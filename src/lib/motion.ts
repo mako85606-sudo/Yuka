@@ -39,6 +39,8 @@ export const durations = {
   inkBurst: 0.32,
   /** Le message de négociation s'affiche d'un bloc. */
   message: 0.3,
+  /** Une demi-respiration de l'étape en cours (aller ou retour). */
+  pulse: 0.9,
   /** Plafond d'une séquence, par bloc. */
   blockMax: 1.2,
 } as const;
@@ -197,6 +199,13 @@ export const transitions = {
     delay,
   }),
   micro: { duration: durations.micro, ease: easings.out } satisfies Transition,
+  /** L'étape en cours respire : opacité seulement, en boucle. */
+  pulse: {
+    duration: durations.pulse,
+    ease: easings.inOut,
+    repeat: Infinity,
+    repeatType: "reverse",
+  } satisfies Transition,
   /** Quand une annotation s'insère, les lignes suivantes glissent (transform). */
   reflow: springs.snappy,
   fadeIn: (delay = 0): Transition => ({

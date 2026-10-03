@@ -1,0 +1,108 @@
+{
+  "id": "02-garage-freins",
+  "description": "Garage, freins avant : une ligne mal calculée et un total TTC faux (erreurs volontaires).",
+  "expectedOutcome": "extracted",
+  "extraction": {
+    "documentKind": "devis",
+    "category": "auto",
+    "readability": "good",
+    "subject": "Remplacement des freins avant",
+    "issuer": {
+      "hasCompanyName": true,
+      "hasSiret": true,
+      "hasAddress": true,
+      "hasInsuranceMention": false,
+      "hasValidityDate": true,
+      "hasTravelFees": false,
+      "hasClientIdentity": true,
+      "hasPaymentTerms": true
+    },
+    "meta": {
+      "isDoorToDoorSale": false,
+      "quoteDate": "2026-09-22",
+      "validityDays": 15,
+      "department": "33"
+    },
+    "lines": [
+      {
+        "label": "Plaquettes de frein avant (jeu)",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "unite",
+        "unitPriceHT": 54.9,
+        "totalHT": 54.9,
+        "vatRate": 20,
+        "canonicalItem": "auto.freinage.plaquettes.avant"
+      },
+      {
+        "label": "Disques de frein avant (paire)",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "unite",
+        "unitPriceHT": 189.9,
+        "totalHT": 198.9,
+        "vatRate": 20,
+        "canonicalItem": "auto.freinage.disques.avant"
+      },
+      {
+        "label": "Purge et remplacement du liquide de frein",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 39,
+        "totalHT": 39,
+        "vatRate": 20,
+        "canonicalItem": "auto.freinage.liquide"
+      },
+      {
+        "label": "Main-d'œuvre atelier",
+        "confidence": "high",
+        "quantity": 1.5,
+        "unit": "heure",
+        "unitPriceHT": 72,
+        "totalHT": 108,
+        "vatRate": 20,
+        "canonicalItem": "auto.main-oeuvre"
+      },
+      {
+        "label": "Ingrédients et produits d'atelier",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 9.8,
+        "totalHT": 9.8,
+        "vatRate": 20,
+        "canonicalItem": "auto.ingredients"
+      }
+    ],
+    "totals": {
+      "totalHT": 410.6,
+      "totalVAT": 82.12,
+      "totalTTC": 502.72
+    },
+    "confidence": {
+      "category": "high",
+      "issuer": "high",
+      "quoteDate": "high",
+      "validity": "high",
+      "deposit": "high",
+      "executionDelay": "high",
+      "department": "high",
+      "doorToDoorSale": "high",
+      "totals": "high"
+    }
+  },
+  "knownIssues": [
+    {
+      "kind": "line-calculation",
+      "line": 2,
+      "expected": 189.9,
+      "printed": 198.9
+    },
+    {
+      "kind": "total-ttc",
+      "expected": 492.72,
+      "printed": 502.72
+    }
+  ]
+}

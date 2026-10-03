@@ -16,13 +16,26 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
   alert: "À vérifier sérieusement",
 };
 
-export interface SceneLine {
+/**
+ * Une ligne telle qu'imprimée sur le devis. Une vraie lecture n'a pas toujours
+ * tout : une valeur absente ou illisible vaut `null`, jamais une invention.
+ */
+export interface PrintedLine {
   readonly id: string;
   readonly label: string;
+  readonly quantity: number | null;
+  /** Symbole d'unité tel qu'affiché (« u », « h », « m² »). */
+  readonly unit: string | null;
+  readonly unitPriceHT: number | null;
+  /** Total HT tel qu'écrit sur le devis (peut être faux : c'est ce qu'on vérifie). */
+  readonly totalHT: number | null;
+}
+
+/** Ligne d'une démo : tout est connu. */
+export interface SceneLine extends PrintedLine {
   readonly quantity: number;
   readonly unit: string;
   readonly unitPriceHT: number;
-  /** Total HT tel qu'écrit sur le devis (peut être faux : c'est ce qu'on vérifie). */
   readonly totalHT: number;
 }
 
@@ -45,7 +58,14 @@ export interface ScenePrice {
   readonly source: PriceSource;
 }
 
-export interface SceneTotals {
+/** Totaux tels qu'imprimés ; `null` quand le devis ne les donne pas. */
+export interface PrintedTotals {
+  readonly totalHT: number | null;
+  readonly totalVAT: number | null;
+  readonly totalTTC: number | null;
+}
+
+export interface SceneTotals extends PrintedTotals {
   readonly totalHT: number;
   readonly totalVAT: number;
   readonly totalTTC: number;

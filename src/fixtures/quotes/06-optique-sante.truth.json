@@ -1,0 +1,7 @@
+{
+  "id": "06-optique-sante",
+  "description": "Optique (santé) : pas pris en charge en V1, doit être refusé sans analyse.",
+  "expectedOutcome": "health",
+  "extraction": null,
+  "knownIssues": []
+}

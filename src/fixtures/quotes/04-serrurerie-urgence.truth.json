@@ -1,0 +1,118 @@
+{
+  "id": "04-serrurerie-urgence",
+  "description": "Serrurerie d'urgence : une ligne mal calculée, un total HT qui ne correspond pas aux lignes, SIRET et validité absents, une ligne vague (erreurs volontaires).",
+  "expectedOutcome": "extracted",
+  "extraction": {
+    "documentKind": "devis",
+    "category": "serrurerie",
+    "readability": "good",
+    "subject": "Ouverture de porte et remplacement du cylindre",
+    "issuer": {
+      "hasCompanyName": true,
+      "hasSiret": false,
+      "hasAddress": true,
+      "hasInsuranceMention": false,
+      "hasValidityDate": false,
+      "hasTravelFees": true,
+      "hasClientIdentity": true,
+      "hasPaymentTerms": true
+    },
+    "meta": {
+      "isDoorToDoorSale": false,
+      "quoteDate": "2026-09-27",
+      "department": "13"
+    },
+    "lines": [
+      {
+        "label": "Ouverture de porte claquée (sans dégât)",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 149,
+        "totalHT": 149,
+        "vatRate": 20,
+        "canonicalItem": "serrurerie.ouverture.claquee"
+      },
+      {
+        "label": "Cylindre de sécurité européen A2P 1 étoile",
+        "confidence": "high",
+        "quantity": 2,
+        "unit": "unite",
+        "unitPriceHT": 64.5,
+        "totalHT": 139,
+        "vatRate": 20,
+        "canonicalItem": "serrurerie.cylindre"
+      },
+      {
+        "label": "Déplacement urgence",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 79,
+        "totalHT": 79,
+        "vatRate": 20,
+        "canonicalItem": "serrurerie.deplacement"
+      },
+      {
+        "label": "Majoration intervention de nuit (après 20 h)",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 60,
+        "totalHT": 60,
+        "vatRate": 20,
+        "canonicalItem": "serrurerie.majoration"
+      },
+      {
+        "label": "Forfait divers",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 45,
+        "totalHT": 45,
+        "vatRate": 20
+      }
+    ],
+    "totals": {
+      "totalHT": 462,
+      "totalVAT": 92.4,
+      "totalTTC": 554.4
+    },
+    "confidence": {
+      "category": "high",
+      "issuer": "high",
+      "quoteDate": "high",
+      "validity": "high",
+      "deposit": "high",
+      "executionDelay": "high",
+      "department": "high",
+      "doorToDoorSale": "high",
+      "totals": "high"
+    }
+  },
+  "knownIssues": [
+    {
+      "kind": "line-calculation",
+      "line": 2,
+      "expected": 129,
+      "printed": 139
+    },
+    {
+      "kind": "total-ht",
+      "expected": 472,
+      "printed": 462
+    },
+    {
+      "kind": "missing-mention",
+      "mention": "hasSiret"
+    },
+    {
+      "kind": "missing-mention",
+      "mention": "hasValidityDate"
+    },
+    {
+      "kind": "vague-line",
+      "line": 5
+    }
+  ]
+}

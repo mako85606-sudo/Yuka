@@ -5,11 +5,12 @@ import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { cn } from "@/lib/cn";
 import { formatAmount, formatEuros, formatRate } from "@/lib/format";
 import { reducedFade, transitions } from "@/lib/motion";
-import type { SceneTotals } from "@/lib/scene-quote";
+import type { PrintedTotals } from "@/lib/scene-quote";
 
 interface QuoteTotalsProps {
-  readonly totals: SceneTotals;
-  readonly vatRate: number;
+  readonly totals: PrintedTotals;
+  /** Taux unique du devis, en fraction (0,1) ; `null` s'il y en a plusieurs ou aucun. */
+  readonly vatRate: number | null;
   /** Faux : les totaux attendent, invisibles (leur place est déjà réservée). */
   readonly revealed?: boolean;
   /** Délai d'apparition, en secondes, compté depuis la révélation. */
@@ -49,12 +50,35 @@ export function QuoteTotals({
         )}
       >
         <dt className="text-ink-muted">Total HT</dt>
-        <dd className="text-right">{formatAmount(totals.totalHT)}</dd>
-        <dt className="text-ink-muted">TVA {formatRate(vatRate)}</dt>
-        <dd className="text-right">{formatAmount(totals.totalVAT)}</dd>
+        <dd className="text-right">
+          <Amount value={totals.totalHT} format={formatAmount} />
+        </dd>
+        <dt className="text-ink-muted">TVA{vatRate === null ? null : ` ${formatRate(vatRate)}`}</dt>
+        <dd className="text-right">
+          <Amount value={totals.totalVAT} format={formatAmount} />
+        </dd>
         <dt className="pt-1 font-semibold">Total TTC</dt>
-        <dd className="pt-1 text-right font-semibold">{formatEuros(totals.totalTTC)}</dd>
+        <dd className="pt-1 text-right font-semibold">
+          <Amount value={totals.totalTTC} format={formatEuros} />
+        </dd>
       </dl>
     </motion.div>
+  );
+}
+
+/** Un montant imprimé, ou un tiret s'il n'y en a pas sur le devis. */
+function Amount({
+  value,
+  format,
+}: {
+  readonly value: number | null;
+  readonly format: (amount: number) => string;
+}) {
+  if (value !== null) return <>{format(value)}</>;
+  return (
+    <>
+      <span aria-hidden>—</span>
+      <span className="sr-only">non indiqué</span>
+    </>
   );
 }

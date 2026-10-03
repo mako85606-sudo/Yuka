@@ -4,14 +4,24 @@ import { formatShortDate } from "@/lib/format";
 
 interface QuoteHeaderProps {
   readonly category: string;
-  readonly department: string;
+  /** Département lisible (« Rhône (69) »), s'il est connu. */
+  readonly department?: string | null;
   readonly title: string;
-  readonly issuedAt: Date;
-  readonly validityDays: number;
+  readonly issuedAt?: Date | null;
+  readonly validityDays?: number | null;
   /** Ce qui occupe le cadre réservé : le tampon, une fois le verdict rendu. */
   readonly stamp?: ReactNode;
   /** Version resserrée, pour la démo de la landing. */
   readonly compact?: boolean;
+}
+
+/** « Daté du 12/09/2026 · valable 30 jours », ou ce qu'on en a lu. */
+function datesLine(issuedAt: Date | null, validityDays: number | null): string {
+  const parts = [
+    issuedAt ? `Daté du ${formatShortDate(issuedAt)}` : "Date non lue",
+    validityDays ? `valable ${validityDays} jours` : null,
+  ];
+  return parts.filter(Boolean).join(" · ");
 }
 
 /**
@@ -49,11 +59,10 @@ export function QuoteHeader({
         <div className="min-w-0">
           <p className="font-mono text-label uppercase text-ink-muted">Devis reconstruit</p>
           <p className={cn("mt-1.5 text-ink", compact ? "text-[0.8125rem]" : "text-sm")}>
-            {category} · {department}
+            {department ? `${category} · ${department}` : category}
           </p>
           <p className={cn("mt-0.5 text-ink-muted", compact ? "text-[0.8125rem]" : "text-sm")}>
-            Daté du {formatShortDate(issuedAt)}
-            {compact ? null : <> · valable {validityDays} jours</>}
+            {datesLine(issuedAt ?? null, compact ? null : (validityDays ?? null))}
           </p>
         </div>
         <div

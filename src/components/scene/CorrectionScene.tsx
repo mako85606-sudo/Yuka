@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
+import { GhostLines } from "@/components/quote/GhostLines";
 import { QuoteHeader } from "@/components/quote/QuoteHeader";
 import { QuoteLine } from "@/components/quote/QuoteLine";
 import { QuoteTotals } from "@/components/quote/QuoteTotals";
@@ -170,19 +171,5 @@ export function CorrectionScene({
         ) : null}
       </div>
     </PaperSheet>
-  );
-}
-
-/** Avant que les premières lignes arrivent : des lignes encore illisibles. */
-function GhostLines() {
-  return (
-    <ul aria-hidden className="space-y-5 py-5 sm:mr-[calc(var(--margin-col)+1.75rem)]">
-      {[72, 63, 54, 45].map((width) => (
-        <li key={width} className="flex items-center gap-4">
-          <span className="h-2 flex-1 rounded-full bg-rule" style={{ maxWidth: `${width}%` }} />
-          <span className="ml-auto h-2 w-12 rounded-full bg-rule" />
-        </li>
-      ))}
-    </ul>
   );
 }

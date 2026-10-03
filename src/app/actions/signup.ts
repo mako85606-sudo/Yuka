@@ -6,6 +6,7 @@ import { saveSignup } from "@/server/signups";
 
 const SUCCESS = fr("C'est noté. On t'écrit quand il y a du nouveau, pas avant.");
 const UNAVAILABLE = fr("L'inscription ouvre très bientôt. Repasse dans quelques jours.");
+const FAILED = fr("Petit souci de notre côté : ton adresse n'a pas été enregistrée. Réessaie dans un instant.");
 
 /** Inscription aux nouvelles de Loupe (landing, rapport détaillé). */
 export async function subscribeToNews(
@@ -19,6 +20,9 @@ export async function subscribeToNews(
     return { status: "invalid", message: parsed.message, email: parsed.email };
   }
   const saved = await saveSignup({ email: parsed.email, source: parsed.source });
-  if (!saved.ok) return { status: "unavailable", message: UNAVAILABLE };
-  return { status: "success", message: SUCCESS };
+  if (saved.ok) return { status: "success", message: SUCCESS };
+  return {
+    status: "unavailable",
+    message: saved.reason === "error" ? FAILED : UNAVAILABLE,
+  };
 }

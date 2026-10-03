@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
 import { formatAmount, formatQuantity } from "@/lib/format";
 import { offsets, reducedFade, transitions } from "@/lib/motion";
 import type { PriceSource } from "@/lib/price-wording";
-import type { SceneLine } from "@/lib/scene-quote";
+import type { PrintedLine } from "@/lib/scene-quote";
 
 export interface QuoteLineIssue {
   readonly id: string;
@@ -31,7 +31,7 @@ export interface QuoteLinePrice {
 }
 
 interface QuoteLineProps {
-  readonly line: SceneLine;
+  readonly line: PrintedLine;
   /** Faux : la ligne attend, invisible (sa place est déjà réservée). */
   readonly revealed?: boolean;
   /** Délai d'apparition de la ligne, en secondes, compté depuis la révélation. */
@@ -42,6 +42,17 @@ interface QuoteLineProps {
   readonly price?: QuoteLinePrice;
   /** Version resserrée, pour la démo de la landing. */
   readonly compact?: boolean;
+}
+
+/** « 4 h × 65,00 », ou ce qu'on en connaît. Rien si ni quantité ni prix unitaire. */
+function lineDetail(line: PrintedLine): string | null {
+  const quantity =
+    line.quantity === null ? null : [formatQuantity(line.quantity), line.unit].filter(Boolean).join(" ");
+  const unitPrice = line.unitPriceHT === null ? null : formatAmount(line.unitPriceHT);
+  if (quantity && unitPrice) return `${quantity} × ${unitPrice}`;
+  if (quantity) return quantity;
+  if (unitPrice) return `PU ${unitPrice}`;
+  return null;
 }
 
 /**
@@ -64,6 +75,7 @@ export function QuoteLine({
     ? { ...reducedFade(delay), layout: { duration: 0 } }
     : { ...transitions.lineReveal(delay), layout: transitions.reflow };
   const textSize = compact ? "text-[0.875rem]" : "text-[0.95rem]";
+  const detail = lineDetail(line);
 
   return (
     <motion.li
@@ -90,12 +102,19 @@ export function QuoteLine({
           ) : null}
           <span className={cn("min-w-0 flex-1 leading-snug", textSize)}>{line.label}</span>
           <span className={cn("shrink-0 font-mono tabular-nums", textSize)}>
-            {formatAmount(line.totalHT)}
+            {line.totalHT === null ? (
+              <>
+                <span aria-hidden>—</span>
+                <span className="sr-only">montant non indiqué</span>
+              </>
+            ) : (
+              formatAmount(line.totalHT)
+            )}
           </span>
         </div>
-        <p className="mt-0.5 font-mono text-xs tabular-nums text-ink-muted">
-          {formatQuantity(line.quantity)} {line.unit} × {formatAmount(line.unitPriceHT)}
-        </p>
+        {detail ? (
+          <p className="mt-0.5 font-mono text-xs tabular-nums text-ink-muted">{detail}</p>
+        ) : null}
       </div>
 
       {issue || price ? (

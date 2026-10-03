@@ -47,27 +47,44 @@ Le moment clé : quelqu'un tient un devis dans la main et se demande s'il est en
 
 Appel LLM : sortie JSON forcée via un outil (tool use) dont l'`input_schema` est dérivé du schéma Zod (`z.toJSONSchema`). Validation Zod côté serveur ; en cas d'échec, une seule relance avec l'erreur de validation. Les PDF partent directement au modèle ; les photos sont compressées côté client (environ 1600 px de large).
 
+Précisions vérifiées dans la documentation de l'API Claude (étape 3) :
+- Claude Sonnet 5.5 refuse le forçage d'outil (`tool_choice` `any` ou `tool` : erreur 400). On envoie `tool_choice: { type: "auto", disable_parallel_tool_use: true }`, une consigne explicite d'appeler l'outil, et un outil `strict: true` (schéma garanti). Pas d'appel d'outil = échec de validation, donc la relance unique.
+- Schémas stricts : objets fermés (`additionalProperties: false`), pas de `minimum`/`maximum`/`pattern`/longueurs (retirés du schéma envoyé, gardés par Zod), au plus 24 champs optionnels et 16 unions par requête. D'où : valeur absente = champ omis (pas de `null`), garde par `schema.test.ts`.
+- Champs obligatoires dans l'ordre déclaré, optionnels ensuite : `documentKind`, `category`, `readability` sortent en premier. Avec `eager_input_streaming: true`, l'entrée de l'outil arrive en fragments : `src/lib/extraction/progress.ts` en tire l'en-tête et chaque ligne dès qu'ils sont complets, et arrête la lecture d'un devis de santé, d'un non-devis ou d'une photo illisible avant la suite.
+- Réflexion adaptative par défaut (`thinking: disabled` renvoie 400 sur ce modèle), effort `low` (conseillé pour l'extraction), `max_tokens` 16 000. Consignes en cache (`cache_control` sur le bloc système). Un refus (`stop_reason: "refusal"`) ou une réponse tronquée ne sont pas relancés.
+- Coût journalisé à chaque lecture (`[analyse] …` dans les journaux du serveur), d'après `MODEL_PRICING` (`src/config/llm.ts`).
+- Vie privée : les photos sont réencodées dans le navigateur (métadonnées EXIF et position GPS effacées) ; le modèle ne renvoie que des booléens pour l'émetteur ; libellés et objet passent par `anonymizeText` ; les fichiers restent en mémoire le temps de la requête.
+
 ## Commandes
 
 - `npm run dev`, `npm run build`, `npm start`
 - `npm run lint` : ESLint CLI (flat config `eslint-config-next`)
 - `npm run typecheck` : `next typegen && tsc --noEmit` (génère les types `PageProps`/`LayoutProps` avant de vérifier)
 - `npm test` : Vitest en une passe ; `npm run test:watch` en continu
+- `npm run db:generate` (migration SQL après un changement de `src/server/db/schema.ts`), `npm run db:migrate` (l'applique à `DATABASE_URL`)
+- `npm run fixtures:generate` : régénère les devis PDF fictifs et leur vérité terrain (rendu déterministe)
+- `npm run eval:extraction [-- préfixe]` : fait lire les devis fictifs par le vrai modèle (clé requise), précision champ par champ, contrôle vie privée, rapport dans `eval-results/` (ignoré par git)
 
 ## Arborescence
 
-- `src/app/` : routes. `/dev/design` est la planche de style (masquée en production Vercel sauf `ENABLE_DEV_PAGES=true`). `globals.css` porte les tokens ; `tokens.test.ts` les garde.
+- `src/app/` : routes. `/dev/design` est la planche de style (masquée en production Vercel sauf `ENABLE_DEV_PAGES=true`). `globals.css` porte les tokens ; `tokens.test.ts` les garde. `api/analyze/route.ts` : l'analyse streamée.
 - `src/components/signature/` : les six composants signature.
-- `src/components/quote/` : le devis reconstruit (en-tête avec « cadre réservé au correcteur », lignes, totaux).
+- `src/components/quote/` : le devis reconstruit (en-tête avec « cadre réservé au correcteur », lignes, totaux, lignes fantômes). Ils acceptent des valeurs absentes (`PrintedLine`, `PrintedTotals` : `null` = non lu, affiché « — »).
 - `src/components/scene/` : `CorrectionScene` (la correction complète pilotée par l'étape atteinte), `ScriptedScene` et `DemoLoop` (démos fictives).
+- `src/components/analyze/` : la page `/analyse` : `AnalyzeFlow` (parcours), `PagePicker` + `use-pages` (photos compressées, PDF), `StepTracker` (étapes réelles), `LiveSheet` (feuille remplie au fil de la lecture), `AnalysisOutcome` (fin, refus, erreurs).
 - `src/components/landing/` : sections de la landing (en-tête, illustrations, FAQ, inscription, CTA collant mobile, pied de page).
-- `src/app/actions/` : Server Actions (`"use server"`). `src/server/` : code serveur uniquement (`import "server-only"`).
+- `src/app/actions/` : Server Actions (`"use server"`). `src/server/` : code serveur uniquement (`import "server-only"`) : `env.ts` (variables validées par Zod), `anthropic.ts` (client), `extraction/` (consignes et appel au modèle), `analysis/` (envoi, origine, flux NDJSON), `db/` (schéma Drizzle, client postgres.js), `rate-limit.ts`, `signups.ts`.
 - `src/components/motion/` : préférences de mouvement (mouvement réduit, saut d'animation).
-- `src/components/ui/` : éléments d'interface maison (pas de shadcn brut).
-- `src/lib/` : code pur et testé : `motion.ts` (durées, courbes, springs), `choreography.ts` (ordre des gestes dans chaque bloc), `phases.ts` (étapes serveur), `hand-drawn.ts` et `seeded-random.ts` (tracés à la main), `format.ts`, `price-wording.ts`, `color.ts`, `demo-script.ts`.
+- `src/components/ui/` : éléments d'interface maison (pas de shadcn brut) ; `icons.tsx` (pictogrammes au trait).
+- `src/lib/` : code pur et testé : `motion.ts` (durées, courbes, springs), `choreography.ts` (ordre des gestes dans chaque bloc), `phases.ts` (étapes serveur), `hand-drawn.ts` et `seeded-random.ts` (tracés à la main), `format.ts`, `price-wording.ts`, `color.ts`, `demo-script.ts`, `typography.ts`, `anonymize.ts` (filet anti-données personnelles), `department.ts`, `client-ip.ts`, `llm-cost.ts`, `image-compression.ts`.
+- `src/lib/extraction/` : `schema.ts` (schéma Zod de la lecture, source unique), `tool-schema.ts` (schéma d'outil strict dérivé), `progress.ts` (lecture progressive du flux, arrêt anticipé), `normalize.ts`.
+- `src/lib/analysis/` : protocole du flux (`events.ts`), messages, client navigateur, état de la lecture en direct (`live-state.ts`), règles d'ajout des pages.
+- `src/lib/eval/` : comparaison d'une lecture avec sa vérité terrain.
 - `src/lib/checks/` (étape 4) : une fonction par règle déterministe, chacune testée.
-- `src/config/` : `site.ts` ; plus tard `taxonomy.ts`, `rules.ts`, seuils et références (avec `// TODO: vérifier` si incertain).
-- `src/fixtures/` : données fictives. `demo-quotes.ts` : trois devis (plomberie « à négocier », garage « à vérifier sérieusement », électricité « correct ») dont `demo-quotes.test.ts` garantit l'honnêteté (chaque erreur annoncée existe dans les chiffres).
+- `src/config/` : `site.ts`, `taxonomy.ts` (catégories, unités, prestations comparables), `llm.ts` (réglages et tarifs du modèle), `limits.ts` (envoi, quota), `departments.ts` ; plus tard `rules.ts`, seuils et références (avec `// TODO: vérifier` si incertain).
+- `src/fixtures/` : données fictives. `demo-quotes.ts` : trois devis de démo dont `demo-quotes.test.ts` garantit l'honnêteté. `quotes/` : les devis PDF du jeu de test (`definitions.ts` en est la source, `definitions.test.ts` garde leurs erreurs volontaires). `sample-extraction.ts` : une lecture type pour les tests.
+- `src/test/` : outils de test : faux serveur Claude (`fake-anthropic.ts`, le vrai SDK sur des flux SSE écrits à la main), base Postgres en mémoire (`test-db.ts`, PGlite + migrations du projet), remplaçant de `server-only`.
+- `scripts/` : générateur des PDF et évaluation (lancés par `tsx`). `drizzle/` : migrations SQL générées.
 
 ## Conventions de code
 
@@ -81,7 +98,9 @@ Appel LLM : sortie JSON forcée via un outil (tool use) dont l'`input_schema` es
 - Composants animés « activables » : prop `active` (vrai par défaut). Tout ce qui est connu est posé dès le départ, invisible, puis s'anime quand son étape arrive : la mise en page ne bouge pas (pas de CLS).
 - Typographie française : `fr()` (`src/lib/typography.ts`) sur les textes avec « ? ! : ; % € » ou des guillemets, `&nbsp;` dans le JSX (« 30&nbsp;secondes »).
 - Durées en CSS : seulement via des variables miroir de `motion.ts` (ex. `--duration-micro`), vérifiées par `tokens.test.ts`.
-- Formulaires : Server Action + `useActionState`, validation Zod côté serveur, messages reliés au champ (`aria-describedby`, `aria-live`).
+- Formulaires : Server Action + `useActionState`, validation Zod côté serveur, messages reliés au champ (`aria-describedby`, `aria-live`). Exception : l'envoi d'un devis passe par `fetch` vers `POST /api/analyze` (fichiers lourds et réponse streamée).
+- Code serveur : `import "server-only"` en tête ; Vitest le remplace par un module vide, `npm run eval:extraction` passe `--conditions=react-server`. `src/server/db/schema.ts` n'a ni `server-only` ni alias `@/` (drizzle-kit le charge hors de Next.js).
+- Tests : pas de réseau. Appels au modèle testés contre `src/test/fake-anthropic.ts`, requêtes SQL contre PGlite (`src/test/test-db.ts`).
 
 ## Direction artistique : « le correcteur au stylo rouge »
 
@@ -129,7 +148,7 @@ Le mouvement raconte la correction dans l'ordre où un humain la ferait. Il sert
 `POST /api/analyze` streame les étapes réelles : `received` → `reading` → `checking` → `pricing` → `verdict`.
 
 1. Entrée : 1 à 4 photos ou un PDF, 10 Mo max. Compression côté client. Sur mobile, `capture="environment"`.
-2. Extraction (modèle vision) : `category`, `issuer` (booléens uniquement), `meta` (date, validité, acompte %, délai, département = 2 premiers chiffres du code postal du chantier, `isDoorToDoorSale`), `lines[]` (`label`, `quantity`, `unit`, `unitPriceHT`, `totalHT`, `vatRate`, `canonicalItem`), `totals`, `confidence` par champ. `canonicalItem` vient de la taxonomie `src/config/taxonomy.ts` (ex. `plomberie.chauffe-eau.remplacement.200l`).
+2. Extraction (modèle vision) : `documentKind` (devis, facture, autre), `category`, `readability` (good, partial, poor), `subject` (objet sans donnée personnelle), `issuer` (booléens uniquement : les six du brief plus `hasClientIdentity` et `hasPaymentTerms`), `meta` (date, validité en jours ou en date, acompte en % et en euros, délai en jours, département = 2 premiers chiffres du code postal du chantier, 3 en outre-mer, `isDoorToDoorSale`), `lines[]` (`label`, `quantity`, `unit`, `unitPriceHT`, `totalHT`, `vatRate` en pourcentage, `canonicalItem`, `confidence`), `totals`, `confidence` par champ (`high`, `medium`, `low`). `canonicalItem` vient de la taxonomie `src/config/taxonomy.ts` (ex. `plomberie.chauffe-eau.remplacement.200l`). Les montants sont recopiés tels qu'imprimés, même faux. Refus sans analyse ni stockage : devis de santé, document qui n'est pas un devis, photo illisible (avec un conseil).
 3. Vérifications déterministes en TypeScript pur (`src/lib/checks/`), jamais confiées au LLM : calculs (avec tolérance d'arrondi), TVA plausible, mentions obligatoires (`src/config/rules.ts`, forme `{ id, severity, message, legalRef, verified }`), acompte élevé (avertissement, jamais le mot « illégal »), vente à domicile (rappel du délai de rétractation), lignes vagues.
 4. Prix : médiane et écart si au moins `MIN_COMPARABLES` (défaut 5) lignes comparables (même item, région proche, moins de 24 mois), sinon fourchette demandée au LLM étiquetée « estimation IA, confiance faible ». Médianes et écarts calculés en TypeScript, jamais par le LLM.
 5. Verdict : `ok` (vert, « Correct »), `negotiate` (orange, « À négocier »), `alert` (rouge, « À vérifier sérieusement ») ; fourchette d'économie potentielle ; trois points clés maximum.
@@ -147,7 +166,7 @@ Mesure (PostHog) : `landing_view`, `upload_started`, `upload_completed`, `analys
 
 1. Fondations et identité : projet, CLAUDE.md, tokens, polices, `src/lib/motion.ts`, six composants signature animés sur `/dev/design`. L'utilisateur valide le style avant la suite.
 2. Landing avec la démo animée (données dans `src/fixtures/`). Fait : l'inscription email valide (Zod) mais n'enregistre rien avant la base de l'étape 3 (`src/server/signups.ts`).
-3. Extraction : route streamée, schémas Zod, appel LLM, refus santé, rate limit ; 5 devis PDF fictifs (pdf-lib), dont 2 avec erreurs connues, et leur vérité terrain JSON ; `npm run eval:extraction` (précision champ par champ).
+3. Extraction : route streamée, schémas Zod, appel LLM, refus santé, rate limit ; 5 devis PDF fictifs (pdf-lib), dont 2 avec erreurs connues, et leur vérité terrain JSON ; `npm run eval:extraction` (précision champ par champ). Fait : `/analyse` dépose le devis et montre la lecture en direct (étapes `received` et `reading` ; contrôles, prix et verdict annoncés « bientôt »). Rien n'est encore stocké d'une analyse : les tables `analysis` et `price_lines` arrivent à l'étape 4. En base : `rate_limits` (HMAC du jour et de l'IP, jamais l'IP) et `signups`.
 4. Vérifications et prix : règles déterministes (au moins un test qui passe et un qui échoue par règle), taxonomie, médianes, verdict.
 5. Écran de résultat : chorégraphie complète, version reduced-motion, message de négociation.
 6. Partage et mesure : page publique, image OG, événements, bouton rapport détaillé, `/admin`.

@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/landing/SiteHeader";
 import { StickyCta } from "@/components/landing/StickyCta";
 import { DemoLoop } from "@/components/scene/DemoLoop";
 import { ButtonLink } from "@/components/ui/Button";
+import { CameraGlyph } from "@/components/ui/icons";
 import { demoQuotes } from "@/fixtures/demo-quotes";
 import { cn } from "@/lib/cn";
 import { fr } from "@/lib/typography";
@@ -223,17 +224,5 @@ function Signup() {
         <EmailSignup />
       </div>
     </section>
-  );
-}
-
-function CameraGlyph() {
-  return (
-    <svg aria-hidden viewBox="0 0 20 20" className="size-5 fill-none stroke-current" strokeWidth={1.6}>
-      <path
-        d="M3 6.5h2.6l1.3-2h6.2l1.3 2H17a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5a1 1 0 0 1 1-1Z"
-        strokeLinejoin="round"
-      />
-      <circle cx="10" cy="11" r="3" />
-    </svg>
   );
 }

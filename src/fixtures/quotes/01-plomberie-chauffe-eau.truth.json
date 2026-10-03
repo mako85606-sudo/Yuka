@@ -1,0 +1,109 @@
+{
+  "id": "01-plomberie-chauffe-eau",
+  "description": "Plomberie, remplacement d'un chauffe-eau : devis correct et complet.",
+  "expectedOutcome": "extracted",
+  "extraction": {
+    "documentKind": "devis",
+    "category": "plomberie",
+    "readability": "good",
+    "subject": "Remplacement d'un chauffe-eau électrique 200 L",
+    "issuer": {
+      "hasCompanyName": true,
+      "hasSiret": true,
+      "hasAddress": true,
+      "hasInsuranceMention": true,
+      "hasValidityDate": true,
+      "hasTravelFees": true,
+      "hasClientIdentity": true,
+      "hasPaymentTerms": true
+    },
+    "meta": {
+      "isDoorToDoorSale": false,
+      "quoteDate": "2026-09-14",
+      "validityDays": 30,
+      "depositPercent": 30,
+      "depositAmount": 328.52,
+      "executionDelayDays": 10,
+      "department": "69"
+    },
+    "lines": [
+      {
+        "label": "Chauffe-eau électrique vertical 200 L, classe C",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "unite",
+        "unitPriceHT": 689,
+        "totalHT": 689,
+        "vatRate": 10,
+        "canonicalItem": "plomberie.chauffe-eau.fourniture.200l"
+      },
+      {
+        "label": "Groupe de sécurité NF 3/4\"",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "unite",
+        "unitPriceHT": 42.5,
+        "totalHT": 42.5,
+        "vatRate": 10,
+        "canonicalItem": "plomberie.groupe-securite"
+      },
+      {
+        "label": "Raccords, flexibles et petites fournitures",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 35,
+        "totalHT": 35,
+        "vatRate": 10,
+        "canonicalItem": "divers.fournitures"
+      },
+      {
+        "label": "Main-d'œuvre : dépose de l'ancien appareil, pose et mise en service",
+        "confidence": "high",
+        "quantity": 3,
+        "unit": "heure",
+        "unitPriceHT": 58,
+        "totalHT": 174,
+        "vatRate": 10,
+        "canonicalItem": "plomberie.main-oeuvre"
+      },
+      {
+        "label": "Déplacement",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 30,
+        "totalHT": 30,
+        "vatRate": 10,
+        "canonicalItem": "plomberie.deplacement"
+      },
+      {
+        "label": "Évacuation et recyclage de l'ancien chauffe-eau",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 25,
+        "totalHT": 25,
+        "vatRate": 10,
+        "canonicalItem": "divers.evacuation-dechets"
+      }
+    ],
+    "totals": {
+      "totalHT": 995.5,
+      "totalVAT": 99.55,
+      "totalTTC": 1095.05
+    },
+    "confidence": {
+      "category": "high",
+      "issuer": "high",
+      "quoteDate": "high",
+      "validity": "high",
+      "deposit": "high",
+      "executionDelay": "high",
+      "department": "high",
+      "doorToDoorSale": "high",
+      "totals": "high"
+    }
+  },
+  "knownIssues": []
+}

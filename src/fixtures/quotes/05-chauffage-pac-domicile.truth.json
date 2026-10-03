@@ -1,0 +1,115 @@
+{
+  "id": "05-chauffage-pac-domicile",
+  "description": "Chauffage, pompe à chaleur vendue à domicile : calculs justes, acompte de 50 %, bordereau de rétractation en page 2.",
+  "expectedOutcome": "extracted",
+  "extraction": {
+    "documentKind": "devis",
+    "category": "chauffage",
+    "readability": "good",
+    "subject": "Installation d'une pompe à chaleur air/eau",
+    "issuer": {
+      "hasCompanyName": true,
+      "hasSiret": true,
+      "hasAddress": true,
+      "hasInsuranceMention": true,
+      "hasValidityDate": true,
+      "hasTravelFees": false,
+      "hasClientIdentity": true,
+      "hasPaymentTerms": true
+    },
+    "meta": {
+      "isDoorToDoorSale": true,
+      "quoteDate": "2026-09-18",
+      "validityDays": 60,
+      "depositPercent": 50,
+      "depositAmount": 6192.33,
+      "executionDelayDays": 42,
+      "department": "31"
+    },
+    "lines": [
+      {
+        "label": "Fourniture et pose d'une pompe à chaleur air/eau 8 kW (unité extérieure et module hydraulique)",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 9850,
+        "totalHT": 9850,
+        "vatRate": 5.5,
+        "canonicalItem": "chauffage.pac.air-eau"
+      },
+      {
+        "label": "Dépose de la chaudière fioul existante",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 650,
+        "totalHT": 650,
+        "vatRate": 5.5
+      },
+      {
+        "label": "Ballon tampon 50 L",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "unite",
+        "unitPriceHT": 420,
+        "totalHT": 420,
+        "vatRate": 5.5
+      },
+      {
+        "label": "Désembouage du circuit de chauffage",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 380,
+        "totalHT": 380,
+        "vatRate": 5.5,
+        "canonicalItem": "chauffage.desembouage"
+      },
+      {
+        "label": "Thermostat d'ambiance connecté",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "unite",
+        "unitPriceHT": 189,
+        "totalHT": 189,
+        "vatRate": 5.5,
+        "canonicalItem": "chauffage.thermostat"
+      },
+      {
+        "label": "Mise en service et réglages",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 250,
+        "totalHT": 250,
+        "vatRate": 5.5,
+        "canonicalItem": "chauffage.mise-en-service"
+      }
+    ],
+    "totals": {
+      "totalHT": 11739,
+      "totalVAT": 645.65,
+      "totalTTC": 12384.65
+    },
+    "confidence": {
+      "category": "high",
+      "issuer": "high",
+      "quoteDate": "high",
+      "validity": "high",
+      "deposit": "high",
+      "executionDelay": "high",
+      "department": "high",
+      "doorToDoorSale": "high",
+      "totals": "high"
+    }
+  },
+  "knownIssues": [
+    {
+      "kind": "high-deposit",
+      "percent": 50
+    },
+    {
+      "kind": "door-to-door"
+    }
+  ]
+}

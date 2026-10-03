@@ -21,6 +21,13 @@ describe("fr", () => {
     expect(fr("890 € HT")).toBe(`890${NBSP}€ HT`);
   });
 
+  it("garde une unité avec son nombre", () => {
+    expect(fr("Chauffe-eau 200 L, classe C")).toBe(`Chauffe-eau 200${NBSP}L, classe C`);
+    expect(fr("Disjoncteur 16 A")).toBe(`Disjoncteur 16${NBSP}A`);
+    expect(fr("Peinture, 45 m² et 3 h")).toBe(`Peinture, 45${NBSP}m² et 3${NBSP}h`);
+    expect(fr("Livraison 2 rue Haute, 3 couches")).toBe("Livraison 2 rue Haute, 3 couches");
+  });
+
   it("ne touche pas au reste", () => {
     expect(fr("Ton devis, corrigé.")).toBe("Ton devis, corrigé.");
   });
