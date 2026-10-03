@@ -86,9 +86,17 @@ export const beats = {
   readingAfterDrop: 0.75,
 } as const;
 
+/** Boucle de démo de la landing. */
+export const demoLoop = {
+  /** Temps laissé pour lire le devis corrigé avant de passer au suivant (s). */
+  hold: 3.6,
+} as const;
+
 /** Distances en pixels. */
 export const offsets = {
   sheetDropY: 40,
+  /** La feuille corrigée est retirée vers le haut. */
+  sheetExitY: -16,
   lineRiseY: 6,
   noteShiftX: -6,
   shakeX: 2,
@@ -99,6 +107,7 @@ export const offsets = {
 export const angles = {
   sheetDrop: 3,
   sheetRest: -0.6,
+  sheetExit: -1.5,
   stampMin: -12,
   stampMax: -8,
 } as const;
@@ -138,6 +147,7 @@ export const transitions = {
     default: { ...springs.gentle, delay },
     opacity: { duration: durations.micro, ease: easings.out, delay },
   }),
+  sheetExit: { duration: durations.microSlow, ease: easings.inOut } satisfies Transition,
   sheetShadow: (delay = 0): Transition => ({
     duration: springs.gentle.visualDuration,
     ease: easings.out,

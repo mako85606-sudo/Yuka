@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { site } from "@/config/site";
 import { contrastRatio } from "@/lib/color";
+import { durations } from "@/lib/motion";
 
 /**
  * Garde-fous de la direction artistique : les tokens du brief n'ont pas
@@ -79,6 +80,11 @@ describe("tokens du brief", () => {
   it("donnent au navigateur la même couleur de fond que le bureau", () => {
     expect(site.themeColor.light).toBe(token(light, "--paper"));
     expect(site.themeColor.dark).toBe(token(darkSystem, "--paper"));
+  });
+
+  it("reprennent en CSS la durée des micro-interactions de motion.ts", () => {
+    const match = /--duration-micro:\s*(\d+)ms;/.exec(css);
+    expect(Number(match?.[1])).toBe(durations.micro * 1000);
   });
 
   it("gardent un grain papier à 4 % d'opacité au plus", () => {

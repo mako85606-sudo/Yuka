@@ -1,13 +1,9 @@
-import type { ButtonHTMLAttributes } from "react";
+import Link from "next/link";
+import type { ButtonHTMLAttributes, ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "secondary" | "quiet";
-type Size = "sm" | "md" | "lg";
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  readonly variant?: Variant;
-  readonly size?: Size;
-}
+type Size = "sm" | "md" | "lg" | "xl";
 
 const base =
   "inline-flex select-none items-center justify-center gap-2 rounded-[6px] font-medium motion-safe:active:translate-y-px disabled:pointer-events-none disabled:opacity-45";
@@ -21,8 +17,19 @@ const variants: Record<Variant, string> = {
 const sizes: Record<Size, string> = {
   sm: "h-8 px-3 text-sm",
   md: "h-10 px-4 text-[0.95rem]",
-  lg: "h-13 px-6 text-base",
+  lg: "h-12 px-5 text-base",
+  xl: "h-14 px-7 text-[1.0625rem]",
 };
+
+/** Classes d'un bouton, pour styler un lien comme un bouton. */
+export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string) {
+  return cn(base, variants[variant], sizes[size], className);
+}
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  readonly variant?: Variant;
+  readonly size?: Size;
+}
 
 /** Bouton de Loupe. Le retour d'appui est une translation d'un pixel. */
 export function Button({
@@ -32,5 +39,15 @@ export function Button({
   type = "button",
   ...props
 }: ButtonProps) {
-  return <button type={type} className={cn(base, variants[variant], sizes[size], className)} {...props} />;
+  return <button type={type} className={buttonClasses(variant, size, className)} {...props} />;
+}
+
+interface ButtonLinkProps extends ComponentProps<typeof Link> {
+  readonly variant?: Variant;
+  readonly size?: Size;
+}
+
+/** Lien de navigation qui a l'allure d'un bouton. */
+export function ButtonLink({ variant = "primary", size = "md", className, ...props }: ButtonLinkProps) {
+  return <Link className={buttonClasses(variant, size, className)} {...props} />;
 }

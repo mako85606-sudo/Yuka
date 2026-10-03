@@ -1,45 +1,19 @@
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
-import { MotionPreferences, useMotionPrefs } from "@/components/motion/MotionPreferences";
-import { CorrectionScene } from "@/components/scene/CorrectionScene";
-import { usePhaseScript } from "@/components/scene/use-phase-script";
+import { useState } from "react";
+import { MotionPreferences } from "@/components/motion/MotionPreferences";
+import { ScriptedScene } from "@/components/scene/ScriptedScene";
 import { Button } from "@/components/ui/Button";
-import { demoQuote } from "@/fixtures/demo-quote";
-import { demoScript, type ScriptStep } from "@/lib/demo-script";
-import type { ScenePhase } from "@/lib/phases";
-
-const PHASE_LABELS: Record<ScenePhase, string> = {
-  idle: "en attente",
-  received: "reçu",
-  reading: "lecture",
-  checking: "vérifications",
-  pricing: "prix",
-  verdict: "verdict",
-  done: "terminé",
-};
+import { plumbingQuote } from "@/fixtures/demo-quotes";
 
 /**
  * La scène complète sur le devis fictif. Un tap sur la feuille (ou le bouton
  * « Tout afficher ») passe l'animation et affiche tout.
  */
 export function ScenePlate() {
-  const { reduced } = useMotionPrefs();
   const [run, setRun] = useState(0);
   const [skipped, setSkipped] = useState(false);
   const [done, setDone] = useState(false);
-  const script = useMemo(
-    () =>
-      demoScript(
-        {
-          lines: demoQuote.lines.length,
-          issues: demoQuote.issues.length,
-          prices: demoQuote.prices.length,
-        },
-        reduced,
-      ),
-    [reduced],
-  );
   const running = !done && !skipped;
 
   const replay = () => {
@@ -79,38 +53,17 @@ export function ScenePlate() {
         onPointerDown={running ? () => setSkipped(true) : undefined}
       >
         <MotionPreferences skip={skipped}>
-          <ScriptedScene
-            key={`${run}-${skipped}`}
-            script={script}
-            startDone={skipped}
-            onDone={() => setDone(true)}
-          />
+          <div className="mx-auto max-w-3xl">
+            <ScriptedScene
+              key={`${run}-${skipped}`}
+              quote={plumbingQuote}
+              startDone={skipped}
+              showPhase
+              onDone={() => setDone(true)}
+            />
+          </div>
         </MotionPreferences>
       </div>
     </section>
-  );
-}
-
-interface ScriptedSceneProps {
-  readonly script: readonly ScriptStep[];
-  readonly startDone: boolean;
-  readonly onDone: () => void;
-}
-
-function ScriptedScene({ script, startDone, onDone }: ScriptedSceneProps) {
-  const phase = usePhaseScript(script, startDone ? "done" : "idle");
-  const notifyDone = useEffectEvent(onDone);
-
-  useEffect(() => {
-    if (phase === "done") notifyDone();
-  }, [phase]);
-
-  return (
-    <div className="mx-auto max-w-3xl">
-      <p className="mb-4 font-mono text-label uppercase text-ink-muted" aria-live="polite">
-        Étape simulée : {PHASE_LABELS[phase]}
-      </p>
-      <CorrectionScene quote={demoQuote} phase={phase} />
-    </div>
   );
 }

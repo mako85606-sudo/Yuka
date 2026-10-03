@@ -10,7 +10,9 @@ import { reducedFade, transitions } from "@/lib/motion";
 interface HighlighterMarkProps {
   /** Identifiant de la ligne : il fixe la forme du trait. */
   readonly id: string;
-  /** Délai avant le coup de surligneur, en secondes. */
+  /** Faux : le trait attend, invisible. Vrai : il balaie la ligne (après `delay`). */
+  readonly active?: boolean;
+  /** Délai avant le coup de surligneur, en secondes, compté depuis l'activation. */
   readonly delay?: number;
   readonly className?: string;
 }
@@ -23,7 +25,7 @@ interface HighlighterMarkProps {
  * sans passer sous la feuille. Décoratif : le texte reste lisible dessus
  * (contraste vérifié dans les deux thèmes).
  */
-export function HighlighterMark({ id, delay = 0, className }: HighlighterMarkProps) {
+export function HighlighterMark({ id, active = true, delay = 0, className }: HighlighterMarkProps) {
   const { reduced } = useMotionPrefs();
   const shape = useMemo(() => highlighterShape(id), [id]);
 
@@ -33,7 +35,7 @@ export function HighlighterMark({ id, delay = 0, className }: HighlighterMarkPro
       className={cn("pointer-events-none absolute -inset-x-1.5 -inset-y-0.5 -z-10 block", className)}
       style={{ originX: 0 }}
       initial={{ scaleX: 0, opacity: 0 }}
-      animate={{ scaleX: 1, opacity: 1 }}
+      animate={active ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0 }}
       transition={reduced ? reducedFade(delay) : transitions.highlight(delay)}
     >
       <svg

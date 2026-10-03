@@ -11,7 +11,9 @@ import { useElementSize } from "@/lib/use-element-size";
 interface RedCircleProps {
   /** Identifiant de la ligne : il fixe le coup de crayon, identique à chaque rendu. */
   readonly id: string;
-  /** Délai avant de tracer, en secondes. */
+  /** Faux : la boucle attend, invisible. Vrai : elle se trace (après `delay`). */
+  readonly active?: boolean;
+  /** Délai avant de tracer, en secondes, compté depuis l'activation. */
   readonly delay?: number;
   /** Position et débord autour de la cible (par défaut : un peu plus large que la ligne). */
   readonly className?: string;
@@ -25,7 +27,7 @@ interface RedCircleProps {
  * quelle que soit la largeur de la ligne. Décoratif : l'explication du
  * problème est portée par la note de marge.
  */
-export function RedCircle({ id, delay = 0, className }: RedCircleProps) {
+export function RedCircle({ id, active = true, delay = 0, className }: RedCircleProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const size = useElementSize(ref);
   const { reduced } = useMotionPrefs();
@@ -39,7 +41,7 @@ export function RedCircle({ id, delay = 0, className }: RedCircleProps) {
     <span
       ref={ref}
       aria-hidden
-      className={cn("pointer-events-none absolute -inset-x-2.5 -inset-y-3 block sm:-inset-x-4", className)}
+      className={cn("pointer-events-none absolute -inset-x-3 -inset-y-4 block sm:-inset-x-4", className)}
     >
       {stroke && size ? (
         <svg
@@ -54,7 +56,7 @@ export function RedCircle({ id, delay = 0, className }: RedCircleProps) {
             r={1.6}
             className="fill-pen-red"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: active ? 1 : 0 }}
             transition={transition}
           />
           <motion.path
@@ -64,7 +66,7 @@ export function RedCircle({ id, delay = 0, className }: RedCircleProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
             initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
+            animate={active ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
             transition={transition}
           />
         </svg>

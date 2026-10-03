@@ -13,8 +13,12 @@ interface PriceDeltaProps {
   readonly amount: number;
   /** Base Loupe (avec le nombre de devis comparables) ou estimation IA. */
   readonly source: PriceSource;
-  /** Délai avant le compteur, en secondes. */
+  /** Faux : l'avis attend, invisible. Vrai : il apparaît et compte (après `delay`). */
+  readonly active?: boolean;
+  /** Délai avant le compteur, en secondes, compté depuis l'activation. */
   readonly delay?: number;
+  /** `sm` dans une feuille compacte. */
+  readonly size?: "md" | "sm";
   readonly className?: string;
 }
 
@@ -26,7 +30,14 @@ interface PriceDeltaProps {
  * Orange au-dessus de la référence (il y a matière à négocier), vert en
  * dessous ; une estimation IA reste à l'encre neutre, soulignée en pointillé.
  */
-export function PriceDelta({ amount, source, delay = 0, className }: PriceDeltaProps) {
+export function PriceDelta({
+  amount,
+  source,
+  active = true,
+  delay = 0,
+  size = "md",
+  className,
+}: PriceDeltaProps) {
   const { reduced, skip } = useMotionPrefs();
   const counter = useMotionValue(0);
   const shown = useTransform(counter, (latest) => formatSignedEuros(latest));
@@ -44,6 +55,10 @@ export function PriceDelta({ amount, source, delay = 0, className }: PriceDeltaP
           : "text-ink-muted";
 
   useEffect(() => {
+    if (!active) {
+      counter.jump(0);
+      return;
+    }
     if (reduced || skip) {
       counter.jump(amount);
       return;
@@ -51,20 +66,22 @@ export function PriceDelta({ amount, source, delay = 0, className }: PriceDeltaP
     counter.jump(0);
     const controls = animate(counter, amount, transitions.counter(delay));
     return () => controls.stop();
-  }, [amount, delay, reduced, skip, counter]);
+  }, [active, amount, delay, reduced, skip, counter]);
 
   return (
     <motion.div
-      className={cn("text-sm leading-snug", className)}
+      aria-hidden={active ? undefined : true}
+      className={cn(size === "sm" ? "text-[0.8125rem] leading-snug" : "text-sm leading-snug", className)}
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: active ? 1 : 0 }}
       transition={reduced ? reducedFade(delay) : transitions.fadeIn(delay)}
     >
       <p className="sr-only">{`${finalText} ${phrase} (${caption.toLowerCase()})`}</p>
       <p aria-hidden className="flex flex-wrap items-baseline gap-x-2">
         <motion.span
           className={cn(
-            "inline-block text-right font-mono text-[1.15rem] font-semibold tabular-nums",
+            "inline-block text-right font-mono font-semibold tabular-nums",
+            size === "sm" ? "text-[1rem]" : "text-[1.15rem]",
             tone,
             source.kind === "ai" && "underline decoration-dotted decoration-1 underline-offset-4",
           )}

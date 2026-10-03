@@ -13,7 +13,9 @@ interface MarginNoteProps {
   /** Identifiant de la ligne annotée : il fixe la courbe du trait. */
   readonly id: string;
   readonly children: ReactNode;
-  /** Délai avant l'apparition, en secondes. */
+  /** Faux : la note attend, invisible. Vrai : elle apparaît (après `delay`). */
+  readonly active?: boolean;
+  /** Délai avant l'apparition, en secondes, compté depuis l'activation. */
   readonly delay?: number;
   /**
    * `margin` : dans la marge de droite, le trait part vers la gauche.
@@ -40,16 +42,17 @@ const BELOW_LINK = { width: 22, height: 20, from: { x: 19, y: 17 }, to: { x: 5, 
 export function MarginNote({
   id,
   children,
+  active = true,
   delay = 0,
   placement = "auto",
   srText,
   className,
 }: MarginNoteProps) {
   const { reduced } = useMotionPrefs();
-  const transition = reduced ? reducedFade(delay) : transitions.note(delay);
 
   return (
     <motion.div
+      aria-hidden={active ? undefined : true}
       className={cn(
         "relative font-hand text-hand text-annotation-blue",
         placement === "below" && "pl-6",
@@ -57,20 +60,18 @@ export function MarginNote({
         className,
       )}
       initial={{ opacity: 0, x: offsets.noteShiftX }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={transition}
+      animate={active ? { opacity: 1, x: 0 } : { opacity: 0, x: offsets.noteShiftX }}
+      transition={reduced ? reducedFade(delay) : transitions.note(delay)}
     >
       {placement !== "below" ? (
         <Link
           seed={id}
           geometry={MARGIN_LINK}
           bend={-1}
+          active={active}
           delay={delay}
           reduced={reduced}
-          className={cn(
-            "right-full top-0",
-            placement === "auto" ? "hidden sm:block" : "block",
-          )}
+          className={cn("right-full top-0", placement === "auto" ? "hidden sm:block" : "block")}
         />
       ) : null}
       {placement !== "margin" ? (
@@ -78,6 +79,7 @@ export function MarginNote({
           seed={id}
           geometry={BELOW_LINK}
           bend={1}
+          active={active}
           delay={delay}
           reduced={reduced}
           className={cn("-top-3.5 left-0.5", placement === "auto" ? "block sm:hidden" : "block")}
@@ -95,18 +97,20 @@ interface LinkProps {
   readonly seed: string;
   readonly geometry: typeof MARGIN_LINK | typeof BELOW_LINK;
   readonly bend: 1 | -1;
+  readonly active: boolean;
   readonly delay: number;
   readonly reduced: boolean;
   readonly className: string;
 }
 
 /** Le trait se dessine, puis sa pointe apparaît quand il arrive à la ligne. */
-function Link({ seed, geometry, bend, delay, reduced, className }: LinkProps) {
+function Link({ seed, geometry, bend, active, delay, reduced, className }: LinkProps) {
   const { d, arrow } = useMemo(
     () => connectorPath(seed, geometry.from, geometry.to, bend),
     [seed, geometry, bend],
   );
   const arrowDelay = delay + durations.note * beats.noteArrow;
+
   return (
     <svg
       aria-hidden
@@ -122,7 +126,7 @@ function Link({ seed, geometry, bend, delay, reduced, className }: LinkProps) {
         strokeWidth={1.5}
         strokeLinecap="round"
         initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
+        animate={{ pathLength: active ? 1 : 0 }}
         transition={reduced ? reducedFade(delay) : transitions.note(delay)}
       />
       <motion.path
@@ -132,7 +136,7 @@ function Link({ seed, geometry, bend, delay, reduced, className }: LinkProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: active ? 1 : 0 }}
         transition={reduced ? reducedFade(delay) : transitions.fadeIn(arrowDelay)}
       />
     </svg>

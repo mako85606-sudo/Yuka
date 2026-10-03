@@ -59,13 +59,15 @@ Appel LLM : sortie JSON forcée via un outil (tool use) dont l'`input_schema` es
 - `src/app/` : routes. `/dev/design` est la planche de style (masquée en production Vercel sauf `ENABLE_DEV_PAGES=true`). `globals.css` porte les tokens ; `tokens.test.ts` les garde.
 - `src/components/signature/` : les six composants signature.
 - `src/components/quote/` : le devis reconstruit (en-tête avec « cadre réservé au correcteur », lignes, totaux).
-- `src/components/scene/` : `CorrectionScene`, la correction complète pilotée par l'étape atteinte.
+- `src/components/scene/` : `CorrectionScene` (la correction complète pilotée par l'étape atteinte), `ScriptedScene` et `DemoLoop` (démos fictives).
+- `src/components/landing/` : sections de la landing (en-tête, illustrations, FAQ, inscription, CTA collant mobile, pied de page).
+- `src/app/actions/` : Server Actions (`"use server"`). `src/server/` : code serveur uniquement (`import "server-only"`).
 - `src/components/motion/` : préférences de mouvement (mouvement réduit, saut d'animation).
 - `src/components/ui/` : éléments d'interface maison (pas de shadcn brut).
 - `src/lib/` : code pur et testé : `motion.ts` (durées, courbes, springs), `choreography.ts` (ordre des gestes dans chaque bloc), `phases.ts` (étapes serveur), `hand-drawn.ts` et `seeded-random.ts` (tracés à la main), `format.ts`, `price-wording.ts`, `color.ts`, `demo-script.ts`.
 - `src/lib/checks/` (étape 4) : une fonction par règle déterministe, chacune testée.
 - `src/config/` : `site.ts` ; plus tard `taxonomy.ts`, `rules.ts`, seuils et références (avec `// TODO: vérifier` si incertain).
-- `src/fixtures/` : données fictives (démo, devis de test et vérités terrain).
+- `src/fixtures/` : données fictives. `demo-quotes.ts` : trois devis (plomberie « à négocier », garage « à vérifier sérieusement », électricité « correct ») dont `demo-quotes.test.ts` garantit l'honnêteté (chaque erreur annoncée existe dans les chiffres).
 
 ## Conventions de code
 
@@ -75,7 +77,11 @@ Appel LLM : sortie JSON forcée via un outil (tool use) dont l'`input_schema` es
 - Le hasard visuel (tracés « à la main », rotation du tampon) est toujours initialisé par un identifiant stable (`createRandom(id)`) : même rendu à chaque fois.
 - Les montants s'affichent en Geist Mono, chiffres tabulaires, alignés à droite, formatés par `src/lib/format.ts` (fr-FR, espace insécable, vrai signe moins).
 - Chaque annotation visuelle a un équivalent texte pour les lecteurs d'écran.
-- Mouvement réduit : ne jamais rendre un DOM différent selon `reduced` (le serveur ne connaît pas la préférence : erreur d'hydratation). Seules les transitions et les cibles d'animation changent.
+- Mouvement réduit : ne jamais rendre un DOM différent selon `reduced` (le serveur ne connaît pas la préférence : erreur d'hydratation). Seules les transitions et les cibles d'animation changent ; pour masquer un élément, la variante CSS `motion-reduce:`.
+- Composants animés « activables » : prop `active` (vrai par défaut). Tout ce qui est connu est posé dès le départ, invisible, puis s'anime quand son étape arrive : la mise en page ne bouge pas (pas de CLS).
+- Typographie française : `fr()` (`src/lib/typography.ts`) sur les textes avec « ? ! : ; % € » ou des guillemets, `&nbsp;` dans le JSX (« 30&nbsp;secondes »).
+- Durées en CSS : seulement via des variables miroir de `motion.ts` (ex. `--duration-micro`), vérifiées par `tokens.test.ts`.
+- Formulaires : Server Action + `useActionState`, validation Zod côté serveur, messages reliés au champ (`aria-describedby`, `aria-live`).
 
 ## Direction artistique : « le correcteur au stylo rouge »
 
@@ -140,7 +146,7 @@ Mesure (PostHog) : `landing_view`, `upload_started`, `upload_completed`, `analys
 ## Étapes
 
 1. Fondations et identité : projet, CLAUDE.md, tokens, polices, `src/lib/motion.ts`, six composants signature animés sur `/dev/design`. L'utilisateur valide le style avant la suite.
-2. Landing avec la démo animée (données dans `src/fixtures/`).
+2. Landing avec la démo animée (données dans `src/fixtures/`). Fait : l'inscription email valide (Zod) mais n'enregistre rien avant la base de l'étape 3 (`src/server/signups.ts`).
 3. Extraction : route streamée, schémas Zod, appel LLM, refus santé, rate limit ; 5 devis PDF fictifs (pdf-lib), dont 2 avec erreurs connues, et leur vérité terrain JSON ; `npm run eval:extraction` (précision champ par champ).
 4. Vérifications et prix : règles déterministes (au moins un test qui passe et un qui échoue par règle), taxonomie, médianes, verdict.
 5. Écran de résultat : chorégraphie complète, version reduced-motion, message de négociation.

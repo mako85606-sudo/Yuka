@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Caveat, Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { MotionPreferences } from "@/components/motion/MotionPreferences";
 import { site } from "@/config/site";
 import "./globals.css";
 
@@ -56,7 +57,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="fr"
       className={`${display.variable} ${sans.variable} ${mono.variable} ${hand.variable}`}
     >
-      <body className="min-h-dvh font-sans text-ink antialiased">{children}</body>
+      <body className="min-h-dvh font-sans text-ink antialiased">
+        <MotionPreferences>{children}</MotionPreferences>
+      </body>
     </html>
   );
 }

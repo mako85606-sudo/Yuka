@@ -8,7 +8,7 @@ import { PriceDelta } from "@/components/signature/PriceDelta";
 import { RedCircle } from "@/components/signature/RedCircle";
 import { Stamp, type Verdict } from "@/components/signature/Stamp";
 import { Button } from "@/components/ui/Button";
-import { demoQuote } from "@/fixtures/demo-quote";
+import { plumbingQuote } from "@/fixtures/demo-quotes";
 import { formatAmount } from "@/lib/format";
 import { Plate } from "./Plate";
 
@@ -26,7 +26,7 @@ export function ComponentPlates() {
   );
 }
 
-const SAMPLE_LINES = demoQuote.lines.slice(0, 3);
+const SAMPLE_LINES = plumbingQuote.lines.slice(0, 3);
 
 /** Ligne de devis simple, sans animation, pour les démonstrations isolées. */
 function Row({ label, amount, children }: { label: string; amount: number; children?: ReactNode }) {
@@ -126,7 +126,11 @@ function HighlighterPlate() {
 }
 
 function NotePlate() {
-  const [first, second] = demoQuote.issues;
+  const [first, second] = plumbingQuote.issues;
+  const lineOf = (lineId: string | undefined) =>
+    plumbingQuote.lines.find((line) => line.id === lineId);
+  const firstLine = lineOf(first?.lineId);
+  const secondLine = lineOf(second?.lineId);
 
   return (
     <Plate
@@ -136,22 +140,22 @@ function NotePlate() {
       <div className="mx-auto max-w-2xl">
         <PaperSheet entrance={false}>
           <div className="space-y-6 px-5 py-6 sm:px-8">
-            <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-x-7 sm:grid-cols-[minmax(0,1fr)_10rem]">
-              <Row label="Main-d'œuvre, pose et raccordement" amount={280} />
-              {first ? (
+            {first && firstLine ? (
+              <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-x-7 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                <Row label={firstLine.label} amount={firstLine.totalHT} />
                 <MarginNote id={first.id} delay={0.2} placement="margin" srText={first.detail}>
                   {first.note}
                 </MarginNote>
-              ) : null}
-            </div>
-            <div>
-              <Row label="Forfait divers" amount={120} />
-              {second ? (
+              </div>
+            ) : null}
+            {second && secondLine ? (
+              <div>
+                <Row label={secondLine.label} amount={secondLine.totalHT} />
                 <MarginNote id={second.id} delay={0.5} placement="below" srText={second.detail}>
                   {second.note}
                 </MarginNote>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </div>
         </PaperSheet>
       </div>
@@ -204,7 +208,7 @@ function StampOnSheet({ verdict, delay }: { verdict: Verdict; delay: number }) {
         <Stamp
           verdict={verdict}
           id={`planche-${verdict}`}
-          date={demoQuote.correctedAt}
+          date={plumbingQuote.correctedAt}
           delay={delay}
           onImpact={() => setShakeKey((value) => value + 1)}
         />
