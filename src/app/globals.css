@@ -1,0 +1,233 @@
+@import "tailwindcss";
+
+/*
+ * Loupe — « le correcteur au stylo rouge ».
+ * Concept de mise en page : un bureau (paper) sur lequel est posée une feuille
+ * (paper-raised) que l'on corrige au stylo rouge, au surligneur et au tampon.
+ *
+ * Les neuf tokens de base reprennent les valeurs du brief (mode clair).
+ * Les tokens dérivés garantissent les contrastes : « -strong » pour le petit
+ * texte (≥ 4,5:1), « verdict-* » pour le tampon (gros texte, ≥ 3:1).
+ * Le mode sombre est un « bureau de nuit » : gris chauds tamisés, jamais de noir.
+ * Ses deux blocs ci-dessous doivent rester identiques (vérifié par tokens.test.ts).
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Tokens de base (brief) */
+  --paper: #F6F3EC;
+  --paper-raised: #FFFDF8;
+  --ink: #16140F;
+  --ink-muted: #6B655A;
+  --pen-red: #D7372B;
+  --highlighter: #FFE45C;
+  --stamp-green: #1E7F4A;
+  --stamp-orange: #D9822B;
+  --annotation-blue: #2C4E9B;
+
+  /* Tokens dérivés (contraste) */
+  --pen-red-strong: #C43428;
+  --stamp-green-strong: #1D7444;
+  --stamp-orange-strong: #9B5F22;
+  --highlighter-mark: #FFE45C;
+  --verdict-ok: #1E7F4A;
+  --verdict-negotiate: #B26C25;
+  --verdict-alert: #D7372B;
+
+  /* Matière */
+  --shadow-color: rgb(46 33 14 / 0.2);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0 0.06 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E");
+
+  /* Calculés à partir des tokens : suivent le thème automatiquement */
+  --rule: color-mix(in srgb, var(--ink) 14%, transparent);
+  --rule-strong: color-mix(in srgb, var(--ink) 55%, transparent);
+  --margin-rule: color-mix(in srgb, var(--pen-red) 42%, transparent);
+  --sheet-shadow-rest:
+    0 0.5px 0.5px color-mix(in srgb, var(--shadow-color) 70%, transparent),
+    0 1px 3px color-mix(in srgb, var(--shadow-color) 55%, transparent),
+    0 6px 12px -4px color-mix(in srgb, var(--shadow-color) 55%, transparent),
+    0 18px 32px -14px color-mix(in srgb, var(--shadow-color) 90%, transparent);
+  --sheet-shadow-lifted:
+    0 2px 6px color-mix(in srgb, var(--shadow-color) 35%, transparent),
+    0 20px 34px -8px color-mix(in srgb, var(--shadow-color) 75%, transparent),
+    0 46px 72px -20px color-mix(in srgb, var(--shadow-color) 100%, transparent);
+  --stamp-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -11 0 0 0 7.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --paper: #2A2722;
+    --paper-raised: #35312A;
+    --ink: #EEE8DC;
+    --ink-muted: #ABA393;
+    --pen-red: #FF7B6B;
+    --highlighter: #FFE45C;
+    --stamp-green: #5CC48A;
+    --stamp-orange: #F0A453;
+    --annotation-blue: #9DB6F2;
+
+    --pen-red-strong: #FF7B6B;
+    --stamp-green-strong: #5CC48A;
+    --stamp-orange-strong: #F0A453;
+    --highlighter-mark: #655C36;
+    --verdict-ok: #5CC48A;
+    --verdict-negotiate: #F0A453;
+    --verdict-alert: #FF7B6B;
+
+    --shadow-color: rgb(0 0 0 / 0.5);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.86 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #2A2722;
+  --paper-raised: #35312A;
+  --ink: #EEE8DC;
+  --ink-muted: #ABA393;
+  --pen-red: #FF7B6B;
+  --highlighter: #FFE45C;
+  --stamp-green: #5CC48A;
+  --stamp-orange: #F0A453;
+  --annotation-blue: #9DB6F2;
+
+  --pen-red-strong: #FF7B6B;
+  --stamp-green-strong: #5CC48A;
+  --stamp-orange-strong: #F0A453;
+  --highlighter-mark: #655C36;
+  --verdict-ok: #5CC48A;
+  --verdict-negotiate: #F0A453;
+  --verdict-alert: #FF7B6B;
+
+  --shadow-color: rgb(0 0 0 / 0.5);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.86 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+/* `dark:` suit le système, sauf si data-theme force un thème. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+/* Seuls nos tokens existent : pas de palette Tailwind par défaut. */
+@theme {
+  --color-*: initial;
+
+  --text-display: clamp(2.75rem, 1.6rem + 5.2vw, 5.25rem);
+  --text-display--line-height: 0.98;
+  --text-display--letter-spacing: -0.012em;
+  --text-title: clamp(1.9rem, 1.45rem + 2vw, 2.75rem);
+  --text-title--line-height: 1.04;
+  --text-title--letter-spacing: -0.008em;
+  --text-hand: 1.3rem;
+  --text-hand--line-height: 1.08;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.14em;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-pen-red: var(--pen-red);
+  --color-pen-red-strong: var(--pen-red-strong);
+  --color-highlighter: var(--highlighter);
+  --color-highlighter-mark: var(--highlighter-mark);
+  --color-stamp-green: var(--stamp-green);
+  --color-stamp-green-strong: var(--stamp-green-strong);
+  --color-stamp-orange: var(--stamp-orange);
+  --color-stamp-orange-strong: var(--stamp-orange-strong);
+  --color-annotation-blue: var(--annotation-blue);
+  --color-verdict-ok: var(--verdict-ok);
+  --color-verdict-negotiate: var(--verdict-negotiate);
+  --color-verdict-alert: var(--verdict-alert);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-margin-rule: var(--margin-rule);
+
+  --font-display: var(--font-instrument-serif), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+  --font-hand: var(--font-caveat), "Segoe Print", "Bradley Hand", cursive;
+}
+
+@layer base {
+  html {
+    background-color: var(--paper);
+  }
+
+  body {
+    background-color: var(--paper);
+    background-image: var(--grain);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background-color: var(--highlighter-mark);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--annotation-blue);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
+/* Grain papier, ≤ 4 % d'opacité (intégré au SVG). */
+@utility paper-grain {
+  background-image: var(--grain);
+}
+
+@utility sheet-shadow-rest {
+  box-shadow: var(--sheet-shadow-rest);
+}
+
+@utility sheet-shadow-lifted {
+  box-shadow: var(--sheet-shadow-lifted);
+}
+
+/* Encre de tampon : quelques manques, comme un vrai coup de tampon. */
+@utility stamp-ink {
+  -webkit-mask-image: var(--stamp-texture);
+  mask-image: var(--stamp-texture);
+  -webkit-mask-size: 160px 160px;
+  mask-size: 160px 160px;
+}
+
+/*
+ * Faisceau de scan : le calque fait toute la hauteur de la feuille, le faisceau
+ * en occupe le bas (traîne bleue, bord d'attaque net).
+ */
+@utility scan-beam {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 82%,
+    color-mix(in srgb, var(--annotation-blue) 6%, transparent) 90%,
+    color-mix(in srgb, var(--annotation-blue) 18%, transparent) 99.2%,
+    color-mix(in srgb, var(--annotation-blue) 65%, transparent) 99.6%,
+    color-mix(in srgb, var(--annotation-blue) 65%, transparent) 100%
+  );
+}
