@@ -9,6 +9,8 @@ interface QuoteHeaderProps {
   readonly title: string;
   readonly issuedAt?: Date | null;
   readonly validityDays?: number | null;
+  /** Faux : pas de ligne de dates (page de partage). */
+  readonly showDates?: boolean;
   /** Ce qui occupe le cadre réservé : le tampon, une fois le verdict rendu. */
   readonly stamp?: ReactNode;
   /** Version resserrée, pour la démo de la landing. */
@@ -38,6 +40,7 @@ export function QuoteHeader({
   title,
   issuedAt,
   validityDays,
+  showDates = true,
   stamp,
   compact = false,
 }: QuoteHeaderProps) {
@@ -61,9 +64,11 @@ export function QuoteHeader({
           <p className={cn("mt-1.5 text-ink", compact ? "text-[0.8125rem]" : "text-sm")}>
             {department ? `${category} · ${department}` : category}
           </p>
-          <p className={cn("mt-0.5 text-ink-muted", compact ? "text-[0.8125rem]" : "text-sm")}>
-            {datesLine(issuedAt ?? null, compact ? null : (validityDays ?? null))}
-          </p>
+          {showDates ? (
+            <p className={cn("mt-0.5 text-ink-muted", compact ? "text-[0.8125rem]" : "text-sm")}>
+              {datesLine(issuedAt ?? null, compact ? null : (validityDays ?? null))}
+            </p>
+          ) : null}
         </div>
         <div
           className={cn(

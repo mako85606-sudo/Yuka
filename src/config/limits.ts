@@ -23,6 +23,10 @@ export const limits = {
    * ce qui reste après la lecture.
    */
   analysisBudgetMs: 110_000,
+  /** Essais de mot de passe sur `/admin`, par jour et par adresse IP. */
+  adminAttemptsPerDay: 10,
+  /** Durée d'une session `/admin`, en heures. */
+  adminSessionHours: 12,
 } as const;
 
 /** Formats d'image acceptés par le modèle (les photos sont recompressées en JPEG). */

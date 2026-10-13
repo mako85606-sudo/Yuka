@@ -98,6 +98,7 @@ export function CorrectionScene({
           title={quote.title}
           issuedAt={quote.issuedAt}
           validityDays={quote.validityDays}
+          showDates={quote.showDates}
           compact={compact}
           stamp={
             quote.verdict ? (

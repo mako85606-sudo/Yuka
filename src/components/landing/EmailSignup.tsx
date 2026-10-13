@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 import { subscribeToNews } from "@/app/actions/signup";
 import { Button } from "@/components/ui/Button";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup";
 import { PenTick } from "./PenTick";
@@ -23,6 +24,10 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
   const [email, setEmail] = useState("");
   const inputId = useId();
   const messageId = useId();
+
+  useEffect(() => {
+    if (state.status === "success") track("email_submitted", { source });
+  }, [state.status, source]);
 
   if (state.status === "success") {
     return (

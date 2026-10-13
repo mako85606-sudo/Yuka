@@ -18,7 +18,8 @@ Puis ouvre :
 
 - <http://localhost:3000> : la landing ;
 - <http://localhost:3000/analyse> : le dépôt d'un devis et sa lecture en direct (il faut `ANTHROPIC_API_KEY`) ;
-- <http://localhost:3000/dev/design> : la planche de style.
+- <http://localhost:3000/dev/design> : la planche de style ;
+- <http://localhost:3000/admin> : le tableau de bord (il faut `ADMIN_PASSWORD` et `DATABASE_URL`).
 
 Pour essayer sur ton téléphone, lance `npm run build` puis `npm start` et ouvre l'adresse « Network » affichée, sur le même Wi-Fi.
 
@@ -47,6 +48,10 @@ Copie `.env.example` en `.env.local` ; chaque variable y est expliquée.
 | `ANTHROPIC_MODEL` | modèle de lecture (défaut `claude-sonnet-5-5`) | non |
 | `DATABASE_URL` | Postgres (Neon ou Supabase) : limite quotidienne, analyses, base de prix, inscriptions | en production |
 | `IP_HASH_SECRET` | secret du hachage des adresses IP, 32 caractères au moins | en production |
+| `POSTHOG_KEY` | clé de projet PostHog (hébergement EU) ; sans elle, les événements restent dans Postgres | non |
+| `POSTHOG_HOST` | hôte PostHog (défaut `https://eu.i.posthog.com`) | non |
+| `ADMIN_PASSWORD` | mot de passe de `/admin`, 16 caractères au moins | pour `/admin` |
+| `SITE_URL` | adresse publique du site, pour les images de partage | non (Vercel la fournit) |
 | `ENABLE_DEV_PAGES` | montre `/dev/design` en production si `true` | non |
 
 ## Base de données
@@ -73,3 +78,9 @@ npm run eval:extraction -- 02    # seulement le devis 02
 ```
 
 Le script affiche, pour chaque champ (catégorie, mentions, dates, montants, lignes…), le nombre de lectures justes, liste les écarts, vérifie qu'aucune donnée personnelle du devis n'a été recopiée, lance les vérifications sur la lecture du modèle (erreurs volontaires retrouvées, constats en trop), et écrit un rapport détaillé dans `eval-results/`.
+
+## Partage et mesure
+
+- **Partage.** Sous une analyse enregistrée, « Partager la correction » crée un lien public `/v/<identifiant>`, distinct du lien privé : il montre la feuille corrigée et le verdict, avec la région au lieu du département, sans date, sans rappel personnel ni message. Il expire avec l'analyse (30 jours) et n'est pas indexé par les moteurs de recherche. Son image de partage est générée par `next/og` (polices dans `assets/fonts`, licence OFL).
+- **Mesure.** Dix événements (`src/lib/events.ts`), sans cookie ni stockage sur l'appareil, envoyés à `/api/events`, gardés dans Postgres (13 mois) et relayés à PostHog (EU) sans adresse IP, sans géolocalisation et sans profil de personne.
+- **`/admin`.** Analyses par jour, verdicts, conversion par étape, catégories, analyses ratées, coût du modèle, sur 30 jours. Session de 12 heures, 10 essais de mot de passe par jour et par adresse.

@@ -21,7 +21,9 @@ import { offsets, reducedFade, transitions } from "@/lib/motion";
 import { buildNegotiation } from "@/lib/negotiation";
 import { VERDICT_LABELS, type Verdict } from "@/lib/scene-quote";
 import { fr } from "@/lib/typography";
+import { DetailedReport } from "./DetailedReport";
 import { NegotiationMessage } from "./NegotiationMessage";
+import { ShareLink } from "./ShareLink";
 
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count > 1 ? many : one}`;
@@ -226,6 +228,14 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
                 )}
           </p>
         )}
+      </section>
+
+      <section aria-labelledby="titre-suite" className="space-y-6 border-t border-rule pt-6">
+        <h3 id="titre-suite" className="font-display text-[1.45rem] leading-tight text-ink">
+          {fr("Et maintenant ?")}
+        </h3>
+        {data.analysisId ? <ShareLink analysisId={data.analysisId} expiresAt={data.expiresAt} /> : null}
+        <DetailedReport />
       </section>
     </motion.div>
   );

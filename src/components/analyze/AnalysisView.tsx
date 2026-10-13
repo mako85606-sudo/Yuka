@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useState, type Ref } from "react";
+import { useEffect, useEffectEvent, useMemo, useState, type ReactNode, type Ref } from "react";
 import { MotionPreferences, useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { CorrectionScene } from "@/components/scene/CorrectionScene";
 import { usePacedPhase } from "@/components/scene/use-paced-phase";
@@ -22,6 +22,13 @@ interface AnalysisViewProps {
   readonly onRestart?: () => void;
   /** Appelé quand toute la correction est affichée. */
   readonly onShown?: () => void;
+  /**
+   * Page de partage : le lieu affiché (la région) remplace le département, et
+   * l'en-tête perd ses dates. Absent : analyse privée.
+   */
+  readonly place?: string | null;
+  /** Ce qui suit la feuille une fois la correction affichée ; par défaut, la conclusion privée. */
+  readonly conclusion?: ReactNode;
 }
 
 /**
@@ -29,7 +36,17 @@ interface AnalysisViewProps {
  * vraies étapes du serveur sans jamais les devancer, puis la conclusion. Un
  * tap sur la feuille, ou « Tout afficher », passe l'animation.
  */
-export function AnalysisView({ data, target, live, sheetId, headingRef, onRestart, onShown }: AnalysisViewProps) {
+export function AnalysisView({
+  data,
+  target,
+  live,
+  sheetId,
+  headingRef,
+  onRestart,
+  onShown,
+  place,
+  conclusion,
+}: AnalysisViewProps) {
   const { reduced } = useMotionPrefs();
   const [skipped, setSkipped] = useState(false);
   const correctedAt = data.correctedAt;
@@ -44,8 +61,20 @@ export function AnalysisView({ data, target, live, sheetId, headingRef, onRestar
         prices: data.prices,
         verdict: data.verdict?.verdict ?? null,
         correctedAt: correctedAt ? new Date(correctedAt) : null,
+        ...(place === undefined ? {} : { place, hideDates: true }),
       }),
-    [data.analysisId, sheetId, data.header, data.lines, data.extraction, data.findings, data.prices, data.verdict, correctedAt],
+    [
+      data.analysisId,
+      sheetId,
+      data.header,
+      data.lines,
+      data.extraction,
+      data.findings,
+      data.prices,
+      data.verdict,
+      correctedAt,
+      place,
+    ],
   );
   const shown = usePacedPhase(
     target,
@@ -93,7 +122,9 @@ export function AnalysisView({ data, target, live, sheetId, headingRef, onRestar
         ) : null}
       </MotionPreferences>
 
-      {shown === "done" ? <AnalysisResult data={data} headingRef={headingRef} onRestart={onRestart} /> : null}
+      {shown === "done"
+        ? (conclusion ?? <AnalysisResult data={data} headingRef={headingRef} onRestart={onRestart} />)
+        : null}
     </div>
   );
 }

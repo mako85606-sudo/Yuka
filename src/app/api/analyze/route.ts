@@ -12,6 +12,7 @@ import { purgeExpiredAnalyses } from "@/server/analysis/store";
 import { isSameOrigin, parseUpload, statusFor } from "@/server/analysis/upload";
 import { getAnthropicClient, getExtractionModel } from "@/server/anthropic";
 import { getDb } from "@/server/db/client";
+import { purgeOldEvents } from "@/server/events/record";
 import {
   consumeAnalysisQuota,
   purgeExpiredQuotas,
@@ -93,7 +94,10 @@ export async function POST(request: Request): Promise<Response> {
       console.error("[analyse] nettoyage des compteurs impossible", error);
     }
     try {
-      if (db) await purgeExpiredAnalyses(db);
+      if (db) {
+        await purgeExpiredAnalyses(db);
+        await purgeOldEvents(db);
+      }
     } catch (error) {
       console.error("[analyse] nettoyage des analyses expirées impossible", error);
     }

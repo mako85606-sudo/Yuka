@@ -4,8 +4,9 @@ import { useEffect, useId, useReducer, useRef, useState, type FormEvent } from "
 import { Button } from "@/components/ui/Button";
 import { limits } from "@/config/limits";
 import { site } from "@/config/site";
+import { track } from "@/lib/analytics";
 import { streamAnalysis } from "@/lib/analysis/client";
-import type { AnalysisErrorCode } from "@/lib/analysis/events";
+import type { AnalysisErrorCode, AnalyzeEvent } from "@/lib/analysis/events";
 import { INITIAL_LIVE_STATE, isRunning, liveReducer } from "@/lib/analysis/live-state";
 import { ERROR_MESSAGES } from "@/lib/analysis/messages";
 import { cn } from "@/lib/cn";
@@ -40,6 +41,31 @@ type FormError = { readonly field: "pages" | "consent"; readonly message: string
 
 const STILL_PREPARING = fr("Encore un instant : les photos se préparent.");
 const REMOVE_BROKEN = fr("Retire la page marquée en rouge avant d'envoyer.");
+
+/**
+ * Mesure du parcours : envoi, réception, fin ou échec (avec l'étape atteinte).
+ * Seulement des catégories et des codes, jamais le contenu du devis.
+ */
+function measurer(files: readonly File[]): (event: AnalyzeEvent) => void {
+  const kind = files.some((file) => file.type === "application/pdf") ? "pdf" : "photo";
+  track("upload_started", { pages: Math.min(files.length, 10), kind });
+  let step: ScenePhase = "idle";
+  let category: Extract<AnalyzeEvent, { type: "extracted" }>["extraction"]["category"] | null = null;
+  return (event) => {
+    if (event.type === "step") {
+      step = event.step;
+      if (event.step === "received") track("upload_completed");
+    } else if (event.type === "extracted") {
+      category = event.extraction.category;
+    } else if (event.type === "verdict" && category) {
+      track("analysis_completed", { category, verdict: event.result.verdict, saved: event.analysisId !== null });
+    } else if (event.type === "refused") {
+      track("analysis_failed", { step, code: event.reason });
+    } else if (event.type === "error" && !FORM_ERRORS.includes(event.code)) {
+      track("analysis_failed", { step, code: event.code });
+    }
+  };
+}
 
 /** Adresse de la page d'analyse, et de celle d'une analyse enregistrée. */
 const ANALYZE_PATH = "/analyse";
@@ -87,8 +113,10 @@ export function AnalyzeFlow() {
     abortRef.current = controller;
     setRunId((id) => id + 1);
     dispatch({ type: "send" });
+    const measure = measurer(files);
     for await (const event of streamAnalysis(files, controller.signal)) {
       if (controller.signal.aborted) return;
+      measure(event);
       if (event.type === "error" && FORM_ERRORS.includes(event.code)) {
         dispatch({ type: "reset" });
         setFormError({

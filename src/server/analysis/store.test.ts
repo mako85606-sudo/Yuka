@@ -8,7 +8,9 @@ import { analyses, priceLines } from "@/server/db/schema";
 import { cleanExtraction, extractionWith, withLine } from "@/test/extraction";
 import { createTestDb } from "@/test/test-db";
 import {
+  ensureShareId,
   loadAnalysis,
+  loadSharedAnalysis,
   newAnalysisId,
   purgeExpiredAnalyses,
   quoteFingerprint,
@@ -160,6 +162,31 @@ describe("loadAnalysis", () => {
     expect(await loadAnalysis(db, saved.id, NOW)).toBeNull();
     expect(error).toHaveBeenCalled();
     error.mockRestore();
+  });
+});
+
+describe("partage", () => {
+  it("crée un lien de partage à la demande, distinct du lien privé, toujours le même ensuite", async () => {
+    const saved = await save(extractionWith({ meta: { quoteDate: "2026-08-20" } }));
+    const shareId = await ensureShareId(db, saved.id, NOW);
+    expect(shareId).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect(shareId).not.toBe(saved.id);
+    expect(await ensureShareId(db, saved.id, NOW)).toBe(shareId);
+
+    const shared = await loadSharedAnalysis(db, shareId ?? "", NOW);
+    expect(shared).toMatchObject({ id: saved.id, shareId, region: "ARA" });
+    // Le lien de partage n'ouvre pas l'analyse privée, et inversement.
+    expect(await loadAnalysis(db, shareId ?? "", NOW)).toBeNull();
+    expect(await loadSharedAnalysis(db, saved.id, NOW)).toBeNull();
+  });
+
+  it("ne partage ni une analyse inconnue, ni une analyse expirée", async () => {
+    expect(await ensureShareId(db, newAnalysisId(), NOW)).toBeNull();
+    const saved = await save(extractionWith({ meta: { quoteDate: "2026-08-21" } }));
+    const shareId = await ensureShareId(db, saved.id, NOW);
+    const later = new Date("2026-11-13T10:00:00Z");
+    expect(await loadSharedAnalysis(db, shareId ?? "", later)).toBeNull();
+    expect(await ensureShareId(db, saved.id, later)).toBeNull();
   });
 });
 

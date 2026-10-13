@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TrackView } from "@/components/analytics/TrackView";
 import { CheckIllustration } from "@/components/landing/CheckIllustration";
 import { EmailSignup } from "@/components/landing/EmailSignup";
 import { Faq } from "@/components/landing/Faq";
@@ -28,6 +29,7 @@ export default function HomePage() {
       </main>
       <SiteFooter />
       <StickyCta targetId={HERO_CTA_ID} />
+      <TrackView event="landing_view" />
     </>
   );
 }

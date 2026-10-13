@@ -115,6 +115,8 @@ export interface CorrectionQuote {
   readonly title: string | null;
   readonly issuedAt: Date | null;
   readonly validityDays: number | null;
+  /** Faux sur une page de partage : la ligne des dates disparaît de l'en-tête. */
+  readonly showDates?: boolean;
   /** Taux de TVA unique, en fraction ; `null` s'il varie ou manque. */
   readonly vatRate: number | null;
   readonly lines: readonly PrintedLine[];

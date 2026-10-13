@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { ogColors } from "@/config/og";
 import { site } from "@/config/site";
 import { contrastRatio } from "@/lib/color";
 import { durations } from "@/lib/motion";
@@ -80,6 +81,24 @@ describe("tokens du brief", () => {
   it("donnent au navigateur la même couleur de fond que le bureau", () => {
     expect(site.themeColor.light).toBe(token(light, "--paper"));
     expect(site.themeColor.dark).toBe(token(darkSystem, "--paper"));
+  });
+
+  it("donnent à l'image de partage les couleurs du thème clair", () => {
+    const names: Record<keyof typeof ogColors, string> = {
+      paper: "--paper",
+      paperRaised: "--paper-raised",
+      ink: "--ink",
+      inkMuted: "--ink-muted",
+      penRed: "--pen-red",
+      annotationBlue: "--annotation-blue",
+      highlighterMark: "--highlighter-mark",
+      verdictOk: "--verdict-ok",
+      verdictNegotiate: "--verdict-negotiate",
+      verdictAlert: "--verdict-alert",
+    };
+    for (const [key, name] of Object.entries(names)) {
+      expect(ogColors[key as keyof typeof ogColors]).toBe(token(light, name));
+    }
   });
 
   it("reprennent en CSS la durée des micro-interactions de motion.ts", () => {

@@ -38,6 +38,10 @@ export interface SheetSource {
   readonly prices: readonly PriceOpinion[] | null;
   readonly verdict: Verdict | null;
   readonly correctedAt: Date | null;
+  /** Lieu affiché à la place du département (la région, sur une page de partage). */
+  readonly place?: string | null;
+  /** Page de partage : ni date ni validité sur l'en-tête. */
+  readonly hideDates?: boolean;
 }
 
 const TOTAL_ROWS: Partial<Record<Finding["ruleId"], TotalRow>> = {
@@ -124,10 +128,12 @@ export function sheetFromAnalysis(source: SheetSource): CorrectionQuote {
   return {
     id: source.id,
     category: header ? CATEGORY_LABELS[header.category] : null,
-    department: header?.department ? departmentLabel(header.department) : null,
+    department:
+      source.place !== undefined ? source.place : header?.department ? departmentLabel(header.department) : null,
     title: header ? fr(header.subject) : null,
-    issuedAt: quoteDate(header?.quoteDate),
-    validityDays: header?.validityDays ?? null,
+    issuedAt: source.hideDates ? null : quoteDate(header?.quoteDate),
+    validityDays: source.hideDates ? null : (header?.validityDays ?? null),
+    showDates: !source.hideDates,
     vatRate: extraction ? commonVatRate(extraction.lines) : null,
     lines: lines.map(printedLine),
     totals: extraction ? printedTotals(extraction.totals) : null,

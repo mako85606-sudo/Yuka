@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { and, asc, eq, gt, gte, lt } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { limits } from "@/config/limits";
 import { regionOf } from "@/config/regions";
@@ -189,6 +189,10 @@ const storedResultSchema = z.object({
 
 export interface LoadedAnalysis {
   readonly id: string;
+  /** Identifiant du lien de partage public, s'il a été créé. */
+  readonly shareId: string | null;
+  /** Code de la région (`src/config/regions.ts`), si le département est connu. */
+  readonly region: string | null;
   readonly createdAt: Date;
   readonly expiresAt: Date;
   readonly extraction: Extraction;
@@ -210,18 +214,15 @@ function storedLine(row: typeof priceLines.$inferSelect): Record<string, unknown
   return line;
 }
 
-/**
- * Une analyse par son identifiant, tant qu'elle n'a pas expiré ; `null` sinon
- * (identifiant inconnu, mal formé, analyse expirée ou illisible).
- */
-export async function loadAnalysis(db: Database, id: string, now = new Date()): Promise<LoadedAnalysis | null> {
-  if (!ANALYSIS_ID.test(id)) return null;
+/** L'analyse qui répond au critère, tant qu'elle n'a pas expiré et que son contenu est lisible. */
+async function loadWhere(db: Database, where: SQL, now: Date): Promise<LoadedAnalysis | null> {
   const [row] = await db
     .select()
     .from(analyses)
-    .where(and(eq(analyses.id, id), gt(analyses.expiresAt, now)))
+    .where(and(where, gt(analyses.expiresAt, now)))
     .limit(1);
   if (!row) return null;
+  const id = row.id;
 
   const stored = storedResultSchema.safeParse(row.result);
   if (!stored.success) {
@@ -241,6 +242,8 @@ export async function loadAnalysis(db: Database, id: string, now = new Date()): 
   const result = row.result as StoredResult;
   return {
     id: row.id,
+    shareId: row.shareId,
+    region: row.region,
     createdAt: row.createdAt,
     expiresAt: row.expiresAt,
     extraction: extraction.data,
@@ -249,4 +252,42 @@ export async function loadAnalysis(db: Database, id: string, now = new Date()): 
     pricesComplete: result.pricesComplete,
     verdict: result.verdict,
   };
+}
+
+/**
+ * Une analyse par son identifiant (le lien privé), tant qu'elle n'a pas
+ * expiré ; `null` sinon (identifiant inconnu, mal formé, analyse expirée ou
+ * illisible).
+ */
+export async function loadAnalysis(db: Database, id: string, now = new Date()): Promise<LoadedAnalysis | null> {
+  if (!ANALYSIS_ID.test(id)) return null;
+  return loadWhere(db, eq(analyses.id, id), now);
+}
+
+/**
+ * Une analyse par son lien de partage public. C'est l'analyse complète :
+ * c'est à la page publique de n'en montrer que la part anonyme
+ * (`src/lib/analysis/share.ts`).
+ */
+export async function loadSharedAnalysis(
+  db: Database,
+  shareId: string,
+  now = new Date(),
+): Promise<LoadedAnalysis | null> {
+  if (!ANALYSIS_ID.test(shareId)) return null;
+  return loadWhere(db, eq(analyses.shareId, shareId), now);
+}
+
+/**
+ * Le lien de partage d'une analyse : créé à la première demande, le même
+ * ensuite. `null` si l'analyse n'existe pas ou a expiré. Il expire avec elle.
+ */
+export async function ensureShareId(db: Database, id: string, now = new Date()): Promise<string | null> {
+  if (!ANALYSIS_ID.test(id)) return null;
+  const [row] = await db
+    .update(analyses)
+    .set({ shareId: sql`coalesce(${analyses.shareId}, ${newAnalysisId()})` })
+    .where(and(eq(analyses.id, id), gt(analyses.expiresAt, now)))
+    .returning({ shareId: analyses.shareId });
+  return row?.shareId ?? null;
 }

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Caveat, Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { MotionPreferences } from "@/components/motion/MotionPreferences";
 import { site } from "@/config/site";
+import { serverEnv } from "@/server/env";
 import "./globals.css";
 
 /** Titres éditoriaux. */
@@ -34,7 +35,12 @@ const hand = Caveat({
   display: "swap",
 });
 
+const siteUrl = serverEnv().SITE_URL;
+
 export const metadata: Metadata = {
+  // Adresse publique du site, pour les liens absolus (images de partage). Sans elle, Next.js
+  // prend l'adresse du déploiement Vercel.
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: {
     default: `${site.name} — ${site.tagline}`,
     template: `%s · ${site.name}`,

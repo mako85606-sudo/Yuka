@@ -60,6 +60,11 @@ export const analyses = pgTable(
     result: jsonb("result").notNull(),
     /** Empreinte des prix du devis : un même devis analysé deux fois ne compte qu'une fois. */
     fingerprint: text("fingerprint").notNull(),
+    /**
+     * Identifiant du lien de partage public (`/v/[shareId]`), créé à la demande.
+     * Distinct de `id` : partager ne donne jamais accès à l'analyse privée.
+     */
+    shareId: text("share_id").unique(),
     llmCostUsd: doublePrecision("llm_cost_usd"),
     llmInputTokens: integer("llm_input_tokens").notNull().default(0),
     llmOutputTokens: integer("llm_output_tokens").notNull().default(0),
@@ -105,5 +110,26 @@ export const priceLines = pgTable(
     index("price_lines_analysis_idx").on(table.analysisId),
     index("price_lines_fingerprint_idx").on(table.fingerprint),
     index("price_lines_created_at_idx").on(table.createdAt),
+  ],
+);
+
+/**
+ * Événements de mesure (entonnoir de `/admin`, et envoi à PostHog). Aucune
+ * donnée personnelle : un nom d'événement de la liste fermée
+ * (`src/lib/events.ts`), un identifiant aléatoire de visite (jamais stocké sur
+ * l'appareil) et quelques propriétés validées.
+ */
+export const events = pgTable(
+  "events",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    name: text("name").notNull(),
+    visit: text("visit").notNull(),
+    props: jsonb("props").notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("events_name_created_at_idx").on(table.name, table.createdAt),
+    index("events_created_at_idx").on(table.createdAt),
   ],
 );

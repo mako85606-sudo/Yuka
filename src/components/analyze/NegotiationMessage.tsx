@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { CheckGlyph, CopyGlyph } from "@/components/ui/icons";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { holds, reducedFade, transitions } from "@/lib/motion";
 import type { NegotiationMessage as Message } from "@/lib/negotiation";
@@ -54,6 +55,7 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
   const copy = async (what: "text" | "subject") => {
     const ok = await copyText(what === "subject" ? message.email.subject : texts[version], textRef.current);
     setCopied(ok ? what : null);
+    if (ok) track("negotiation_copied", { version: what === "subject" ? "subject" : version });
     setStatus(
       ok
         ? what === "subject"

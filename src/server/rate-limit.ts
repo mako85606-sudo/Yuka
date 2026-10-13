@@ -152,3 +152,19 @@ export async function purgeExpiredQuotas(
   const yesterday = parisDay(new Date(now.getTime() - 24 * 60 * 60 * 1000));
   await store?.purgeBefore(yesterday);
 }
+
+/**
+ * Essais de mot de passe sur `/admin`, comptés comme les analyses (HMAC du
+ * jour et de l'adresse, préfixé : les deux compteurs ne se mélangent pas).
+ * Vrai si l'essai est permis.
+ */
+export async function consumeAdminAttempt(
+  ip: string,
+  now: Date = new Date(),
+  store: QuotaStore | null = resolveStore(),
+): Promise<boolean> {
+  const secret = resolveSecret();
+  if (!store || !secret) return false;
+  const day = parisDay(now);
+  return (await store.consume(quotaKey(`admin|${ip}`, day, secret), day, limits.adminAttemptsPerDay)) !== null;
+}
