@@ -24,8 +24,10 @@ interface CorrectionSceneProps {
    * (sans décalage calculé), et des lignes fantômes attendent la suite.
    */
   readonly live?: boolean;
-  /** Joue le dépôt de la feuille au montage. Faux : la feuille est déjà posée. */
-  readonly entrance?: boolean;
+  /** Joue le dépôt de la feuille au montage (`toss` : lancée sur le bureau). Faux : déjà posée. */
+  readonly entrance?: boolean | "toss";
+  /** Coup de tampon renforcé (démo de la landing). */
+  readonly dramatic?: boolean;
   /** Version resserrée, pour la démo de la landing. */
   readonly compact?: boolean;
   /** Nom accessible de la feuille. */
@@ -52,6 +54,7 @@ export function CorrectionScene({
   phase,
   live = false,
   entrance = true,
+  dramatic = false,
   compact = false,
   label,
   titleAs,
@@ -113,6 +116,7 @@ export function CorrectionScene({
                 active={verdictActive}
                 delay={verdict.stamp.start}
                 size={compact ? "sm" : "md"}
+                burst={dramatic}
                 onImpact={() => setShakeKey((key) => key + 1)}
               />
             ) : null

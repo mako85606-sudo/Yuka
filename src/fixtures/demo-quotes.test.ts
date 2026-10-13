@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { demoQuotes } from "@/fixtures/demo-quotes";
+import { tradeQuotes } from "@/fixtures/trade-quotes";
+import { demoSavings, demoVerdict } from "@/lib/demo-outcome";
 import { roundCents, totalsFromLines } from "@/lib/scene-quote";
 
 /**
  * Les démos doivent être honnêtes : une erreur annoncée existe vraiment dans
- * les chiffres, et une ligne sans erreur annoncée est juste.
+ * les chiffres, une ligne sans erreur annoncée est juste, et le verdict est
+ * celui que les règles de l'analyse réelle rendraient.
  */
-describe.each(demoQuotes.map((quote) => [quote.id, quote] as const))("démo %s", (_id, quote) => {
+const allQuotes = [...demoQuotes, ...tradeQuotes];
+
+describe.each(allQuotes.map((quote) => [quote.id, quote] as const))("démo %s", (_id, quote) => {
   const lineIds = new Set(quote.lines.map((line) => line.id));
   const calculationLines = new Set(
     quote.issues.filter((issue) => issue.kind === "calculation").map((issue) => issue.lineId),
@@ -42,9 +47,25 @@ describe.each(demoQuotes.map((quote) => [quote.id, quote] as const))("démo %s",
     expect(quote.totals).toEqual(totalsFromLines(quote.lines, quote.vatRate));
   });
 
-  it("ne rend un verdict « Correct » que sans problème", () => {
-    if (quote.verdict === "ok") expect(quote.issues).toHaveLength(0);
-    else expect(quote.issues.length).toBeGreaterThan(0);
+  it("rend le verdict que donneraient les règles de l'analyse", () => {
+    expect(quote.verdict).toBe(demoVerdict(quote));
+  });
+
+  it("n'annonce une économie que s'il y a quelque chose à négocier", () => {
+    if (quote.verdict === "ok") expect(demoSavings(quote)).toBeNull();
+    else expect(demoSavings(quote)).toBeGreaterThan(0);
+  });
+
+  it("ne prépare un message que sur des erreurs vérifiées, avec les bons chiffres", () => {
+    if (!quote.message) return;
+    expect(quote.verdict).not.toBe("ok");
+    expect(quote.message).toMatch(/^Bonjour/);
+    expect(quote.message).toContain("?");
+    for (const issue of quote.issues.filter((item) => item.kind === "calculation")) {
+      const line = quote.lines.find((item) => item.id === issue.lineId);
+      if (!line) continue;
+      expect(quote.message).toContain(String(line.totalHT));
+    }
   });
 });
 
@@ -53,5 +74,25 @@ describe("boucle de démo", () => {
     expect(new Set(demoQuotes.map((quote) => quote.verdict))).toEqual(
       new Set(["ok", "negotiate", "alert"]),
     );
+  });
+
+  it("a un message pour chaque devis à négocier", () => {
+    for (const quote of demoQuotes) {
+      if (quote.verdict !== "ok") expect(quote.message).toBeTruthy();
+    }
+  });
+});
+
+describe("carrousel des métiers", () => {
+  it("montre un verdict de chaque couleur, sur des métiers tous différents", () => {
+    expect(new Set(tradeQuotes.map((quote) => quote.verdict))).toEqual(
+      new Set(["ok", "negotiate", "alert"]),
+    );
+    expect(new Set(tradeQuotes.map((quote) => quote.category)).size).toBe(tradeQuotes.length);
+  });
+
+  it("garde des identifiants uniques (ils fixent les tracés à la main)", () => {
+    const ids = [...demoQuotes, ...tradeQuotes].map((quote) => quote.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

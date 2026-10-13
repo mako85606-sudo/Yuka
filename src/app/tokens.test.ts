@@ -148,4 +148,8 @@ describe.each(Object.entries(themes))("contrastes, thème %s", (_name, theme) =>
       contrastRatio(token(theme, "--ink"), token(theme, "--highlighter-mark")),
     ).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("garde le « € » lisible sur les pièces de la démo", () => {
+    expect(contrastRatio(token(theme, "--coin-ink"), token(theme, "--coin"))).toBeGreaterThanOrEqual(4.5);
+  });
 });

@@ -22,8 +22,10 @@ interface ScriptedSceneProps {
   readonly quote: SceneQuote;
   /** Démarre directement à la fin (animation passée). */
   readonly startDone?: boolean;
-  /** Joue le dépôt de la feuille. Faux : la feuille est déjà posée. */
-  readonly entrance?: boolean;
+  /** Joue le dépôt de la feuille (`toss` : lancée sur le bureau). Faux : déjà posée. */
+  readonly entrance?: boolean | "toss";
+  /** Coup de tampon renforcé (démo de la landing). */
+  readonly dramatic?: boolean;
   readonly compact?: boolean;
   /** Affiche l'étape simulée au-dessus de la feuille (planche de style). */
   readonly showPhase?: boolean;
@@ -39,6 +41,7 @@ export function ScriptedScene({
   quote,
   startDone = false,
   entrance = true,
+  dramatic = false,
   compact = false,
   showPhase = false,
   onDone,
@@ -66,7 +69,7 @@ export function ScriptedScene({
           Étape simulée : {PHASE_LABELS[phase]}
         </p>
       ) : null}
-      <CorrectionScene quote={quote} phase={phase} entrance={entrance} compact={compact} />
+      <CorrectionScene quote={quote} phase={phase} entrance={entrance} dramatic={dramatic} compact={compact} />
     </>
   );
 }

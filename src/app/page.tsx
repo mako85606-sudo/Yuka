@@ -3,14 +3,17 @@ import { TrackView } from "@/components/analytics/TrackView";
 import { CheckIllustration } from "@/components/landing/CheckIllustration";
 import { EmailSignup } from "@/components/landing/EmailSignup";
 import { Faq } from "@/components/landing/Faq";
+import { HowItWorks } from "@/components/landing/HowItWorks";
 import { PenTick } from "@/components/landing/PenTick";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { StickyCta } from "@/components/landing/StickyCta";
+import { TradeCarousel } from "@/components/landing/TradeCarousel";
 import { DemoLoop } from "@/components/scene/DemoLoop";
 import { ButtonLink } from "@/components/ui/Button";
 import { CameraGlyph } from "@/components/ui/icons";
 import { demoQuotes } from "@/fixtures/demo-quotes";
+import { tradeQuotes } from "@/fixtures/trade-quotes";
 import { cn } from "@/lib/cn";
 import { fr } from "@/lib/typography";
 
@@ -20,8 +23,11 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main className="pb-24 sm:pb-0">
+      {/* Garde-fou : une goutte d'encre ou une pièce ne doit jamais élargir la page. */}
+      <main className="overflow-x-clip pb-24 sm:pb-0">
         <Hero />
+        <Story />
+        <Trades />
         <Checks />
         <Trust />
         <Questions />
@@ -121,6 +127,40 @@ function SectionHeading({
   );
 }
 
+/** « Comment ça marche », raconté au défilement, sur le devis de garage du carrousel. */
+function Story() {
+  const quote = tradeQuotes[0];
+  if (!quote) return null;
+  return (
+    <section aria-labelledby="comment" className="border-t border-rule">
+      <div className="mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-8 lg:pb-20 lg:pt-28">
+        <SectionHeading id="comment" title="Comment ça marche">
+          {fr("Une photo de ta part. Le reste, c'est le stylo rouge.")}
+        </SectionHeading>
+        <div className="mt-8 lg:mt-0">
+          <HowItWorks quote={quote} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Six métiers, six devis qui se corrigent en glissant. */
+function Trades() {
+  return (
+    <section aria-labelledby="metiers" className="border-t border-rule">
+      <div className="mx-auto max-w-6xl px-4 pt-20 sm:px-8 lg:pt-28">
+        <SectionHeading id="metiers" title="Un devis, quel que soit le métier">
+          {fr("Garage, plombier, serrurier, déménageur… Fais glisser : chaque devis se corrige sous tes yeux.")}
+        </SectionHeading>
+      </div>
+      <div className="mx-auto mt-6 max-w-6xl pb-20 lg:pb-28">
+        <TradeCarousel quotes={tradeQuotes} />
+      </div>
+    </section>
+  );
+}
+
 const CHECKS = [
   {
     kind: "calculation",
@@ -150,7 +190,7 @@ function Checks() {
           {CHECKS.map((check) => (
             <li key={check.kind} className="flex flex-col gap-7">
               {/* Les fiches reposent sur une même ligne, les titres s'alignent. */}
-              <div className="md:flex md:min-h-[12rem] md:items-end">
+              <div className="md:flex md:min-h-[13.5rem] md:items-end">
                 <CheckIllustration kind={check.kind} />
               </div>
               <div>

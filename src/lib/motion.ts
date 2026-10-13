@@ -41,6 +41,16 @@ export const durations = {
   message: 0.3,
   /** Une demi-respiration de l'étape en cours (aller ou retour). */
   pulse: 0.9,
+  /** Une pièce qui tombe du devis jusqu'au compteur d'économie. */
+  coinFall: 0.72,
+  /** Le cercle d'encre qui s'élargit sous le tampon (démo de la landing). */
+  inkRing: 0.42,
+  /** Un mot du message de la démo qui apparaît. */
+  wordReveal: 0.22,
+  /** Changement d'étape dans « Comment ça marche ». */
+  storyStep: 0.35,
+  /** Éclair de l'appareil photo, dans « Comment ça marche ». */
+  flash: 0.3,
   /** Plafond d'une séquence, par bloc. */
   blockMax: 1.2,
 } as const;
@@ -56,6 +66,8 @@ export const easings = {
   inOut: [0.65, 0, 0.35, 1],
   /** Vitesse constante : secousse, fondus en mouvement réduit. */
   linear: [0, 0, 1, 1],
+  /** Accélère comme une chute : les pièces qui tombent. */
+  fall: [0.55, 0, 1, 0.45],
 } as const satisfies Record<string, CubicBezier>;
 
 /**
@@ -88,10 +100,18 @@ export const beats = {
   readingAfterDrop: 0.75,
 } as const;
 
+/**
+ * Les illustrations sous la ligne de flottaison ne sont montées qu'à cette
+ * distance de l'écran : la page s'affiche et répond plus vite au chargement.
+ */
+export const LAZY_MOUNT_MARGIN = "600px 0px";
+
 /** Boucle de démo de la landing. */
 export const demoLoop = {
   /** Temps laissé pour lire le devis corrigé avant de passer au suivant (s). */
   hold: 3.6,
+  /** Pièces qui tombent au plus, pour un devis à négocier. */
+  coins: 8,
 } as const;
 
 /** Retours qui restent affichés un moment, en secondes. */
@@ -109,6 +129,29 @@ export const offsets = {
   noteShiftX: -6,
   shakeX: 2,
   stampFromScale: 1.6,
+  /** La feuille de la démo arrive d'un peu plus haut, comme lancée sur le bureau. */
+  sheetTossY: -36,
+  /** Petit rebond d'une pièce avant sa chute. */
+  coinHopY: -14,
+  /** Dérive latérale maximale d'une pièce pendant sa chute. */
+  coinDriftX: 14,
+  /** Le visuel de « Comment ça marche » glisse légèrement entre deux étapes. */
+  storyShiftY: 10,
+} as const;
+
+/** Échelles. */
+export const scales = {
+  /** La feuille lancée arrive un peu plus près, puis se pose. */
+  sheetToss: 1.06,
+  /** Cercle d'encre sous le tampon : de 0,6 à 1,9 fois sa taille. */
+  inkRingFrom: 0.6,
+  inkRingTo: 1.9,
+  /** Le compteur d'économie se gonfle quand la dernière pièce arrive. */
+  pocketPop: 1.06,
+  /** Le devis vu dans le viseur, un peu plus loin. */
+  storyPhoto: 0.94,
+  /** Le devis recule pour laisser la place au message, l'erreur entourée restant visible. */
+  storyMessage: 0.8,
 } as const;
 
 /** Angles en degrés. */
@@ -116,6 +159,12 @@ export const angles = {
   sheetDrop: 3,
   sheetRest: -0.6,
   sheetExit: -1.5,
+  /** La feuille lancée tourne de 9° avant de se poser. */
+  sheetToss: 9,
+  /** Une pièce tourne sur elle-même en tombant. */
+  coinSpin: 220,
+  /** Le devis tenu devant l'appareil photo, un peu de travers (« Comment ça marche »). */
+  storyPhoto: 2.5,
   stampMin: -12,
   stampMax: -8,
 } as const;
@@ -126,6 +175,10 @@ export const stagger = {
   linesMin: 0.04,
   linesMax: 0.06,
   prices: 0.12,
+  /** Entre deux pièces qui tombent. */
+  coins: 0.06,
+  /** Entre deux mots du message de la démo. */
+  words: 0.025,
 } as const;
 
 /** Positions successives de la micro-secousse (px). */
@@ -217,6 +270,37 @@ export const transitions = {
   fadeIn: (delay = 0): Transition => ({
     duration: durations.micro,
     ease: easings.out,
+    delay,
+  }),
+  /** Une pièce : petit rebond, puis chute accélérée ; elle disparaît en arrivant. */
+  coinFall: (delay = 0): Transition => ({
+    x: { duration: durations.coinFall, ease: easings.out, delay },
+    y: { duration: durations.coinFall, ease: [easings.out, easings.fall], times: [0, 0.25, 1], delay },
+    rotate: { duration: durations.coinFall, ease: easings.linear, delay },
+    opacity: { duration: durations.coinFall, ease: easings.linear, times: [0, 0.08, 0.96, 1], delay },
+  }),
+  /** Le cercle s'élargit en s'effaçant, puis reprend sa taille, invisible (rien ne déborde). */
+  inkRing: (delay = 0): Transition => ({
+    scale: { duration: durations.inkRing, ease: easings.out, times: [0, 0.98, 1], delay },
+    opacity: { duration: durations.inkRing, ease: easings.out, times: [0, 0.3, 0.98, 1], delay },
+  }),
+  word: (delay = 0): Transition => ({
+    duration: durations.wordReveal,
+    ease: easings.out,
+    delay,
+  }),
+  /** Le stylo souligne le montant de l'économie. */
+  underline: (delay = 0): Transition => ({
+    pathLength: { duration: durations.highlight, ease: easings.out, delay },
+    opacity: { duration: durations.appear, ease: easings.linear, delay },
+  }),
+  /** Aller-retour d'échelle (trois valeurs) : une tween, un spring n'en accepte que deux. */
+  pocketPop: (delay = 0): Transition => ({ duration: durations.microSlow, ease: easings.out, delay }),
+  storyStep: { duration: durations.storyStep, ease: easings.out } satisfies Transition,
+  flash: (delay = 0): Transition => ({
+    duration: durations.flash,
+    ease: easings.out,
+    times: [0, 0.2, 1],
     delay,
   }),
 } as const;

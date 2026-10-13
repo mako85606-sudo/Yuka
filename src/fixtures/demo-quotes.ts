@@ -1,4 +1,5 @@
-import { totalsFromLines, type SceneLine, type SceneQuote } from "@/lib/scene-quote";
+import type { DemoQuote } from "@/lib/demo-outcome";
+import { totalsFromLines, type SceneLine } from "@/lib/scene-quote";
 import { fr } from "@/lib/typography";
 
 /**
@@ -9,19 +10,20 @@ import { fr } from "@/lib/typography";
  * uniquement à montrer le rendu, et la landing les présente comme un
  * exemple fictif. Les erreurs sont volontaires et vérifiées par
  * `demo-quotes.test.ts` : chaque erreur de calcul annoncée existe vraiment
- * dans les chiffres, et aucune autre ligne n'est fausse.
+ * dans les chiffres, aucune autre ligne n'est fausse, et le verdict est celui
+ * que les règles de l'analyse réelle rendraient (`demoVerdict`).
  */
 
 const plumbingLines: readonly SceneLine[] = [
   { id: "l1", label: "Chauffe-eau 200 L, vertical", quantity: 1, unit: "u", unitPriceHT: 890, totalHT: 890 },
-  { id: "l2", label: "Main-d'œuvre, pose", quantity: 4, unit: "h", unitPriceHT: 65, totalHT: 280 },
+  { id: "l2", label: "Main-d'œuvre, pose", quantity: 4, unit: "h", unitPriceHT: 65, totalHT: 275 },
   { id: "l3", label: "Groupe de sécurité", quantity: 1, unit: "u", unitPriceHT: 58, totalHT: 58 },
   { id: "l4", label: "Forfait divers", quantity: 1, unit: "u", unitPriceHT: 120, totalHT: 120 },
   { id: "l5", label: "Déplacement", quantity: 1, unit: "u", unitPriceHT: 45, totalHT: 45 },
 ];
 
 /** Plomberie : une erreur de calcul, une ligne vague, un prix haut. À négocier. */
-export const plumbingQuote: SceneQuote = {
+export const plumbingQuote: DemoQuote = {
   id: "demo-plomberie",
   category: "Plomberie",
   department: "Rhône (69)",
@@ -36,8 +38,8 @@ export const plumbingQuote: SceneQuote = {
       id: "calcul-l2",
       kind: "calculation",
       lineId: "l2",
-      note: "4 × 65 = 260, pas 280",
-      detail: fr("Erreur de calcul : 4 heures à 65,00 € font 260,00 €, le devis indique 280,00 €."),
+      note: "4 × 65 = 260, pas 275",
+      detail: fr("Erreur de calcul : 4 heures à 65,00 € font 260,00 €, le devis indique 275,00 €."),
     },
     {
       id: "vague-l4",
@@ -48,11 +50,14 @@ export const plumbingQuote: SceneQuote = {
     },
   ],
   prices: [
-    { lineId: "l1", delta: 340, source: { kind: "loupe", comparables: 23 } },
+    { lineId: "l1", delta: 190, source: { kind: "loupe", comparables: 23 } },
     { lineId: "l3", delta: 12, source: { kind: "ai" } },
   ],
   verdict: "negotiate",
   correctedAt: new Date("2026-10-03T09:00:00Z"),
+  message: fr(
+    "Bonjour, en relisant votre devis : 4 heures de pose à 65 €, cela fait 260 €, et non 275 €. Pourriez-vous corriger cette ligne et me préciser ce que couvre le « forfait divers » ?",
+  ),
 };
 
 const garageLines: readonly SceneLine[] = [
@@ -64,7 +69,7 @@ const garageLines: readonly SceneLine[] = [
 ];
 
 /** Garage : une erreur de calcul, une ligne vague, deux prix hauts. À vérifier sérieusement. */
-export const garageQuote: SceneQuote = {
+export const garageQuote: DemoQuote = {
   id: "demo-garage",
   category: "Garage",
   department: "Gironde (33)",
@@ -96,6 +101,9 @@ export const garageQuote: SceneQuote = {
   ],
   verdict: "alert",
   correctedAt: new Date("2026-10-03T09:00:00Z"),
+  message: fr(
+    "Bonjour, sur votre devis, le liquide d'embrayage compte 36 € pour 1 litre à 18 €. Pourriez-vous vérifier cette ligne et me détailler les « petites fournitures » ?",
+  ),
 };
 
 const electricLines: readonly SceneLine[] = [
@@ -106,7 +114,7 @@ const electricLines: readonly SceneLine[] = [
 ];
 
 /** Électricité : rien à redire, prix dans la moyenne. Correct. */
-export const electricQuote: SceneQuote = {
+export const electricQuote: DemoQuote = {
   id: "demo-electricite",
   category: "Électricité",
   department: "Nord (59)",
@@ -119,11 +127,11 @@ export const electricQuote: SceneQuote = {
   issues: [],
   prices: [
     { lineId: "l1", delta: -35, source: { kind: "loupe", comparables: 12 } },
-    { lineId: "l2", delta: 4, source: { kind: "ai" } },
+    { lineId: "l2", delta: 0, source: { kind: "ai" } },
   ],
   verdict: "ok",
   correctedAt: new Date("2026-10-03T09:00:00Z"),
 };
 
 /** Ordre de la boucle de la landing : un verdict de chaque couleur. */
-export const demoQuotes: readonly SceneQuote[] = [plumbingQuote, garageQuote, electricQuote];
+export const demoQuotes: readonly DemoQuote[] = [plumbingQuote, garageQuote, electricQuote];

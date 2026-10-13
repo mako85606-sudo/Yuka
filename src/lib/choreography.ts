@@ -139,3 +139,65 @@ export function verdictBeats(options: ScheduleOptions = {}): VerdictBeats {
     ink: { start: impact, duration: durations.inkBurst },
   };
 }
+
+export interface ChuteBeats {
+  /** Chaque pièce : départ du devis, arrivée au compteur. */
+  readonly coins: readonly Segment[];
+  /** Le compteur d'économie monte pendant que les pièces arrivent. */
+  readonly counter: Segment;
+  /** La dernière pièce arrive : le compteur se gonfle. */
+  readonly pop: number;
+  /** Le stylo souligne le montant. */
+  readonly underline: Segment;
+  /** Le message s'écrit, mot par mot. */
+  readonly words: readonly Segment[];
+  /** Fin de la chute : la démo peut tenir, puis passer au devis suivant. */
+  readonly end: number;
+}
+
+/**
+ * La chute, à la fin d'une démo : les euros en trop tombent du devis dans le
+ * compteur d'économie, le montant est souligné, puis le message s'écrit.
+ * Deux blocs (pièces, message), chacun sous 1,2 s. En mouvement réduit, tout
+ * apparaît d'un seul fondu.
+ */
+export function chuteSchedule(
+  coinCount: number,
+  wordCount: number,
+  options: ScheduleOptions = {},
+): ChuteBeats {
+  const { startAt = 0, reduced = false } = options;
+  if (reduced) {
+    const fade = reducedSegment(startAt);
+    return {
+      coins: [],
+      counter: fade,
+      pop: startAt,
+      underline: fade,
+      words: Array.from({ length: wordCount }, () => fade),
+      end: endOf(fade),
+    };
+  }
+
+  const coins = Array.from({ length: Math.max(0, coinCount) }, (_, index) => ({
+    start: startAt + index * stagger.coins,
+    duration: durations.coinFall,
+  }));
+  const firstLand = coins.length > 0 ? endOf(coins[0]!) : startAt;
+  const lastLand = coins.length > 0 ? endOf(coins[coins.length - 1]!) : startAt;
+  const counter = {
+    start: firstLand,
+    duration: coins.length > 0 ? Math.min(durations.counter, Math.max(durations.micro, lastLand - firstLand)) : 0,
+  };
+  const underline = { start: Math.max(endOf(counter), lastLand), duration: durations.highlight };
+
+  const wordsStart = endOf(underline) + durations.micro;
+  const lastStart = durations.blockMax - durations.wordReveal;
+  const step = wordCount > 1 ? Math.min(stagger.words, lastStart / (wordCount - 1)) : 0;
+  const words = Array.from({ length: wordCount }, (_, index) => ({
+    start: wordsStart + index * step,
+    duration: durations.wordReveal,
+  }));
+  const end = words.length > 0 ? endOf(words[words.length - 1]!) : endOf(underline);
+  return { coins, counter, pop: lastLand, underline, words, end };
+}

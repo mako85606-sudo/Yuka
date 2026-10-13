@@ -4,12 +4,16 @@ import { AnimatePresence, motion, useAnimate } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { cn } from "@/lib/cn";
-import { angles, offsets, reducedFade, shakeKeyframes, transitions } from "@/lib/motion";
+import { angles, offsets, reducedFade, scales, shakeKeyframes, transitions } from "@/lib/motion";
 
 interface PaperSheetProps {
   readonly children: ReactNode;
-  /** Joue le dépôt de la feuille sur le bureau au montage. */
-  readonly entrance?: boolean;
+  /**
+   * Joue le dépôt de la feuille sur le bureau au montage. `toss` : la feuille
+   * arrive d'un peu plus haut et plus près, en tournant, comme lancée sur le
+   * bureau (démo de la landing).
+   */
+  readonly entrance?: boolean | "toss";
   /** Délai avant le dépôt, en secondes. */
   readonly delay?: number;
   /** Faisceau de scan : à activer pendant l'étape de lecture réelle. */
@@ -58,8 +62,14 @@ export function PaperSheet({
     <motion.div
       ref={scope}
       className={cn("relative isolate", className)}
-      initial={entrance ? { opacity: 0, y: offsets.sheetDropY, rotate: angles.sheetDrop } : false}
-      animate={{ opacity: 1, y: 0, rotate: angles.sheetRest }}
+      initial={
+        entrance === "toss"
+          ? { opacity: 0, y: offsets.sheetTossY, rotate: angles.sheetToss, scale: scales.sheetToss }
+          : entrance
+            ? { opacity: 0, y: offsets.sheetDropY, rotate: angles.sheetDrop }
+            : false
+      }
+      animate={{ opacity: 1, y: 0, rotate: angles.sheetRest, scale: 1 }}
       transition={reduced ? reducedFade(delay) : transitions.sheetDrop(delay)}
     >
       <motion.div

@@ -34,6 +34,8 @@
   --verdict-ok: #1E7F4A;
   --verdict-negotiate: #B26C25;
   --verdict-alert: #D7372B;
+  --coin: #FFE45C;
+  --coin-ink: #7A4A12;
 
   /* Matière */
   --shadow-color: rgb(46 33 14 / 0.2);
@@ -79,6 +81,8 @@
     --verdict-ok: #5CC48A;
     --verdict-negotiate: #F0A453;
     --verdict-alert: #FF7B6B;
+    --coin: #F2CF4E;
+    --coin-ink: #3D2A0D;
 
     --shadow-color: rgb(0 0 0 / 0.5);
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.86 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.035'/%3E%3C/svg%3E");
@@ -105,6 +109,8 @@
   --verdict-ok: #5CC48A;
   --verdict-negotiate: #F0A453;
   --verdict-alert: #FF7B6B;
+  --coin: #F2CF4E;
+  --coin-ink: #3D2A0D;
 
   --shadow-color: rgb(0 0 0 / 0.5);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.86 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.035'/%3E%3C/svg%3E");
@@ -156,6 +162,8 @@
   --color-verdict-ok: var(--verdict-ok);
   --color-verdict-negotiate: var(--verdict-negotiate);
   --color-verdict-alert: var(--verdict-alert);
+  --color-coin: var(--coin);
+  --color-coin-ink: var(--coin-ink);
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
   --color-margin-rule: var(--margin-rule);
@@ -209,6 +217,11 @@
 
 @utility sheet-shadow-lifted {
   box-shadow: var(--sheet-shadow-lifted);
+}
+
+/* Pièce de la démo : une ombre posée, statique (seule la pièce bouge). */
+@utility coin-shadow {
+  box-shadow: 0 1px 2px var(--shadow-color), inset 0 -2px 0 color-mix(in srgb, var(--coin-ink) 18%, transparent);
 }
 
 /* Encre de tampon : quelques manques, comme un vrai coup de tampon. */

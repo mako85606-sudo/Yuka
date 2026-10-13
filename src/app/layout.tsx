@@ -37,8 +37,12 @@ const mono = Geist_Mono({
   preload: false,
 });
 
-/** Annotations manuscrites, avec parcimonie. Pas préchargée, pour la même raison. */
+/**
+ * Annotations manuscrites, avec parcimonie. Pas préchargée, pour la même raison.
+ * Une seule graisse : le fichier pèse trois fois moins que la police variable.
+ */
 const hand = Caveat({
+  weight: "400",
   subsets: ["latin"],
   variable: "--font-caveat",
   display: "swap",

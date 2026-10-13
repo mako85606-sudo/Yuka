@@ -3,21 +3,25 @@
 import { AnimatePresence, motion, useInView } from "motion/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { MotionPreferences, useMotionPrefs } from "@/components/motion/MotionPreferences";
+import { SavingsDrop } from "@/components/scene/SavingsDrop";
 import { ScriptedScene } from "@/components/scene/ScriptedScene";
 import { cn } from "@/lib/cn";
+import { describeOutcome, type DemoQuote } from "@/lib/demo-outcome";
 import { angles, demoLoop, offsets, reducedFade, transitions } from "@/lib/motion";
-import { describeCorrection, type SceneQuote } from "@/lib/scene-quote";
+import { describeCorrection } from "@/lib/scene-quote";
 import { useMaxHeight } from "@/lib/use-max-height";
 import { usePageVisible } from "@/lib/use-page-visible";
 
 interface DemoLoopProps {
-  readonly quotes: readonly SceneQuote[];
+  readonly quotes: readonly DemoQuote[];
   readonly className?: string;
 }
 
 /**
  * Démo de la landing : des devis fictifs corrigés en boucle, avec la même
- * chorégraphie que l'analyse réelle.
+ * chorégraphie que l'analyse réelle. La feuille arrive lancée sur le bureau,
+ * le tampon frappe fort, puis la chute : les euros en trop tombent dans le
+ * compteur d'économie et le message s'écrit.
  *
  * - Un tap sur la feuille passe l'animation et affiche tout.
  * - « Pause » arrête la boucle (et affiche tout de suite la correction en
@@ -40,6 +44,7 @@ export function DemoLoop({ quotes, className }: DemoLoopProps) {
   const [run, setRun] = useState(0);
   const [skipped, setSkipped] = useState(false);
   const [done, setDone] = useState(false);
+  const [shown, setShown] = useState(false);
   const [paused, setPaused] = useState(false);
 
   const quote = quotes[index] ?? quotes[0];
@@ -50,23 +55,24 @@ export function DemoLoop({ quotes, className }: DemoLoopProps) {
     setRun((value) => value + 1);
     setSkipped(false);
     setDone(false);
+    setShown(false);
   };
   const advance = useEffectEvent(() => goTo((index + 1) % quotes.length));
 
   useEffect(() => {
-    if (!done || !autoplay || !inView || !pageVisible) return;
+    if (!shown || !autoplay || !inView || !pageVisible) return;
     const timer = window.setTimeout(() => advance(), demoLoop.hold * 1000);
     return () => window.clearTimeout(timer);
-  }, [done, autoplay, inView, pageVisible]);
+  }, [shown, autoplay, inView, pageVisible]);
 
   const showAll = () => {
-    if (!done && !skipped) setSkipped(true);
+    if (!shown && !skipped) setSkipped(true);
   };
 
   const togglePause = () => {
     if (paused) {
       setPaused(false);
-      if (done) goTo((index + 1) % quotes.length);
+      if (shown) goTo((index + 1) % quotes.length);
     } else {
       setPaused(true);
       showAll();
@@ -95,14 +101,17 @@ export function DemoLoop({ quotes, className }: DemoLoopProps) {
               transition={reduced ? reducedFade() : transitions.sheetExit}
             >
               <MotionPreferences skip={skipped}>
-                <ScriptedScene
-                  key={skipped ? "fin" : "jeu"}
-                  quote={quote}
-                  entrance={run > 0}
-                  startDone={skipped}
-                  compact
-                  onDone={() => setDone(true)}
-                />
+                <SavingsDrop quote={quote} active={done} onDone={() => setShown(true)}>
+                  <ScriptedScene
+                    key={skipped ? "fin" : "jeu"}
+                    quote={quote}
+                    entrance={run > 0 ? "toss" : false}
+                    dramatic
+                    startDone={skipped}
+                    compact
+                    onDone={() => setDone(true)}
+                  />
+                </SavingsDrop>
               </MotionPreferences>
             </motion.div>
           </AnimatePresence>
@@ -111,7 +120,7 @@ export function DemoLoop({ quotes, className }: DemoLoopProps) {
 
       <figcaption className="mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <span className="font-mono text-label uppercase text-ink-muted">Exemple fictif</span>
-        <span className="sr-only">{describeCorrection(quote)}</span>
+        <span className="sr-only">{`${describeCorrection(quote)} ${describeOutcome(quote)}`}</span>
         <span className="flex flex-wrap items-center gap-2">
           <span
             role="group"

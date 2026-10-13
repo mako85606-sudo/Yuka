@@ -82,6 +82,7 @@ export function QuoteLine({
   return (
     <motion.li
       layout="position"
+      data-line={line.id}
       className={cn(
         "grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_var(--margin-col)] sm:gap-x-7",
         compact ? "gap-y-1.5 py-2.5" : "gap-y-2 py-3",
@@ -103,7 +104,7 @@ export function QuoteLine({
             />
           ) : null}
           <span className={cn("min-w-0 flex-1 leading-snug", textSize)}>{line.label}</span>
-          <span className={cn("shrink-0 font-mono tabular-nums", textSize)}>
+          <span data-amount className={cn("shrink-0 font-mono tabular-nums", textSize)}>
             {line.totalHT === null ? (
               <>
                 <span aria-hidden>—</span>

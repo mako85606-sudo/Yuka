@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CHECKS_PHASE_TARGET,
+  chuteSchedule,
   endOf,
   ISSUE_DURATION,
   ISSUE_INTERVAL,
@@ -105,5 +106,41 @@ describe("verdictBeats", () => {
   it("se contente d'un fondu en mouvement réduit", () => {
     const beats = verdictBeats({ startAt: 3, reduced: true });
     expect(beats.stamp).toEqual({ start: 3, duration: 0.15 });
+  });
+});
+
+describe("chuteSchedule", () => {
+  it("fait tomber les pièces en moins de 1,2 s, puis monte le compteur et souligne", () => {
+    const chute = chuteSchedule(8, 20);
+    const first = chute.coins[0]!;
+    const last = chute.coins[chute.coins.length - 1]!;
+    expect(endOf(last) - first.start).toBeLessThanOrEqual(1.2);
+    expect(chute.counter.start).toBeCloseTo(endOf(first));
+    expect(chute.pop).toBeCloseTo(endOf(last));
+    expect(chute.underline.start).toBeGreaterThanOrEqual(endOf(chute.counter) - 1e-9);
+  });
+
+  it("écrit le message après le soulignement, en un bloc de 1,2 s au plus", () => {
+    const chute = chuteSchedule(8, 80);
+    const firstWord = chute.words[0]!;
+    const lastWord = chute.words[chute.words.length - 1]!;
+    expect(firstWord.start).toBeGreaterThan(endOf(chute.underline));
+    expect(endOf(lastWord) - firstWord.start).toBeLessThanOrEqual(1.2 + 1e-9);
+    expect(chute.end).toBeCloseTo(endOf(lastWord));
+  });
+
+  it("se passe de pièces pour un devis correct", () => {
+    const chute = chuteSchedule(0, 0, { startAt: 0.5 });
+    expect(chute.coins).toHaveLength(0);
+    expect(chute.counter.start).toBe(0.5);
+    expect(chute.end).toBeCloseTo(0.5 + 0.28);
+  });
+
+  it("devient un seul fondu en mouvement réduit", () => {
+    const chute = chuteSchedule(8, 10, { startAt: 1, reduced: true });
+    expect(chute.coins).toHaveLength(0);
+    for (const segment of [chute.counter, chute.underline, ...chute.words]) {
+      expect(segment).toEqual({ start: 1, duration: 0.15 });
+    }
   });
 });
