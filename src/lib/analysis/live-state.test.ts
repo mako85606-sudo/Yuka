@@ -44,16 +44,40 @@ describe("liveReducer", () => {
     expect(state.lines).toEqual([]);
   });
 
-  it("remplace la lecture provisoire par l'extraction validée", () => {
+  it("remplace la lecture provisoire par l'extraction validée, sans s'arrêter là", () => {
     const state = replay([
       { type: "send" },
       { type: "step", step: "reading" },
       { type: "extracted", extraction: sampleExtraction, remaining: 3 },
     ]);
-    expect(state.status).toBe("extracted");
+    expect(state.status).toBe("streaming");
     expect(state.lines).toHaveLength(sampleExtraction.lines.length);
     expect(state.header?.quoteDate).toBe("2026-09-12");
     expect(state.remaining).toBe(3);
+    expect(isRunning(state)).toBe(true);
+  });
+
+  it("reçoit les constats, les prix puis le verdict, qui clôt l'analyse", () => {
+    const verdict = { verdict: "negotiate", savings: { low: 20, high: 80 }, keyPoints: ["Un point."], overcharge: 0 } as const;
+    const state = replay([
+      { type: "send" },
+      { type: "extracted", extraction: sampleExtraction, remaining: 3 },
+      { type: "step", step: "checking" },
+      { type: "checks", findings: [] },
+      { type: "step", step: "pricing" },
+      { type: "prices", prices: [], complete: false },
+      { type: "step", step: "verdict" },
+      { type: "verdict", result: verdict, analysisId: "abc", expiresAt: "2026-11-12T10:00:00.000Z" },
+    ]);
+    expect(state).toMatchObject({
+      status: "done",
+      step: "verdict",
+      findings: [],
+      prices: [],
+      pricesComplete: false,
+      verdict,
+      analysisId: "abc",
+    });
     expect(isRunning(state)).toBe(false);
   });
 

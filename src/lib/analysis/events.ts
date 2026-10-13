@@ -1,3 +1,4 @@
+import type { Finding, PriceOpinion, VerdictResult } from "@/lib/analysis/result";
 import type { ExtractionHeader } from "@/lib/extraction/progress";
 import type { ExtractedLine, Extraction } from "@/lib/extraction/schema";
 import { SERVER_STEPS, type ServerStep } from "@/lib/phases";
@@ -39,6 +40,20 @@ export type AnalyzeEvent =
   | { readonly type: "restart" }
   /** Lecture terminée et validée. `remaining` : analyses encore possibles aujourd'hui. */
   | { readonly type: "extracted"; readonly extraction: Extraction; readonly remaining: number }
+  /** Constats des vérifications déterministes. */
+  | { readonly type: "checks"; readonly findings: readonly Finding[] }
+  /** Avis de prix. `complete` : faux si une source a manqué (des lignes restent sans avis). */
+  | { readonly type: "prices"; readonly prices: readonly PriceOpinion[]; readonly complete: boolean }
+  /**
+   * Verdict : fin de l'analyse. `analysisId` : identifiant de l'analyse
+   * enregistrée (son lien), `null` si elle n'a pas pu l'être.
+   */
+  | {
+      readonly type: "verdict";
+      readonly result: VerdictResult;
+      readonly analysisId: string | null;
+      readonly expiresAt: string | null;
+    }
   /** Document refusé, sans analyse ni stockage. */
   | { readonly type: "refused"; readonly reason: RefusalReason; readonly message: string }
   /** Échec. `refunded` : l'analyse n'a pas été décomptée. */
@@ -88,6 +103,18 @@ export function parseEventLine(line: string): AnalyzeEvent | null {
       return value as AnalyzeEvent;
     case "extracted":
       return isRecord(value.extraction) && typeof value.remaining === "number"
+        ? (value as AnalyzeEvent)
+        : null;
+    case "checks":
+      return Array.isArray(value.findings) ? (value as AnalyzeEvent) : null;
+    case "prices":
+      return Array.isArray(value.prices) && typeof value.complete === "boolean"
+        ? (value as AnalyzeEvent)
+        : null;
+    case "verdict":
+      return isRecord(value.result) &&
+        typeof value.result.verdict === "string" &&
+        (value.analysisId === null || typeof value.analysisId === "string")
         ? (value as AnalyzeEvent)
         : null;
     case "refused":

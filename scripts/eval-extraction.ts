@@ -2,6 +2,8 @@
  * Évalue la lecture des devis de test : chaque PDF de `src/fixtures/quotes`
  * passe par la vraie chaîne d'extraction (même modèle, mêmes consignes que
  * le site), puis la lecture est comparée à sa vérité terrain, champ par champ.
+ * Les vérifications déterministes tournent ensuite sur cette lecture : elles
+ * doivent retrouver les erreurs volontaires du devis, et rien de plus.
  *
  *   npm run eval:extraction               tous les devis
  *   npm run eval:extraction -- 02         seulement ceux dont l'identifiant commence par « 02 »
@@ -20,6 +22,8 @@ import {
   tallyByField,
   type FieldResult,
 } from "@/lib/eval/compare-extraction";
+import { runChecks } from "@/lib/checks";
+import { compareFindings, type FindingsComparison } from "@/lib/eval/known-issues";
 import type { Extraction } from "@/lib/extraction/schema";
 import { getAnthropicClient, getExtractionModel } from "@/server/anthropic";
 import { extractQuote, type ExtractionOutcome } from "@/server/extraction/extract-quote";
@@ -47,6 +51,8 @@ interface FixtureReport {
   readonly costUsd: number | null;
   readonly results: readonly FieldResult[];
   readonly leaks: readonly string[];
+  /** Vérifications sur la lecture du modèle, comparées aux erreurs volontaires. */
+  readonly checks: FindingsComparison | null;
 }
 
 function describeOutcome(outcome: ExtractionOutcome): string {
@@ -109,6 +115,7 @@ async function main() {
 
     let results: FieldResult[] = [];
     let leaks: string[] = [];
+    let checks: FindingsComparison | null = null;
     let passed: boolean;
     if (truth.expectedOutcome === "health") {
       passed = outcome.kind === "stopped" && outcome.reason === "health";
@@ -116,7 +123,12 @@ async function main() {
     } else if (outcome.kind === "extracted" && truth.extraction) {
       results = compareExtraction(truth.extraction, outcome.extraction);
       leaks = findLeaks(outcome.extraction, personalValues(fixture));
-      passed = results.every((result) => result.ok) && leaks.length === 0;
+      checks = compareFindings(fixture.knownIssues, runChecks(outcome.extraction));
+      passed =
+        results.every((result) => result.ok) &&
+        leaks.length === 0 &&
+        checks.missed.length === 0 &&
+        checks.extra.length === 0;
     } else {
       // Pas de lecture : tous les champs attendus comptent faux.
       results =
@@ -135,6 +147,11 @@ async function main() {
     console.log(
       `${pad(describeOutcome(outcome), 26)} ${String(correct).padStart(3)}/${String(results.length).padEnd(3)} ` +
         `${secondsFormat.format(outcome.run.durationMs / 1000).padStart(5)} s  ${cost}` +
+        (checks
+          ? `  contrôles ${checks.found.length}/${fixture.knownIssues.length}` +
+            (checks.missed.length > 0 ? ` (manqués : ${checks.missed.join(", ")})` : "") +
+            (checks.extra.length > 0 ? ` (en trop : ${checks.extra.join(", ")})` : "")
+          : "") +
         (leaks.length > 0 ? `  ⚠ données personnelles : ${leaks.join(", ")}` : ""),
     );
     reports.push({
@@ -145,6 +162,7 @@ async function main() {
       costUsd: outcome.run.costUsd,
       results,
       leaks,
+      checks,
     });
   }
 
@@ -180,6 +198,12 @@ async function main() {
       allResults.length === 0 ? 0 : correct / allResults.length,
     )}) · ${reports.filter((report) => report.passed).length}/${reports.length} devis parfaits · ` +
       `${dollarsFormat.format(totalCost)} $ · ${secondsFormat.format(totalSeconds)} s`,
+  );
+  const checked = reports.flatMap((report) => (report.checks ? [report.checks] : []));
+  const expectedIssues = checked.reduce((sum, item) => sum + item.found.length + item.missed.length, 0);
+  console.log(
+    `Contrôles : ${checked.reduce((sum, item) => sum + item.found.length, 0)}/${expectedIssues} erreurs volontaires retrouvées, ` +
+      `${checked.reduce((sum, item) => sum + item.extra.length, 0)} constat(s) en trop.`,
   );
   console.log(
     leaksFound

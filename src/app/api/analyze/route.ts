@@ -8,8 +8,10 @@ import {
 import { ERROR_MESSAGES } from "@/lib/analysis/messages";
 import { clientIp } from "@/lib/client-ip";
 import { createAnalysisStream } from "@/server/analysis/analysis-stream";
+import { purgeExpiredAnalyses } from "@/server/analysis/store";
 import { isSameOrigin, parseUpload, statusFor } from "@/server/analysis/upload";
 import { getAnthropicClient, getExtractionModel } from "@/server/anthropic";
+import { getDb } from "@/server/db/client";
 import {
   consumeAnalysisQuota,
   purgeExpiredQuotas,
@@ -25,7 +27,8 @@ import {
  * disque, ni en base, ni dans les journaux.
  */
 
-// Deux tentatives de lecture au plus (50 s chacune), plus la marge.
+// Deux tentatives de lecture au plus (50 s chacune), puis l'estimation des
+// prix dans le temps restant (`limits.analysisBudgetMs`, 110 s en tout).
 // TODO: vérifier — la durée maximale accordée dépend du plan Vercel (et de
 // Fluid compute) ; 120 s doit y être autorisé.
 export const maxDuration = 120;
@@ -82,11 +85,17 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (quota.kind === "limited") return errorResponse("rate-limited");
 
+  const db = getDb();
   after(async () => {
     try {
       await purgeExpiredQuotas();
     } catch (error) {
       console.error("[analyse] nettoyage des compteurs impossible", error);
+    }
+    try {
+      if (db) await purgeExpiredAnalyses(db);
+    } catch (error) {
+      console.error("[analyse] nettoyage des analyses expirées impossible", error);
     }
   });
 
@@ -94,6 +103,7 @@ export async function POST(request: Request): Promise<Response> {
     client,
     model: getExtractionModel(),
     documents: upload.documents,
+    db,
     remaining: quota.remaining,
     refund: async () => {
       try {

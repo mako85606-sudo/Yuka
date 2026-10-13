@@ -1,4 +1,5 @@
 import type { AnalysisErrorCode, AnalyzeEvent, RefusalReason } from "@/lib/analysis/events";
+import type { Finding, PriceOpinion, VerdictResult } from "@/lib/analysis/result";
 import type { ExtractionHeader } from "@/lib/extraction/progress";
 import type { ExtractedLine, Extraction } from "@/lib/extraction/schema";
 import type { ScenePhase } from "@/lib/phases";
@@ -8,7 +9,8 @@ import type { ScenePhase } from "@/lib/phases";
  * Pur et sans effet : testable, et rejouable.
  */
 
-export type LiveStatus = "idle" | "sending" | "streaming" | "extracted" | "refused" | "error";
+/** `done` : le verdict est arrivé, l'analyse est complète. */
+export type LiveStatus = "idle" | "sending" | "streaming" | "done" | "refused" | "error";
 
 export interface LiveLine {
   readonly index: number;
@@ -23,8 +25,18 @@ export interface LiveState {
   /** Lignes reçues, dans l'ordre du devis. */
   readonly lines: readonly LiveLine[];
   readonly extraction: Extraction | null;
-  /** Analyses encore possibles aujourd'hui, connues à la fin. */
+  /** Analyses encore possibles aujourd'hui, connues à la fin de la lecture. */
   readonly remaining: number | null;
+  /** Constats des vérifications, `null` avant qu'ils arrivent. */
+  readonly findings: readonly Finding[] | null;
+  /** Avis de prix, `null` avant qu'ils arrivent. */
+  readonly prices: readonly PriceOpinion[] | null;
+  /** Faux si des lignes sont restées sans avis faute de source. */
+  readonly pricesComplete: boolean;
+  readonly verdict: VerdictResult | null;
+  /** Identifiant de l'analyse enregistrée, `null` si elle ne l'a pas été. */
+  readonly analysisId: string | null;
+  readonly expiresAt: string | null;
   readonly refusal: { readonly reason: RefusalReason; readonly message: string } | null;
   readonly error: {
     readonly code: AnalysisErrorCode;
@@ -40,6 +52,12 @@ export const INITIAL_LIVE_STATE: LiveState = {
   lines: [],
   extraction: null,
   remaining: null,
+  findings: null,
+  prices: null,
+  pricesComplete: true,
+  verdict: null,
+  analysisId: null,
+  expiresAt: null,
   refusal: null,
   error: null,
 };
@@ -80,11 +98,22 @@ export function liveReducer(state: LiveState, action: LiveAction): LiveState {
     case "extracted":
       return {
         ...state,
-        status: "extracted",
         header: headerFromExtraction(action.extraction),
         lines: action.extraction.lines.map((line, index) => ({ index, line })),
         extraction: action.extraction,
         remaining: action.remaining,
+      };
+    case "checks":
+      return { ...state, findings: action.findings };
+    case "prices":
+      return { ...state, prices: action.prices, pricesComplete: action.complete };
+    case "verdict":
+      return {
+        ...state,
+        status: "done",
+        verdict: action.result,
+        analysisId: action.analysisId,
+        expiresAt: action.expiresAt,
       };
     case "refused":
       return {

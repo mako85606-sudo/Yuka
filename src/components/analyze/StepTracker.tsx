@@ -83,7 +83,7 @@ export function StepTracker({
             </span>
             <span
               className={cn(
-                "mt-2 block truncate font-mono text-label uppercase tracking-[0.04em] sm:tracking-[0.14em]",
+                "mt-2 block truncate font-mono text-label uppercase tracking-normal sm:tracking-[0.14em]",
                 state === "upcoming" || state === "unavailable"
                   ? "text-ink-muted"
                   : state === "failed"

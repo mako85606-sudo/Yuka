@@ -7,7 +7,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import type { AnalysisErrorCode, RefusalReason } from "@/lib/analysis/events";
 import type { LiveState } from "@/lib/analysis/live-state";
 import { offsets, reducedFade, transitions } from "@/lib/motion";
-import { fr } from "@/lib/typography";
+import { AnalysisResult } from "./AnalysisResult";
 
 const REFUSAL_TITLES: Record<RefusalReason, string> = {
   health: "Pas encore pris en charge.",
@@ -22,10 +22,6 @@ const RETRYABLE: readonly AnalysisErrorCode[] = [
   "interrupted",
 ];
 
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count > 1 ? many : one}`;
-}
-
 interface AnalysisOutcomeProps {
   readonly state: LiveState;
   readonly headingRef: Ref<HTMLHeadingElement>;
@@ -34,8 +30,8 @@ interface AnalysisOutcomeProps {
 }
 
 /**
- * Ce qu'on dit à la fin : lecture réussie, document refusé, ou échec. Les
- * vérifications, les prix et le verdict viendront s'ajouter ici.
+ * Ce qu'on dit à la fin : le résultat complet, un document refusé, ou un
+ * échec.
  */
 export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: AnalysisOutcomeProps) {
   const { reduced } = useMotionPrefs();
@@ -43,39 +39,10 @@ export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: Analy
   let body: ReactNode;
   let actions: ReactNode;
 
-  if (state.status === "extracted" && state.extraction) {
-    const { extraction } = state;
-    title = "Lecture terminée.";
-    body = (
-      <>
-        <p className="text-[1.0625rem] leading-relaxed text-ink">
-          {fr(
-            `${plural(extraction.lines.length, "ligne lue", "lignes lues")}${
-              extraction.readability === "partial"
-                ? ", certaines avec difficulté : compare les montants avec ton devis."
-                : "."
-            }`,
-          )}
-          {extraction.documentKind === "facture"
-            ? fr(" C'est une facture plutôt qu'un devis : on l'a lue quand même.")
-            : null}
-        </p>
-        <p className="mt-2 leading-relaxed text-ink-muted">
-          {fr(
-            "Les contrôles (calculs, mentions obligatoires), la comparaison des prix et le verdict arrivent dans la prochaine version de Loupe.",
-          )}
-        </p>
-        {state.remaining !== null ? (
-          <p className="mt-3 text-sm text-ink-muted">
-            {state.remaining === 0
-              ? "C'était ta dernière analyse du jour."
-              : fr(`Il te reste ${plural(state.remaining, "analyse", "analyses")} aujourd'hui.`)}
-          </p>
-        ) : null}
-      </>
-    );
-    actions = <Button onClick={onRestart}>Analyser un autre devis</Button>;
-  } else if (state.status === "refused" && state.refusal) {
+  if (state.status === "done") {
+    return <AnalysisResult state={state} headingRef={headingRef} onRestart={onRestart} />;
+  }
+  if (state.status === "refused" && state.refusal) {
     title = REFUSAL_TITLES[state.refusal.reason];
     body = <p className="text-[1.0625rem] leading-relaxed text-ink">{state.refusal.message}</p>;
     actions = (

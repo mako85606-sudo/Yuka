@@ -54,7 +54,7 @@ export function LiveSheet({ state }: { readonly state: LiveState }) {
               ))}
             </ol>
           ) : null}
-          {running ? <GhostLines count={state.lines.length > 0 ? 1 : 4} /> : null}
+          {running && !extraction ? <GhostLines count={state.lines.length > 0 ? 1 : 4} /> : null}
           {!running && state.lines.length === 0 ? (
             <p className="py-6 text-sm text-ink-muted">Aucune ligne lue.</p>
           ) : null}

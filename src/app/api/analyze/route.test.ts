@@ -3,10 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { limits } from "@/config/limits";
 import { sampleExtraction } from "@/fixtures/sample-extraction";
 import { readEvents, type AnalyzeEvent } from "@/lib/analysis/events";
+import { ESTIMATE_TOOL_NAME } from "@/server/pricing/estimate-prices";
 import {
   createFakeAnthropic,
   errorResponse,
+  messageResponse,
   sseResponse,
+  toolUseBlock,
   toolUseEvents,
   type Responder,
 } from "@/test/fake-anthropic";
@@ -42,6 +45,11 @@ function request({
   });
 }
 
+const reading: Responder = (_request, signal) => sseResponse(toolUseEvents(sampleExtraction), signal);
+// Sans base, le chauffe-eau du devis (890 € HT) est comparé à une estimation IA.
+const pricing: Responder = () =>
+  messageResponse([toolUseBlock(ESTIMATE_TOOL_NAME, { estimates: [{ line: 1, low: 550, high: 800 }] })]);
+
 function useModel(responders: readonly Responder[]) {
   const { client, requests } = createFakeAnthropic(responders);
   fake.client = client;
@@ -69,30 +77,59 @@ afterEach(() => {
 });
 
 describe("POST /api/analyze", () => {
-  it("streame les étapes réelles, puis les lignes au fil de la lecture", async () => {
-    useModel([(_request, signal) => sseResponse(toolUseEvents(sampleExtraction), signal)]);
+  it("streame les étapes réelles : lecture ligne à ligne, vérifications, prix, verdict", async () => {
+    const requests = useModel([reading, pricing]);
     const response = await POST(request());
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/x-ndjson");
     const events = await collect(response);
-    expect(events.map((event) => event.type)).toEqual([
-      "step",
-      "step",
+    expect(events.map((event) => (event.type === "step" ? event.step : event.type))).toEqual([
+      "received",
+      "reading",
       "header",
       "line",
       "line",
       "extracted",
+      "checking",
+      "checks",
+      "pricing",
+      "prices",
+      "verdict",
+      "verdict",
     ]);
-    expect(events.slice(0, 2)).toEqual([
-      { type: "step", step: "received" },
-      { type: "step", step: "reading" },
-    ]);
-    expect(events.at(-1)).toMatchObject({
-      type: "extracted",
+    expect(events.find((event) => event.type === "extracted")).toMatchObject({
       remaining: limits.analysesPerDay - 1,
       extraction: { category: "plomberie" },
     });
+
+    const checks = events.find((event) => event.type === "checks");
+    if (checks?.type !== "checks") throw new Error("constats attendus");
+    expect(checks.findings.map((finding) => finding.ruleId)).toEqual(
+      expect.arrayContaining(["mention-insurance", "vague-line"]),
+    );
+
+    const prices = events.find((event) => event.type === "prices");
+    expect(prices).toMatchObject({
+      complete: true,
+      prices: [{ lineIndex: 0, source: { kind: "ai" }, reference: { low: 550, high: 800 }, delta: 90 }],
+    });
+    expect(requests).toHaveLength(2);
+
+    // Sans base configurée, le résultat s'affiche mais n'a pas de lien.
+    expect(events.at(-1)).toMatchObject({
+      type: "verdict",
+      result: { verdict: "negotiate" },
+      analysisId: null,
+      expiresAt: null,
+    });
+  });
+
+  it("conclut même quand l'estimation des prix échoue", async () => {
+    useModel([reading, () => errorResponse(529, "overloaded_error", "Surcharge")]);
+    const events = await collect(await POST(request()));
+    expect(events.find((event) => event.type === "prices")).toMatchObject({ prices: [], complete: false });
+    expect(events.at(-1)).toMatchObject({ type: "verdict" });
   });
 
   it("refuse poliment un devis de santé, sans rien lire de plus", async () => {
@@ -110,17 +147,16 @@ describe("POST /api/analyze", () => {
     const failed = await collect(await POST(request({ ip })));
     expect(failed.at(-1)).toMatchObject({ type: "error", code: "reading-failed", refunded: true });
 
-    useModel([(_request, signal) => sseResponse(toolUseEvents(sampleExtraction), signal)]);
+    useModel([reading, pricing]);
     const retried = await collect(await POST(request({ ip })));
-    expect(retried.at(-1)).toMatchObject({ remaining: limits.analysesPerDay - 1 });
+    expect(retried.find((event) => event.type === "extracted")).toMatchObject({
+      remaining: limits.analysesPerDay - 1,
+    });
   });
 
   it(`bloque au-delà de ${limits.analysesPerDay} analyses par jour`, async () => {
     const ip = "203.0.113.60";
-    const responders = Array.from({ length: limits.analysesPerDay }, (): Responder => (_request, signal) =>
-      sseResponse(toolUseEvents(sampleExtraction), signal),
-    );
-    useModel(responders);
+    useModel(Array.from({ length: limits.analysesPerDay }, () => [reading, pricing]).flat());
     for (let i = 0; i < limits.analysesPerDay; i += 1) await collect(await POST(request({ ip })));
     const response = await POST(request({ ip }));
     expect(response.status).toBe(429);

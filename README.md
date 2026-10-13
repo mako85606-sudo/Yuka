@@ -45,7 +45,7 @@ Copie `.env.example` en `.env.local` ; chaque variable y est expliquée.
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | lecture des devis par le modèle | pour analyser |
 | `ANTHROPIC_MODEL` | modèle de lecture (défaut `claude-sonnet-5-5`) | non |
-| `DATABASE_URL` | Postgres (Neon ou Supabase) : limite quotidienne, inscriptions | en production |
+| `DATABASE_URL` | Postgres (Neon ou Supabase) : limite quotidienne, analyses, base de prix, inscriptions | en production |
 | `IP_HASH_SECRET` | secret du hachage des adresses IP, 32 caractères au moins | en production |
 | `ENABLE_DEV_PAGES` | montre `/dev/design` en production si `true` | non |
 
@@ -57,7 +57,9 @@ Copie `.env.example` en `.env.local` ; chaque variable y est expliquée.
 
 Si la migration échoue avec la chaîne « pooled » (Neon) ou « Transaction pooler » (Supabase), lance-la avec la chaîne directe (« Direct connection »), puis remets la chaîne « pooled » pour le site.
 
-En local, sans `DATABASE_URL`, tout fonctionne quand même : la limite de 5 analyses par jour est tenue en mémoire (remise à zéro au redémarrage) et les inscriptions email sont seulement signalées dans le terminal.
+En local, sans `DATABASE_URL`, tout fonctionne quand même : la limite de 5 analyses par jour est tenue en mémoire (remise à zéro au redémarrage), les analyses ne sont pas enregistrées (le résultat s'affiche, sans lien), les prix sont comparés à des estimations IA seulement, et les inscriptions email sont seulement signalées dans le terminal.
+
+Ce qui est enregistré d'une analyse : son verdict, ses constats, ses avis de prix, la catégorie, le département et les lignes anonymisées du devis. Jamais le devis lui-même. Les analyses sont effacées au bout de 30 jours ; les lignes anonymisées servent à comparer les prix pendant 24 mois.
 
 ## Évaluer la lecture
 
@@ -68,4 +70,4 @@ npm run eval:extraction          # les six devis (quelques centimes d'API)
 npm run eval:extraction -- 02    # seulement le devis 02
 ```
 
-Le script affiche, pour chaque champ (catégorie, mentions, dates, montants, lignes…), le nombre de lectures justes, liste les écarts, vérifie qu'aucune donnée personnelle du devis n'a été recopiée, et écrit un rapport détaillé dans `eval-results/`.
+Le script affiche, pour chaque champ (catégorie, mentions, dates, montants, lignes…), le nombre de lectures justes, liste les écarts, vérifie qu'aucune donnée personnelle du devis n'a été recopiée, lance les vérifications sur la lecture du modèle (erreurs volontaires retrouvées, constats en trop), et écrit un rapport détaillé dans `eval-results/`.

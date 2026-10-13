@@ -22,5 +22,6 @@ describe("avis de prix", () => {
   it("gère l'écart nul et l'arrondi", () => {
     expect(describeDelta(0.3, { kind: "loupe", comparables: 8 })).toBe("pile sur la médiane");
     expect(describeDelta(-0.6, { kind: "ai" })).toBe("en dessous de l'estimation IA");
+    expect(describeDelta(0, { kind: "ai" })).toBe("dans la fourchette de l'estimation IA");
   });
 });

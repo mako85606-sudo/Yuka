@@ -55,6 +55,14 @@ Précisions vérifiées dans la documentation de l'API Claude (étape 3) :
 - Coût journalisé à chaque lecture (`[analyse] …` dans les journaux du serveur), d'après `MODEL_PRICING` (`src/config/llm.ts`).
 - Vie privée : les photos sont réencodées dans le navigateur (métadonnées EXIF et position GPS effacées) ; le modèle ne renvoie que des booléens pour l'émetteur ; libellés et objet passent par `anonymizeText` ; les fichiers restent en mémoire le temps de la requête.
 
+Vérifications, prix et verdict (étape 4) :
+- Flux : `extracted` → étape `checking` + `checks` (constats) → étape `pricing` + `prices` (avis, `complete`) → étape `verdict` + `verdict` (résultat, `analysisId`, `expiresAt`), qui clôt l'analyse. Un flux coupé avant le verdict est « interrompu ».
+- Constat (`Finding`, `src/lib/analysis/result.ts`) : `kind` `error` (calcul faux, mention absente), `warning` (ligne vague, acompte élevé, TVA inhabituelle), `reminder` (rétractation) ; `confirmed` faux si les chiffres en cause sont lus en confiance `low` (affiché « à confirmer sur ton devis », jamais une erreur sûre, jamais une alerte) ; `legalRef` affichée seulement si `ruleVerified`.
+- Prix : une ligne mal lue, vague, remise ou de moins de 20 € n'a pas d'avis. Base Loupe : `price_lines` `comparable` de la même prestation, même unité de comparaison, même région (`src/config/regions.ts`), moins de 24 mois, autre empreinte ; médiane et quartiles en TS dès 5 comparables. Sinon fourchette du modèle (`src/server/pricing/estimate-prices.ts`, outil strict `estimer_prix`, non streamé, une relance) : il ne voit jamais les prix du devis ; 12 lignes au plus, les plus chères ; délai = reste du budget de la requête (`limits.analysisBudgetMs`). Écart d'une estimation IA compté seulement hors fourchette.
+- Verdict (`src/lib/verdict.ts`, seuils `src/config/verdict.ts`) : `alert` si les erreurs de calcul coûtent ≥ 20 €, si le nom ou le SIRET manque (constat sûr), ou si un prix dépasse la médiane Loupe de 60 % ; `negotiate` pour tout autre constat (hors rappel), un prix à +15 % de la médiane, ou au-dessus d'une fourchette IA ; sinon `ok` (sans économie annoncée). Une estimation IA ne mène jamais à `alert`. Économie : trop-payé recalculé + écarts au-dessus du 3e quartile (bas) ou de la médiane et des fourchettes IA (haut).
+- Enregistrement (`src/server/analysis/store.ts`) : `analyses` (id aléatoire 128 bits, catégorie, département, région, verdict, `result` = l'extraction sans ses lignes + constats + avis + verdict, coût) et `price_lines` (libellés repassés par `anonymizeText`). Empreinte des prix (`quoteFingerprint`) : un même devis analysé deux fois ne compte qu'une fois dans les médianes. Analyses effacées après 30 jours, lignes après 24 mois (détachées entre-temps) par `after()` dans la route. Sans base : résultat affiché, pas de lien. Visiteur parti avant la fin : rien n'est enregistré.
+- Journal : `[analyse] verdict … · constats · avis (base, IA) · enregistrée · coût total` en plus de la ligne de lecture.
+
 ## Commandes
 
 - `npm run dev`, `npm run build`, `npm start`
@@ -63,7 +71,7 @@ Précisions vérifiées dans la documentation de l'API Claude (étape 3) :
 - `npm test` : Vitest en une passe ; `npm run test:watch` en continu
 - `npm run db:generate` (migration SQL après un changement de `src/server/db/schema.ts`), `npm run db:migrate` (l'applique à `DATABASE_URL`)
 - `npm run fixtures:generate` : régénère les devis PDF fictifs et leur vérité terrain (rendu déterministe)
-- `npm run eval:extraction [-- préfixe]` : fait lire les devis fictifs par le vrai modèle (clé requise), précision champ par champ, contrôle vie privée, rapport dans `eval-results/` (ignoré par git)
+- `npm run eval:extraction [-- préfixe]` : fait lire les devis fictifs par le vrai modèle (clé requise), précision champ par champ, contrôle vie privée, vérifications lancées sur la lecture (erreurs volontaires retrouvées, constats en trop), rapport dans `eval-results/` (ignoré par git)
 
 ## Arborescence
 
@@ -71,19 +79,20 @@ Précisions vérifiées dans la documentation de l'API Claude (étape 3) :
 - `src/components/signature/` : les six composants signature.
 - `src/components/quote/` : le devis reconstruit (en-tête avec « cadre réservé au correcteur », lignes, totaux, lignes fantômes). Ils acceptent des valeurs absentes (`PrintedLine`, `PrintedTotals` : `null` = non lu, affiché « — »).
 - `src/components/scene/` : `CorrectionScene` (la correction complète pilotée par l'étape atteinte), `ScriptedScene` et `DemoLoop` (démos fictives).
-- `src/components/analyze/` : la page `/analyse` : `AnalyzeFlow` (parcours), `PagePicker` + `use-pages` (photos compressées, PDF), `StepTracker` (étapes réelles), `LiveSheet` (feuille remplie au fil de la lecture), `AnalysisOutcome` (fin, refus, erreurs).
+- `src/components/analyze/` : la page `/analyse` : `AnalyzeFlow` (parcours), `PagePicker` + `use-pages` (photos compressées, PDF), `StepTracker` (étapes réelles), `LiveSheet` (feuille remplie au fil de la lecture), `AnalysisOutcome` (fin, refus, erreurs), `AnalysisResult` (tampon, économie, points clés, « Erreurs vérifiées » séparées des « Avis sur les prix »).
 - `src/components/landing/` : sections de la landing (en-tête, illustrations, FAQ, inscription, CTA collant mobile, pied de page).
-- `src/app/actions/` : Server Actions (`"use server"`). `src/server/` : code serveur uniquement (`import "server-only"`) : `env.ts` (variables validées par Zod), `anthropic.ts` (client), `extraction/` (consignes et appel au modèle), `analysis/` (envoi, origine, flux NDJSON), `db/` (schéma Drizzle, client postgres.js), `rate-limit.ts`, `signups.ts`.
+- `src/app/actions/` : Server Actions (`"use server"`). `src/server/` : code serveur uniquement (`import "server-only"`) : `env.ts` (variables validées par Zod), `anthropic.ts` (client), `extraction/` (consignes et appel au modèle), `analysis/` (envoi, origine, flux NDJSON, enregistrement `store.ts`), `pricing/` (comparables en base, estimation IA, orchestration `price-quote.ts`), `db/` (schéma Drizzle, client postgres.js), `rate-limit.ts`, `signups.ts`.
 - `src/components/motion/` : préférences de mouvement (mouvement réduit, saut d'animation).
 - `src/components/ui/` : éléments d'interface maison (pas de shadcn brut) ; `icons.tsx` (pictogrammes au trait).
-- `src/lib/` : code pur et testé : `motion.ts` (durées, courbes, springs), `choreography.ts` (ordre des gestes dans chaque bloc), `phases.ts` (étapes serveur), `hand-drawn.ts` et `seeded-random.ts` (tracés à la main), `format.ts`, `price-wording.ts`, `color.ts`, `demo-script.ts`, `typography.ts`, `anonymize.ts` (filet anti-données personnelles), `department.ts`, `client-ip.ts`, `llm-cost.ts`, `image-compression.ts`.
+- `src/lib/` : code pur et testé : `motion.ts` (durées, courbes, springs), `choreography.ts` (ordre des gestes dans chaque bloc), `phases.ts` (étapes serveur), `hand-drawn.ts` et `seeded-random.ts` (tracés à la main), `format.ts`, `price-wording.ts`, `color.ts`, `demo-script.ts`, `typography.ts`, `anonymize.ts` (filet anti-données personnelles), `department.ts`, `client-ip.ts`, `llm-cost.ts`, `image-compression.ts`, `verdict.ts` (verdict, économie, points clés).
 - `src/lib/extraction/` : `schema.ts` (schéma Zod de la lecture, source unique), `tool-schema.ts` (schéma d'outil strict dérivé), `progress.ts` (lecture progressive du flux, arrêt anticipé), `normalize.ts`.
-- `src/lib/analysis/` : protocole du flux (`events.ts`), messages, client navigateur, état de la lecture en direct (`live-state.ts`), règles d'ajout des pages.
-- `src/lib/eval/` : comparaison d'une lecture avec sa vérité terrain.
-- `src/lib/checks/` (étape 4) : une fonction par règle déterministe, chacune testée.
-- `src/config/` : `site.ts`, `taxonomy.ts` (catégories, unités, prestations comparables), `llm.ts` (réglages et tarifs du modèle), `limits.ts` (envoi, quota), `departments.ts` ; plus tard `rules.ts`, seuils et références (avec `// TODO: vérifier` si incertain).
+- `src/lib/analysis/` : protocole du flux (`events.ts`), types du résultat (`result.ts`), mise en mots du résultat (`result-view.ts`), messages, client navigateur, état de l'analyse en direct (`live-state.ts`), règles d'ajout des pages.
+- `src/lib/eval/` : comparaison d'une lecture avec sa vérité terrain, et des constats avec les erreurs volontaires (`known-issues.ts`).
+- `src/lib/checks/` : une fonction par règle déterministe (calculs, TVA, mentions, acompte, vente à domicile, lignes vagues), `overcharge.ts` (trop-payé recalculé), `index.ts` (`runChecks`). Chaque règle a au moins un test qui passe et un qui échoue (`rules.test.ts`, `calculations.test.ts`) ; `index.test.ts` vérifie que le jeu de test donne exactement ses erreurs volontaires.
+- `src/lib/pricing/` : `stats.ts` (médiane, quartiles), `opinions.ts` (unité de comparaison, avis base Loupe ou IA).
+- `src/config/` : `site.ts`, `taxonomy.ts` (catégories, unités, prestations comparables), `llm.ts` (réglages et tarifs du modèle), `limits.ts` (envoi, quota, conservation, budget de temps), `departments.ts`, `regions.ts`, `rules.ts` (mentions, taux de TVA, rétractation : `// TODO: vérifier`, `verified: false`), `checks.ts` (tolérances, seuils, mots vagues), `pricing.ts`, `verdict.ts`.
 - `src/fixtures/` : données fictives. `demo-quotes.ts` : trois devis de démo dont `demo-quotes.test.ts` garantit l'honnêteté. `quotes/` : les devis PDF du jeu de test (`definitions.ts` en est la source, `definitions.test.ts` garde leurs erreurs volontaires). `sample-extraction.ts` : une lecture type pour les tests.
-- `src/test/` : outils de test : faux serveur Claude (`fake-anthropic.ts`, le vrai SDK sur des flux SSE écrits à la main), base Postgres en mémoire (`test-db.ts`, PGlite + migrations du projet), remplaçant de `server-only`.
+- `src/test/` : outils de test : faux serveur Claude (`fake-anthropic.ts`, le vrai SDK sur des flux SSE ou des réponses JSON écrits à la main), base Postgres en mémoire (`test-db.ts`, PGlite + migrations du projet), lecture propre à modifier (`extraction.ts`), remplaçant de `server-only`.
 - `scripts/` : générateur des PDF et évaluation (lancés par `tsx`). `drizzle/` : migrations SQL générées.
 
 ## Conventions de code
@@ -166,8 +175,8 @@ Mesure (PostHog) : `landing_view`, `upload_started`, `upload_completed`, `analys
 
 1. Fondations et identité : projet, CLAUDE.md, tokens, polices, `src/lib/motion.ts`, six composants signature animés sur `/dev/design`. L'utilisateur valide le style avant la suite.
 2. Landing avec la démo animée (données dans `src/fixtures/`). Fait : l'inscription email valide (Zod) mais n'enregistre rien avant la base de l'étape 3 (`src/server/signups.ts`).
-3. Extraction : route streamée, schémas Zod, appel LLM, refus santé, rate limit ; 5 devis PDF fictifs (pdf-lib), dont 2 avec erreurs connues, et leur vérité terrain JSON ; `npm run eval:extraction` (précision champ par champ). Fait : `/analyse` dépose le devis et montre la lecture en direct (étapes `received` et `reading` ; contrôles, prix et verdict annoncés « bientôt »). Rien n'est encore stocké d'une analyse : les tables `analysis` et `price_lines` arrivent à l'étape 4. En base : `rate_limits` (HMAC du jour et de l'IP, jamais l'IP) et `signups`.
-4. Vérifications et prix : règles déterministes (au moins un test qui passe et un qui échoue par règle), taxonomie, médianes, verdict.
+3. Extraction : route streamée, schémas Zod, appel LLM, refus santé, rate limit ; 5 devis PDF fictifs (pdf-lib), dont 2 avec erreurs connues, et leur vérité terrain JSON ; `npm run eval:extraction` (précision champ par champ). Fait : `/analyse` dépose le devis et montre la lecture en direct (étapes `received` et `reading` ; contrôles, prix et verdict annoncés « bientôt »). En base : `rate_limits` (HMAC du jour et de l'IP, jamais l'IP) et `signups`.
+4. Vérifications et prix : règles déterministes (au moins un test qui passe et un qui échoue par règle), taxonomie, médianes, verdict. Fait : flux complet jusqu'au verdict, enregistrement (`analyses`, `price_lines`), résultat affiché sur `/analyse` (tampon, économie, points clés, erreurs vérifiées, à confirmer, avis sur les prix avec source et confiance, points d'attention, rappels). La page `/analyse/[id]` et la feuille annotée arrivent à l'étape 5.
 5. Écran de résultat : chorégraphie complète, version reduced-motion, message de négociation.
 6. Partage et mesure : page publique, image OG, événements, bouton rapport détaillé, `/admin`.
 7. Durcissement : pages légales, erreurs (photo floue + conseil), accessibilité (contrastes, focus visibles, équivalent texte des annotations), Lighthouse mobile ≥ 90, déploiement Vercel.

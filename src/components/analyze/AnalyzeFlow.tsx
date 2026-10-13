@@ -9,7 +9,7 @@ import type { AnalysisErrorCode } from "@/lib/analysis/events";
 import { INITIAL_LIVE_STATE, isRunning, liveReducer } from "@/lib/analysis/live-state";
 import { ERROR_MESSAGES } from "@/lib/analysis/messages";
 import { cn } from "@/lib/cn";
-import type { ServerStep } from "@/lib/phases";
+import type { ScenePhase } from "@/lib/phases";
 import { fr } from "@/lib/typography";
 import { AnalysisOutcome } from "./AnalysisOutcome";
 import { LiveSheet } from "./LiveSheet";
@@ -17,8 +17,14 @@ import { PagePicker } from "./PagePicker";
 import { StepTracker } from "./StepTracker";
 import { usePages } from "./use-pages";
 
-/** Étapes que cette version du serveur sait faire. */
-const AVAILABLE_STEPS: readonly ServerStep[] = ["received", "reading"];
+/** Titre et annonce (lecteurs d'écran) de chaque étape réelle du serveur. */
+const STEP_TEXT: Partial<Record<ScenePhase, { readonly title: string; readonly status: string }>> = {
+  received: { title: "Envoi…", status: "Envoi du devis." },
+  reading: { title: "Lecture en cours…", status: "Lecture du devis en cours." },
+  checking: { title: "Vérifications…", status: "Vérification des calculs et des mentions." },
+  pricing: { title: "Comparaison des prix…", status: "Comparaison des prix." },
+  verdict: { title: "Verdict…", status: "Verdict en cours." },
+};
 
 /** Refus « de formulaire » renvoyés par le serveur : on revient au formulaire pour corriger. */
 const FORM_ERRORS: readonly AnalysisErrorCode[] = [
@@ -58,7 +64,7 @@ export function AnalyzeFlow() {
   // Le focus suit le parcours : vue d'analyse à l'envoi, conclusion à la fin.
   useEffect(() => {
     if (state.status === "sending") viewHeading.current?.focus();
-    if (state.status === "extracted" || state.status === "refused" || state.status === "error") {
+    if (state.status === "done" || state.status === "refused" || state.status === "error") {
       outcomeHeading.current?.focus();
     }
   }, [state.status]);
@@ -200,6 +206,7 @@ export function AnalyzeFlow() {
   }
 
   const showSheet = state.status !== "refused" && state.status !== "error";
+  const stepText = running ? (STEP_TEXT[state.step] ?? STEP_TEXT.received) : undefined;
 
   return (
     <section aria-labelledby="titre-analyse">
@@ -210,7 +217,7 @@ export function AnalyzeFlow() {
           tabIndex={-1}
           className="font-display text-title text-ink outline-none"
         >
-          {running ? "Lecture en cours…" : "Ton devis"}
+          {stepText ? stepText.title : "Ton devis"}
         </h1>
         {running ? (
           <Button variant="quiet" onClick={cancel} className="mt-2 shrink-0">
@@ -224,13 +231,12 @@ export function AnalyzeFlow() {
           step={state.step}
           running={running}
           failed={state.status === "error"}
-          available={AVAILABLE_STEPS}
           className="mt-5"
         />
       ) : null}
       {/* Une annonce par étape, pas par ligne : les lignes se lisent sur la feuille. */}
       <p role="status" className="sr-only">
-        {running ? (state.step === "reading" ? "Lecture du devis en cours." : "Envoi du devis.") : null}
+        {stepText?.status ?? null}
       </p>
 
       <div className="mt-8 space-y-8">

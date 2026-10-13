@@ -26,5 +26,6 @@ export function describeDelta(amount: number, source: PriceSource): string {
   const rounded = Math.round(amount);
   if (rounded > 0) return `au-dessus de ${reference}`;
   if (rounded < 0) return `en dessous de ${reference}`;
-  return `pile sur ${reference}`;
+  // Une estimation IA est une fourchette : à l'intérieur, l'écart est nul.
+  return source.kind === "ai" ? "dans la fourchette de l'estimation IA" : `pile sur ${reference}`;
 }

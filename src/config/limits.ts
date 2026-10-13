@@ -15,6 +15,14 @@ export const limits = {
   photoMaxHeight: 2400,
   /** Qualité JPEG après compression. */
   photoQuality: 0.82,
+  /** Une analyse reste accessible par son lien pendant 30 jours, puis elle est effacée. */
+  analysisRetentionDays: 30,
+  /**
+   * Temps accordé à une analyse complète, lecture et prix compris : un peu
+   * moins que `maxDuration` de la route (120 s). L'estimation des prix prend
+   * ce qui reste après la lecture.
+   */
+  analysisBudgetMs: 110_000,
 } as const;
 
 /** Formats d'image acceptés par le modèle (les photos sont recompressées en JPEG). */

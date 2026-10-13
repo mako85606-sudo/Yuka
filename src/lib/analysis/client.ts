@@ -33,7 +33,7 @@ async function errorFromResponse(response: Response): Promise<AnalyzeEvent> {
   return errorEvent("server-error");
 }
 
-const TERMINAL_EVENTS = new Set<AnalyzeEvent["type"]>(["extracted", "refused", "error"]);
+const TERMINAL_EVENTS = new Set<AnalyzeEvent["type"]>(["verdict", "refused", "error"]);
 
 export async function* streamAnalysis(
   files: readonly File[],

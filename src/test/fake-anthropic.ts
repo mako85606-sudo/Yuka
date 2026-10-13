@@ -187,3 +187,30 @@ export function textEvents(text: string, options: MessageOptions = {}): SseEvent
     ...messageEnd(options, "end_turn"),
   ];
 }
+
+/** Réponse non streamée (`messages.create` sans `stream`), avec les blocs donnés. */
+export function messageResponse(content: readonly unknown[], options: MessageOptions = {}): Response {
+  const callsTool = content.some((block) => (block as { type?: string }).type === "tool_use");
+  const stopReason = options.stopReason ?? (callsTool ? "tool_use" : "end_turn");
+  const message = {
+    id: "msg_test",
+    type: "message",
+    role: "assistant",
+    model: "claude-sonnet-5-5",
+    content,
+    stop_reason: stopReason,
+    stop_sequence: null,
+    usage: {
+      input_tokens: options.inputTokens ?? 400,
+      output_tokens: options.outputTokens ?? 200,
+      cache_creation_input_tokens: options.cacheWriteTokens ?? 0,
+      cache_read_input_tokens: options.cacheReadTokens ?? 0,
+    },
+  };
+  return new Response(JSON.stringify(message), { status: 200, headers: { "content-type": "application/json" } });
+}
+
+/** Bloc d'appel d'outil, pour `messageResponse`. */
+export function toolUseBlock(name: string, input: unknown, id = "toolu_test_1") {
+  return { type: "tool_use", id, name, input };
+}

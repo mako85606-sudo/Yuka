@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { sampleExtraction } from "@/fixtures/sample-extraction";
 import { streamAnalysis } from "@/lib/analysis/client";
 import { encodeEvent, readEvents, type AnalyzeEvent } from "@/lib/analysis/events";
 import { ERROR_MESSAGES } from "@/lib/analysis/messages";
@@ -94,5 +95,20 @@ describe("streamAnalysis", () => {
   it("signale un flux terminé sans résultat", async () => {
     const events = await collect(async () => ndjson([encodeEvent({ type: "step", step: "reading" })]));
     expect(events.at(-1)).toMatchObject({ type: "error", code: "interrupted" });
+  });
+
+  it("attend le verdict : un flux coupé après la lecture reste interrompu", async () => {
+    const extracted = encodeEvent({ type: "extracted", extraction: sampleExtraction, remaining: 2 });
+    const cut = await collect(async () => ndjson([extracted, encodeEvent({ type: "step", step: "checking" })]));
+    expect(cut.at(-1)).toMatchObject({ type: "error", code: "interrupted" });
+
+    const verdict = encodeEvent({
+      type: "verdict",
+      result: { verdict: "ok", savings: null, keyPoints: [], overcharge: 0 },
+      analysisId: null,
+      expiresAt: null,
+    });
+    const complete = await collect(async () => ndjson([extracted, verdict]));
+    expect(complete.map((event) => event.type)).toEqual(["extracted", "verdict"]);
   });
 });
