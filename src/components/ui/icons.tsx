@@ -45,3 +45,30 @@ export function CloseGlyph({ className }: { readonly className?: string }) {
     </svg>
   );
 }
+
+export function CopyGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className={cn("size-5 fill-none stroke-current", className)}
+      strokeWidth={1.6}
+    >
+      <rect x="7" y="7" width="10" height="10.5" rx="1.2" />
+      <path d="M13 4.5V3.7a1.2 1.2 0 0 0-1.2-1.2H4.2A1.2 1.2 0 0 0 3 3.7v8.6a1.2 1.2 0 0 0 1.2 1.2H5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function CheckGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className={cn("size-5 fill-none stroke-current", className)}
+      strokeWidth={1.8}
+    >
+      <path d="M4 10.5 8.2 14.5 16 5.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

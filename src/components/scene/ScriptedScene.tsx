@@ -6,7 +6,7 @@ import { CorrectionScene } from "@/components/scene/CorrectionScene";
 import { usePhaseScript } from "@/components/scene/use-phase-script";
 import { demoScript } from "@/lib/demo-script";
 import type { ScenePhase } from "@/lib/phases";
-import type { SceneQuote } from "@/lib/scene-quote";
+import { annotationCount, type SceneQuote } from "@/lib/scene-quote";
 
 const PHASE_LABELS: Record<ScenePhase, string> = {
   idle: "en attente",
@@ -47,7 +47,7 @@ export function ScriptedScene({
   const script = useMemo(
     () =>
       demoScript(
-        { lines: quote.lines.length, issues: quote.issues.length, prices: quote.prices.length },
+        { lines: quote.lines.length, issues: annotationCount(quote), prices: quote.prices.length },
         reduced,
       ),
     [quote, reduced],

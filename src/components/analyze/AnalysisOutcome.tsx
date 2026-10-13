@@ -7,7 +7,6 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import type { AnalysisErrorCode, RefusalReason } from "@/lib/analysis/events";
 import type { LiveState } from "@/lib/analysis/live-state";
 import { offsets, reducedFade, transitions } from "@/lib/motion";
-import { AnalysisResult } from "./AnalysisResult";
 
 const REFUSAL_TITLES: Record<RefusalReason, string> = {
   health: "Pas encore pris en charge.",
@@ -30,8 +29,8 @@ interface AnalysisOutcomeProps {
 }
 
 /**
- * Ce qu'on dit à la fin : le résultat complet, un document refusé, ou un
- * échec.
+ * Ce qu'on dit quand l'analyse ne va pas au bout : document refusé, ou échec.
+ * Le résultat complet, lui, s'affiche sous la feuille corrigée (`AnalysisView`).
  */
 export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: AnalysisOutcomeProps) {
   const { reduced } = useMotionPrefs();
@@ -39,9 +38,6 @@ export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: Analy
   let body: ReactNode;
   let actions: ReactNode;
 
-  if (state.status === "done") {
-    return <AnalysisResult state={state} headingRef={headingRef} onRestart={onRestart} />;
-  }
   if (state.status === "refused" && state.refusal) {
     title = REFUSAL_TITLES[state.refusal.reason];
     body = <p className="text-[1.0625rem] leading-relaxed text-ink">{state.refusal.message}</p>;

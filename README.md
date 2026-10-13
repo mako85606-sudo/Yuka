@@ -59,6 +59,8 @@ Si la migration échoue avec la chaîne « pooled » (Neon) ou « Transaction po
 
 En local, sans `DATABASE_URL`, tout fonctionne quand même : la limite de 5 analyses par jour est tenue en mémoire (remise à zéro au redémarrage), les analyses ne sont pas enregistrées (le résultat s'affiche, sans lien), les prix sont comparés à des estimations IA seulement, et les inscriptions email sont seulement signalées dans le terminal.
 
+Chaque analyse enregistrée a son adresse, `/analyse/<identifiant>` : l'adresse de la page change d'elle-même à la fin de l'analyse, et la rouvrir rejoue la correction. Sans base, le résultat s'affiche mais n'a pas d'adresse.
+
 Ce qui est enregistré d'une analyse : son verdict, ses constats, ses avis de prix, la catégorie, le département et les lignes anonymisées du devis. Jamais le devis lui-même. Les analyses sont effacées au bout de 30 jours ; les lignes anonymisées servent à comparer les prix pendant 24 mois.
 
 ## Évaluer la lecture

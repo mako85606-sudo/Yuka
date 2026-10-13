@@ -102,7 +102,19 @@ describe("inkSplatter", () => {
       expect(drop.r).toBeGreaterThanOrEqual(1);
       expect(drop.r).toBeLessThan(3.2);
       expect(Math.hypot(drop.u, drop.v)).toBeGreaterThan(0.9);
-      expect(Math.hypot(drop.dx, drop.dy)).toBeLessThanOrEqual(12);
+      expect(Math.hypot(drop.dx, drop.dy)).toBeLessThanOrEqual(12.01);
+    }
+  });
+
+  it("arrondit ses valeurs : elles finissent en styles, identiques au rendu serveur et client", () => {
+    for (let i = 0; i < 50; i += 1) {
+      for (const drop of inkSplatter(`analyse-${i}`, 9)) {
+        expect(Math.round(drop.r * 100) / 100).toBe(drop.r);
+        expect(Math.round(drop.dx * 100) / 100).toBe(drop.dx);
+        expect(Math.round(drop.u * 10_000) / 10_000).toBe(drop.u);
+      }
+      const tilt = stampTilt(`analyse-${i}`);
+      expect(Math.round(tilt * 100) / 100).toBe(tilt);
     }
   });
 });

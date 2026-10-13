@@ -162,6 +162,7 @@ export function createAnalysisStream(options: AnalysisStreamOptions): ReadableSt
           result: verdict,
           analysisId: saved?.id ?? null,
           expiresAt: saved?.expiresAt.toISOString() ?? null,
+          correctedAt: (saved?.createdAt ?? new Date()).toISOString(),
         });
       };
 

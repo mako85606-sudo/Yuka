@@ -204,23 +204,29 @@ export interface InkDroplet {
 }
 
 /** Gouttes d'encre projetées tout autour du tampon au moment de l'impact. */
+function roundTo(value: number, digits: number): number {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
 export function inkSplatter(seed: string, count: number): InkDroplet[] {
   const random = createRandom(`ink:${seed}`);
   return Array.from({ length: count }, (_, index) => {
     const angle = (index / count) * TAU + between(random, -0.3, 0.3);
     const reach = between(random, 0.95, 1.12);
     const travel = between(random, 4, 12);
+    // Arrondis : ces valeurs finissent en styles en ligne, identiques au rendu serveur et client.
     return {
-      u: Math.cos(angle) * reach,
-      v: Math.sin(angle) * reach,
-      r: between(random, 1, 3.2),
-      dx: Math.cos(angle) * travel,
-      dy: Math.sin(angle) * travel,
+      u: roundTo(Math.cos(angle) * reach, 4),
+      v: roundTo(Math.sin(angle) * reach, 4),
+      r: roundTo(between(random, 1, 3.2), 2),
+      dx: roundTo(Math.cos(angle) * travel, 2),
+      dy: roundTo(Math.sin(angle) * travel, 2),
     };
   });
 }
 
 /** Inclinaison du tampon, entre −12° et −8°, stable pour une même graine. */
 export function stampTilt(seed: string): number {
-  return between(createRandom(`stamp:${seed}`), angles.stampMin, angles.stampMax);
+  return roundTo(between(createRandom(`stamp:${seed}`), angles.stampMin, angles.stampMax), 2);
 }

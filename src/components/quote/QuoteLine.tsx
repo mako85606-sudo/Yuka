@@ -20,6 +20,8 @@ export interface QuoteLineIssue {
   readonly beats: IssueBeats;
   /** Vrai quand l'étape de vérification est atteinte. */
   readonly active: boolean;
+  /** Faux pour un constat à confirmer : surligné et annoté, jamais entouré. */
+  readonly circled?: boolean;
 }
 
 export interface QuoteLinePrice {
@@ -89,7 +91,7 @@ export function QuoteLine({
       transition={transition}
     >
       <div className="relative">
-        {issue ? (
+        {issue && issue.circled !== false ? (
           <RedCircle id={issue.id} active={issue.active} delay={issue.beats.circle.start} />
         ) : null}
         <div className="relative isolate flex items-baseline gap-3">

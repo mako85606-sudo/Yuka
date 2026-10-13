@@ -1,11 +1,12 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt } from "drizzle-orm";
+import { z } from "zod";
 import { limits } from "@/config/limits";
 import { regionOf } from "@/config/regions";
 import type { Finding, PriceOpinion, VerdictResult } from "@/lib/analysis/result";
 import { anonymizeText } from "@/lib/anonymize";
-import type { Extraction } from "@/lib/extraction/schema";
+import { extractionSchema, type Extraction } from "@/lib/extraction/schema";
 import type { LlmUsage } from "@/lib/llm-cost";
 import type { Database } from "@/server/db/client";
 import { analyses, priceLines } from "@/server/db/schema";
@@ -74,6 +75,7 @@ export interface SaveAnalysisInput {
 
 export interface SavedAnalysis {
   readonly id: string;
+  readonly createdAt: Date;
   readonly expiresAt: Date;
   /** Faux si le même devis a déjà été compté : ses lignes n'entrent pas une seconde fois dans les médianes. */
   readonly counted: boolean;
@@ -154,7 +156,7 @@ export async function saveAnalysis(db: Database, input: SaveAnalysisInput): Prom
         }),
       );
     }
-    return { id, expiresAt, counted };
+    return { id, createdAt: now, expiresAt, counted };
   });
 }
 
@@ -166,4 +168,85 @@ export async function saveAnalysis(db: Database, input: SaveAnalysisInput): Prom
 export async function purgeExpiredAnalyses(db: Database, now = new Date()): Promise<void> {
   await db.delete(analyses).where(lt(analyses.expiresAt, now));
   await db.delete(priceLines).where(lt(priceLines.createdAt, windowStart(now)));
+}
+
+/** Forme d'un identifiant d'analyse : inutile d'interroger la base pour autre chose. */
+const ANALYSIS_ID = /^[A-Za-z0-9_-]{22}$/;
+
+/**
+ * Contrôle de forme du contenu enregistré : l'extraction est revalidée
+ * entièrement (lignes comprises), le reste vient de Loupe et n'est vérifié
+ * que dans ses grandes lignes.
+ */
+const storedResultSchema = z.object({
+  version: z.literal(1),
+  quote: z.record(z.string(), z.unknown()),
+  findings: z.array(z.object({ id: z.string(), ruleId: z.string(), kind: z.string(), detail: z.string() }).loose()),
+  prices: z.array(z.object({ lineIndex: z.number(), delta: z.number() }).loose()),
+  pricesComplete: z.boolean(),
+  verdict: z.object({ verdict: z.enum(["ok", "negotiate", "alert"]), keyPoints: z.array(z.string()) }).loose(),
+});
+
+export interface LoadedAnalysis {
+  readonly id: string;
+  readonly createdAt: Date;
+  readonly expiresAt: Date;
+  readonly extraction: Extraction;
+  readonly findings: readonly Finding[];
+  readonly prices: readonly PriceOpinion[];
+  readonly pricesComplete: boolean;
+  readonly verdict: VerdictResult;
+}
+
+/** Une ligne enregistrée, rendue à la forme de la lecture (valeur absente = champ omis). */
+function storedLine(row: typeof priceLines.$inferSelect): Record<string, unknown> {
+  const line: Record<string, unknown> = { label: row.label, confidence: row.confidence };
+  if (row.quantity !== null) line.quantity = row.quantity;
+  if (row.unit !== null) line.unit = row.unit;
+  if (row.unitPriceHT !== null) line.unitPriceHT = row.unitPriceHT;
+  if (row.totalHT !== null) line.totalHT = row.totalHT;
+  if (row.vatRate !== null) line.vatRate = row.vatRate;
+  if (row.canonicalItem !== null) line.canonicalItem = row.canonicalItem;
+  return line;
+}
+
+/**
+ * Une analyse par son identifiant, tant qu'elle n'a pas expiré ; `null` sinon
+ * (identifiant inconnu, mal formé, analyse expirée ou illisible).
+ */
+export async function loadAnalysis(db: Database, id: string, now = new Date()): Promise<LoadedAnalysis | null> {
+  if (!ANALYSIS_ID.test(id)) return null;
+  const [row] = await db
+    .select()
+    .from(analyses)
+    .where(and(eq(analyses.id, id), gt(analyses.expiresAt, now)))
+    .limit(1);
+  if (!row) return null;
+
+  const stored = storedResultSchema.safeParse(row.result);
+  if (!stored.success) {
+    console.error(`[analyse] contenu illisible pour une analyse enregistrée : ${stored.error.issues[0]?.message ?? ""}`);
+    return null;
+  }
+  const lines = await db
+    .select()
+    .from(priceLines)
+    .where(eq(priceLines.analysisId, id))
+    .orderBy(asc(priceLines.position));
+  const extraction = extractionSchema.safeParse({ ...stored.data.quote, lines: lines.map(storedLine) });
+  if (!extraction.success) {
+    console.error(`[analyse] lecture enregistrée invalide : ${extraction.error.issues[0]?.message ?? ""}`);
+    return null;
+  }
+  const result = row.result as StoredResult;
+  return {
+    id: row.id,
+    createdAt: row.createdAt,
+    expiresAt: row.expiresAt,
+    extraction: extraction.data,
+    findings: result.findings,
+    prices: result.prices,
+    pricesComplete: result.pricesComplete,
+    verdict: result.verdict,
+  };
 }

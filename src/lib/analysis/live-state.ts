@@ -37,6 +37,8 @@ export interface LiveState {
   /** Identifiant de l'analyse enregistrée, `null` si elle ne l'a pas été. */
   readonly analysisId: string | null;
   readonly expiresAt: string | null;
+  /** Date de la correction (ISO). */
+  readonly correctedAt: string | null;
   readonly refusal: { readonly reason: RefusalReason; readonly message: string } | null;
   readonly error: {
     readonly code: AnalysisErrorCode;
@@ -58,13 +60,30 @@ export const INITIAL_LIVE_STATE: LiveState = {
   verdict: null,
   analysisId: null,
   expiresAt: null,
+  correctedAt: null,
   refusal: null,
   error: null,
 };
 
+/** Ce qu'il faut pour afficher une analyse, en direct ou rouverte par son lien. */
+export type AnalysisData = Pick<
+  LiveState,
+  | "header"
+  | "lines"
+  | "extraction"
+  | "findings"
+  | "prices"
+  | "pricesComplete"
+  | "verdict"
+  | "analysisId"
+  | "expiresAt"
+  | "correctedAt"
+  | "remaining"
+>;
+
 export type LiveAction = AnalyzeEvent | { readonly type: "send" } | { readonly type: "reset" };
 
-function headerFromExtraction(extraction: Extraction): ExtractionHeader {
+export function headerFromExtraction(extraction: Extraction): ExtractionHeader {
   return {
     documentKind: extraction.documentKind,
     category: extraction.category,
@@ -114,6 +133,7 @@ export function liveReducer(state: LiveState, action: LiveAction): LiveState {
         verdict: action.result,
         analysisId: action.analysisId,
         expiresAt: action.expiresAt,
+        correctedAt: action.correctedAt,
       };
     case "refused":
       return {

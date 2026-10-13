@@ -1,12 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
-import type { ReactNode, Ref } from "react";
+import { useMemo, type ReactNode, type Ref } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { PriceDelta } from "@/components/signature/PriceDelta";
-import { Stamp } from "@/components/signature/Stamp";
-import { Button } from "@/components/ui/Button";
-import type { LiveState } from "@/lib/analysis/live-state";
+import { Button, ButtonLink, buttonClasses } from "@/components/ui/Button";
+import type { AnalysisData } from "@/lib/analysis/live-state";
 import type { Finding, PriceOpinion } from "@/lib/analysis/result";
 import {
   groupFindings,
@@ -17,69 +16,81 @@ import {
 } from "@/lib/analysis/result-view";
 import { cn } from "@/lib/cn";
 import type { Extraction } from "@/lib/extraction/schema";
+import { formatShortDate } from "@/lib/format";
 import { offsets, reducedFade, transitions } from "@/lib/motion";
-import { describeSource } from "@/lib/price-wording";
+import { buildNegotiation } from "@/lib/negotiation";
+import { VERDICT_LABELS, type Verdict } from "@/lib/scene-quote";
 import { fr } from "@/lib/typography";
+import { NegotiationMessage } from "./NegotiationMessage";
 
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count > 1 ? many : one}`;
 }
 
+const VERDICT_INK: Record<Verdict, string> = {
+  ok: "text-verdict-ok",
+  negotiate: "text-verdict-negotiate",
+  alert: "text-verdict-alert",
+};
+
+const MESSAGE_ANCHOR = "message-a-envoyer";
+
 interface AnalysisResultProps {
-  readonly state: LiveState;
-  readonly headingRef: Ref<HTMLHeadingElement>;
-  readonly onRestart: () => void;
+  readonly data: AnalysisData;
+  readonly headingRef?: Ref<HTMLHeadingElement>;
+  /** Analyse en direct : « Analyser un autre devis » repart sans recharger. */
+  readonly onRestart?: () => void;
 }
 
 /**
- * La conclusion d'une analyse : le tampon, l'économie possible et les points
- * clés, puis le détail. Les erreurs vérifiées et les avis de prix restent
- * dans des blocs séparés : un calcul faux est un fait, un prix est un avis.
+ * La conclusion d'une analyse, sous la feuille corrigée : le verdict en
+ * clair, l'économie possible et les points clés, puis le détail et le
+ * message à envoyer. Les erreurs vérifiées et les avis de prix restent dans
+ * des blocs séparés : un calcul faux est un fait, un prix est un avis.
  */
-export function AnalysisResult({ state, headingRef, onRestart }: AnalysisResultProps) {
+export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultProps) {
   const { reduced } = useMotionPrefs();
-  const { verdict, extraction } = state;
+  const { verdict, extraction } = data;
+  const findings = useMemo(() => data.findings ?? [], [data.findings]);
+  const prices = useMemo(() => data.prices ?? [], [data.prices]);
+  const message = useMemo(
+    () => (extraction ? buildNegotiation({ extraction, findings, prices }) : null),
+    [extraction, findings, prices],
+  );
   if (!verdict || !extraction) return null;
-  const findings = state.findings ?? [];
-  const prices = state.prices ?? [];
   const groups = groupFindings(findings);
-  const stampId = state.analysisId ?? `${extraction.category}-${extraction.lines.length}`;
+  const expiresAt = data.analysisId && data.expiresAt ? new Date(data.expiresAt) : null;
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-8"
       initial={{ opacity: 0, y: offsets.lineRiseY }}
       animate={{ opacity: 1, y: 0 }}
       transition={reduced ? reducedFade() : transitions.message()}
     >
-      <section
-        aria-labelledby="issue-analyse"
-        className="rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6"
-      >
-        <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h2
-              id="issue-analyse"
-              ref={headingRef}
-              tabIndex={-1}
-              className="font-display text-[1.75rem] leading-tight text-ink outline-none"
-            >
-              {fr("Le verdict de Loupe")}
-            </h2>
-            {verdict.savings ? (
-              <p className="mt-2 text-[1.0625rem] text-ink">
-                {fr("Économie possible : ")}
-                <strong className="font-mono font-semibold tabular-nums">{savingsText(verdict.savings)}</strong>
-              </p>
-            ) : null}
-            {verdict.savings && savingsRelyOnAi(prices) ? (
-              <p className="mt-1 text-sm text-ink-muted">
-                {fr("Le haut de la fourchette repose sur une estimation IA, à confiance faible.")}
-              </p>
-            ) : null}
-          </div>
-          <Stamp verdict={verdict.verdict} id={stampId} className="shrink-0 self-start sm:mt-1" />
-        </div>
+      <section aria-labelledby="issue-analyse" className="rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6">
+        <h2
+          id="issue-analyse"
+          ref={headingRef}
+          tabIndex={-1}
+          className="font-mono text-label uppercase text-ink-muted outline-none"
+        >
+          Le verdict de Loupe
+        </h2>
+        <p className={cn("mt-2 font-display text-[2rem] leading-tight", VERDICT_INK[verdict.verdict])}>
+          {VERDICT_LABELS[verdict.verdict]}
+        </p>
+        {verdict.savings ? (
+          <p className="mt-2 text-[1.0625rem] text-ink">
+            {fr("Économie possible : ")}
+            <strong className="font-mono font-semibold tabular-nums">{savingsText(verdict.savings)}</strong>
+          </p>
+        ) : null}
+        {verdict.savings && savingsRelyOnAi(prices) ? (
+          <p className="mt-1 text-sm text-ink-muted">
+            {fr("Le haut de la fourchette repose sur une estimation IA, à confiance faible.")}
+          </p>
+        ) : null}
 
         {verdict.keyPoints.length > 0 ? (
           <ol className="mt-5 space-y-2 border-t border-rule pt-5">
@@ -100,16 +111,36 @@ export function AnalysisResult({ state, headingRef, onRestart }: AnalysisResultP
           </p>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button onClick={onRestart}>Analyser un autre devis</Button>
-          {state.remaining !== null ? (
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          {message ? (
+            <a href={`#${MESSAGE_ANCHOR}`} className={buttonClasses("primary")}>
+              Préparer mon message
+            </a>
+          ) : null}
+          {onRestart ? (
+            <Button variant={message ? "secondary" : "primary"} onClick={onRestart}>
+              Analyser un autre devis
+            </Button>
+          ) : (
+            <ButtonLink href="/analyse" variant={message ? "secondary" : "primary"}>
+              Analyser un autre devis
+            </ButtonLink>
+          )}
+          {data.remaining !== null && onRestart ? (
             <p className="text-sm text-ink-muted">
-              {state.remaining === 0
+              {data.remaining === 0
                 ? "C'était ta dernière analyse du jour."
-                : fr(`Il te reste ${plural(state.remaining, "analyse", "analyses")} aujourd'hui.`)}
+                : fr(`Il te reste ${plural(data.remaining, "analyse", "analyses")} aujourd'hui.`)}
             </p>
           ) : null}
         </div>
+        {expiresAt ? (
+          <p className="mt-4 text-sm text-ink-muted">
+            {fr(
+              `Cette analyse reste consultable à cette adresse jusqu'au ${formatShortDate(expiresAt)}, puis elle est effacée. Personne d'autre ne la voit sans le lien.`,
+            )}
+          </p>
+        ) : null}
       </section>
 
       <ResultBlock title="Erreurs vérifiées" tone="red">
@@ -148,7 +179,7 @@ export function AnalysisResult({ state, headingRef, onRestart }: AnalysisResultP
             )}
           </p>
         )}
-        {!state.pricesComplete ? (
+        {!data.pricesComplete ? (
           <p className="mt-3 text-sm text-ink-muted">
             {fr("Certaines lignes n'ont pas pu être comparées cette fois-ci.")}
           </p>
@@ -166,6 +197,36 @@ export function AnalysisResult({ state, headingRef, onRestart }: AnalysisResultP
           <FindingList findings={groups.reminders} extraction={extraction} />
         </ResultBlock>
       ) : null}
+
+      <section
+        id={MESSAGE_ANCHOR}
+        aria-labelledby="titre-message"
+        className="scroll-mt-6 rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6"
+      >
+        <h3 id="titre-message" className="font-display text-[1.6rem] leading-tight text-ink">
+          {fr("Le message à envoyer")}
+        </h3>
+        {message ? (
+          <>
+            <p className="mt-1 text-sm text-ink-muted">
+              {fr(
+                "Poli et factuel : seulement ce qui est vérifié, jamais une estimation IA. Relis-le, ajuste-le, puis signe-le.",
+              )}
+            </p>
+            <div className="mt-4">
+              <NegotiationMessage message={message} />
+            </div>
+          </>
+        ) : (
+          <p className="mt-2 leading-relaxed text-ink-muted">
+            {verdict.verdict === "ok"
+              ? fr("Rien à négocier : on n'a rien trouvé à redire sur ce devis.")
+              : fr(
+                  "Pas de message à envoyer : les points relevés reposent sur une estimation IA ou sur des chiffres à confirmer. Vérifie-les d'abord sur ton devis.",
+                )}
+          </p>
+        )}
+      </section>
     </motion.div>
   );
 }
@@ -229,7 +290,6 @@ function FindingList({
 }
 
 function PriceItem({ opinion, extraction }: { readonly opinion: PriceOpinion; readonly extraction: Extraction }) {
-  const inRange = opinion.source.kind === "ai" && Math.round(opinion.delta) === 0;
   return (
     <li className="py-3 first:pt-0 last:pb-0">
       <p className="font-medium text-ink">{fr(lineLabel(extraction, opinion.lineIndex) ?? "")}</p>
@@ -238,14 +298,7 @@ function PriceItem({ opinion, extraction }: { readonly opinion: PriceOpinion; re
         {quotedPriceText(opinion)}
       </p>
       <p className="font-mono text-sm tabular-nums text-ink-muted">{referenceText(opinion)}</p>
-      {inRange ? (
-        <div className="mt-2 text-sm leading-snug">
-          <p className="text-ink">{fr("Dans la fourchette de l'estimation IA.")}</p>
-          <p className="mt-1 font-mono text-label uppercase text-ink-muted">{describeSource(opinion.source)}</p>
-        </div>
-      ) : (
-        <PriceDelta amount={opinion.delta} source={opinion.source} className="mt-2" />
-      )}
+      <PriceDelta amount={opinion.delta} source={opinion.source} className="mt-2" />
     </li>
   );
 }

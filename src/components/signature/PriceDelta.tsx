@@ -45,6 +45,8 @@ export function PriceDelta({
   const phrase = describeDelta(amount, source);
   const caption = describeSource(source);
   const rounded = Math.round(amount);
+  // Dans la fourchette d'une estimation IA, il n'y a pas d'écart à compter : la phrase suffit.
+  const inRange = source.kind === "ai" && rounded === 0;
   const tone =
     source.kind === "ai"
       ? "text-ink"
@@ -76,20 +78,24 @@ export function PriceDelta({
       animate={{ opacity: active ? 1 : 0 }}
       transition={reduced ? reducedFade(delay) : transitions.fadeIn(delay)}
     >
-      <p className="sr-only">{`${finalText} ${phrase} (${caption.toLowerCase()})`}</p>
+      <p className="sr-only">
+        {inRange ? `Prix ${phrase} (${caption.toLowerCase()})` : `${finalText} ${phrase} (${caption.toLowerCase()})`}
+      </p>
       <p aria-hidden className="flex flex-wrap items-baseline gap-x-2">
-        <motion.span
-          className={cn(
-            "inline-block text-right font-mono font-semibold tabular-nums",
-            size === "sm" ? "text-[1rem]" : "text-[1.15rem]",
-            tone,
-            source.kind === "ai" && "underline decoration-dotted decoration-1 underline-offset-4",
-          )}
-          style={{ minWidth: `${finalText.length}ch` }}
-        >
-          {shown}
-        </motion.span>
-        <span className="text-ink">{phrase}</span>
+        {inRange ? null : (
+          <motion.span
+            className={cn(
+              "inline-block text-right font-mono font-semibold tabular-nums",
+              size === "sm" ? "text-[1rem]" : "text-[1.15rem]",
+              tone,
+              source.kind === "ai" && "underline decoration-dotted decoration-1 underline-offset-4",
+            )}
+            style={{ minWidth: `${finalText.length}ch` }}
+          >
+            {shown}
+          </motion.span>
+        )}
+        <span className="text-ink">{inRange ? `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}` : phrase}</span>
       </p>
       <p aria-hidden className="mt-1 font-mono text-label uppercase text-ink-muted">
         {caption}

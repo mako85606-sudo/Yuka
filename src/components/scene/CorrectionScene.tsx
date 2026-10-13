@@ -3,55 +3,69 @@
 import { useMemo, useState } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { GhostLines } from "@/components/quote/GhostLines";
+import { HeaderPlaceholder } from "@/components/quote/HeaderPlaceholder";
 import { QuoteHeader } from "@/components/quote/QuoteHeader";
 import { QuoteLine } from "@/components/quote/QuoteLine";
 import { QuoteTotals } from "@/components/quote/QuoteTotals";
+import { SheetRemarks } from "@/components/quote/SheetRemarks";
 import { PaperSheet } from "@/components/signature/PaperSheet";
 import { Stamp } from "@/components/signature/Stamp";
 import { issuesSchedule, lineSchedule, priceSchedule, verdictBeats } from "@/lib/choreography";
 import { cn } from "@/lib/cn";
 import { hasReached, type ScenePhase } from "@/lib/phases";
-import type { SceneQuote } from "@/lib/scene-quote";
+import { annotationCount, issueSeverity, type CorrectionQuote } from "@/lib/scene-quote";
 
 interface CorrectionSceneProps {
-  readonly quote: SceneQuote;
+  readonly quote: CorrectionQuote;
   /** Étape atteinte : chaque bloc s'anime quand son étape arrive. */
   readonly phase: ScenePhase;
+  /**
+   * Lecture en direct : les lignes apparaissent au moment où elles sont lues
+   * (sans décalage calculé), et des lignes fantômes attendent la suite.
+   */
+  readonly live?: boolean;
   /** Joue le dépôt de la feuille au montage. Faux : la feuille est déjà posée. */
   readonly entrance?: boolean;
   /** Version resserrée, pour la démo de la landing. */
   readonly compact?: boolean;
+  /** Nom accessible de la feuille. */
+  readonly label?: string;
   readonly className?: string;
 }
 
 /**
  * La correction complète d'un devis : dépôt de la feuille, lecture (scan et
- * lignes), vérifications (surligneur, cercle, note), prix (compteurs), verdict
- * (tampon et secousse).
+ * lignes), vérifications (surligneur, cercle, note ; sur les lignes, puis sur
+ * les totaux, puis les remarques sur le devis entier), prix (compteurs),
+ * verdict (tampon et secousse).
  *
  * Tout ce qui est connu est posé dès le départ, invisible : la mise en page ne
  * bouge pas pendant la correction, seuls opacité, transformations et tracés
- * s'animent quand leur étape arrive. L'ordre à l'intérieur de chaque bloc vient
- * de `@/lib/choreography`.
+ * s'animent quand leur étape arrive. En direct, ce qui n'est pas encore connu
+ * arrive avec son étape. L'ordre à l'intérieur de chaque bloc vient de
+ * `@/lib/choreography`.
  */
 export function CorrectionScene({
   quote,
   phase,
+  live = false,
   entrance = true,
   compact = false,
+  label,
   className,
 }: CorrectionSceneProps) {
   const { reduced } = useMotionPrefs();
   const [shakeKey, setShakeKey] = useState(0);
+  const totalIssues = quote.totalIssues ?? [];
+  const remarks = quote.remarks ?? [];
 
   const lineTimes = useMemo(
     () => lineSchedule(quote.lines.length, { reduced }),
     [quote.lines.length, reduced],
   );
-  const issueTimes = useMemo(
-    () => issuesSchedule(quote.issues.length, { reduced }),
-    [quote.issues.length, reduced],
-  );
+  // Un seul calendrier pour toute la vérification : lignes, puis totaux, puis remarques.
+  const gestures = annotationCount(quote);
+  const issueTimes = useMemo(() => issuesSchedule(gestures, { reduced }), [gestures, reduced]);
   const priceTimes = useMemo(
     () => priceSchedule(quote.prices.length, { reduced }),
     [quote.prices.length, reduced],
@@ -63,6 +77,9 @@ export function CorrectionScene({
   const pricesActive = hasReached(phase, "pricing");
   const verdictActive = hasReached(phase, "verdict");
   const lastLine = lineTimes[lineTimes.length - 1];
+  const totalsOffset = quote.issues.length;
+  const remarksOffset = totalsOffset + totalIssues.length;
+  const reading = live && quote.totals === null;
 
   return (
     <PaperSheet
@@ -70,26 +87,33 @@ export function CorrectionScene({
       entrance={entrance}
       scanning={phase === "reading"}
       shakeKey={shakeKey}
+      label={label}
     >
-      <QuoteHeader
-        category={quote.category}
-        department={quote.department}
-        title={quote.title}
-        issuedAt={quote.issuedAt}
-        validityDays={quote.validityDays}
-        compact={compact}
-        stamp={
-          <Stamp
-            verdict={quote.verdict}
-            id={quote.id}
-            date={quote.correctedAt}
-            active={verdictActive}
-            delay={verdict.stamp.start}
-            size={compact ? "sm" : "md"}
-            onImpact={() => setShakeKey((key) => key + 1)}
-          />
-        }
-      />
+      {quote.title === null ? (
+        <HeaderPlaceholder />
+      ) : (
+        <QuoteHeader
+          category={quote.category ?? ""}
+          department={quote.department}
+          title={quote.title}
+          issuedAt={quote.issuedAt}
+          validityDays={quote.validityDays}
+          compact={compact}
+          stamp={
+            quote.verdict ? (
+              <Stamp
+                verdict={quote.verdict}
+                id={quote.id}
+                date={quote.correctedAt ?? undefined}
+                active={verdictActive}
+                delay={verdict.stamp.start}
+                size={compact ? "sm" : "md"}
+                onImpact={() => setShakeKey((key) => key + 1)}
+              />
+            ) : null
+          }
+        />
+      )}
 
       {/* Largeur de la marge : 9 puis 10rem en compact, sinon 10 puis 12rem sur grand écran. */}
       <div
@@ -130,7 +154,7 @@ export function CorrectionScene({
                     line={line}
                     compact={compact}
                     revealed={linesRevealed}
-                    delay={lineTimes[index]?.start ?? 0}
+                    delay={live ? 0 : (lineTimes[index]?.start ?? 0)}
                     issue={
                       issue && issueBeats
                         ? {
@@ -139,6 +163,7 @@ export function CorrectionScene({
                             detail: issue.detail,
                             beats: issueBeats,
                             active: issuesActive,
+                            circled: issueSeverity(issue) !== "unconfirmed",
                           }
                         : undefined
                     }
@@ -156,19 +181,33 @@ export function CorrectionScene({
                 );
               })}
             </ol>
-          ) : (
-            <GhostLines />
-          )}
+          ) : null}
+          {reading ? <GhostLines count={quote.lines.length > 0 ? 1 : undefined} /> : null}
+          {!reading && quote.lines.length === 0 ? (
+            <p className="py-6 text-sm text-ink-muted">Aucune ligne lue.</p>
+          ) : null}
         </div>
-        {quote.lines.length > 0 ? (
+        {quote.totals ? (
           <QuoteTotals
             totals={quote.totals}
             vatRate={quote.vatRate}
             revealed={linesRevealed}
-            delay={lastLine?.start ?? 0}
+            delay={live ? 0 : (lastLine?.start ?? 0)}
             compact={compact}
+            issues={totalIssues.flatMap((issue, index) => {
+              const beats = issueTimes[totalsOffset + index];
+              return beats
+                ? [{ ...issue, beats, active: issuesActive, circled: issue.severity !== "unconfirmed" }]
+                : [];
+            })}
           />
         ) : null}
+        <SheetRemarks
+          remarks={remarks}
+          schedule={remarks.map((_, index) => issueTimes[remarksOffset + index]?.highlight ?? { start: 0, duration: 0 })}
+          active={issuesActive}
+          compact={compact}
+        />
       </div>
     </PaperSheet>
   );

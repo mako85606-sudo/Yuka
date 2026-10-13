@@ -107,6 +107,7 @@ describe("streamAnalysis", () => {
       result: { verdict: "ok", savings: null, keyPoints: [], overcharge: 0 },
       analysisId: null,
       expiresAt: null,
+      correctedAt: "2026-10-13T10:00:00.000Z",
     });
     const complete = await collect(async () => ndjson([extracted, verdict]));
     expect(complete.map((event) => event.type)).toEqual(["extracted", "verdict"]);

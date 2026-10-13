@@ -67,7 +67,13 @@ describe("liveReducer", () => {
       { type: "step", step: "pricing" },
       { type: "prices", prices: [], complete: false },
       { type: "step", step: "verdict" },
-      { type: "verdict", result: verdict, analysisId: "abc", expiresAt: "2026-11-12T10:00:00.000Z" },
+      {
+        type: "verdict",
+        result: verdict,
+        analysisId: "abc",
+        expiresAt: "2026-11-12T10:00:00.000Z",
+        correctedAt: "2026-10-13T10:00:00.000Z",
+      },
     ]);
     expect(state).toMatchObject({
       status: "done",
@@ -77,6 +83,7 @@ describe("liveReducer", () => {
       pricesComplete: false,
       verdict,
       analysisId: "abc",
+      correctedAt: "2026-10-13T10:00:00.000Z",
     });
     expect(isRunning(state)).toBe(false);
   });

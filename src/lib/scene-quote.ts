@@ -2,9 +2,10 @@ import type { PriceSource } from "@/lib/price-wording";
 
 /**
  * Ce que la scène de correction affiche : un devis reconstruit (jamais de nom,
- * d'adresse ni de numéro), ses problèmes vérifiés, ses avis de prix et le
- * verdict. Les démos le remplissent avec des données fictives ; l'écran de
- * résultat le remplira à partir de l'analyse réelle.
+ * d'adresse ni de numéro), ses problèmes, ses avis de prix et le verdict. Les
+ * démos le remplissent avec des données fictives et complètes (`SceneQuote`) ;
+ * l'écran de résultat, à partir de l'analyse réelle, avec ce qui a été lu
+ * (`CorrectionQuote`, valeurs absentes permises).
  */
 
 export type Verdict = "ok" | "negotiate" | "alert";
@@ -41,6 +42,13 @@ export interface SceneLine extends PrintedLine {
 
 export type IssueKind = "calculation" | "vague-line";
 
+/**
+ * `error` : erreur vérifiée. `warning` : point d'attention (ligne vague).
+ * Les deux sont entourés au stylo rouge. `unconfirmed` : chiffres mal lus,
+ * à confirmer sur le devis : surligné et annoté, jamais entouré.
+ */
+export type IssueSeverity = "error" | "warning" | "unconfirmed";
+
 export interface SceneIssue {
   readonly id: string;
   readonly kind: IssueKind;
@@ -48,6 +56,30 @@ export interface SceneIssue {
   /** Note manuscrite, courte. */
   readonly note: string;
   /** Explication complète, pour les lecteurs d'écran. */
+  readonly detail: string;
+  /** Par défaut : `error` pour un calcul, `warning` pour une ligne vague. */
+  readonly severity?: IssueSeverity;
+}
+
+export type TotalRow = "totalHT" | "totalVAT" | "totalTTC";
+
+/** Problème sur un total : entouré sur la feuille, noté dans la marge. */
+export interface TotalIssue {
+  readonly id: string;
+  readonly row: TotalRow;
+  readonly note: string;
+  readonly detail: string;
+  readonly severity: IssueSeverity;
+}
+
+/** `reminder` : rappel utile, sans reproche (délai de rétractation). */
+export type RemarkTone = IssueSeverity | "reminder";
+
+/** Remarque sur le devis entier (mention absente, acompte, rétractation), en bas de la feuille. */
+export interface SheetRemark {
+  readonly id: string;
+  readonly tone: RemarkTone;
+  readonly note: string;
   readonly detail: string;
 }
 
@@ -71,8 +103,34 @@ export interface SceneTotals extends PrintedTotals {
   readonly totalTTC: number;
 }
 
-export interface SceneQuote {
+/** Un devis à corriger, tel qu'on le connaît à un instant donné de l'analyse. */
+export interface CorrectionQuote {
+  /** Identifiant stable : il fixe le tracé du tampon. */
   readonly id: string;
+  /** Catégorie lisible (« Plomberie ») ; `null` tant que l'en-tête n'est pas lu. */
+  readonly category: string | null;
+  /** Département lisible (« Rhône (69) »). */
+  readonly department: string | null;
+  /** Objet du devis ; `null` tant que l'en-tête n'est pas lu. */
+  readonly title: string | null;
+  readonly issuedAt: Date | null;
+  readonly validityDays: number | null;
+  /** Taux de TVA unique, en fraction ; `null` s'il varie ou manque. */
+  readonly vatRate: number | null;
+  readonly lines: readonly PrintedLine[];
+  /** Totaux tels qu'écrits ; `null` tant que la lecture n'est pas finie. */
+  readonly totals: PrintedTotals | null;
+  readonly issues: readonly SceneIssue[];
+  readonly totalIssues?: readonly TotalIssue[];
+  readonly remarks?: readonly SheetRemark[];
+  readonly prices: readonly ScenePrice[];
+  /** `null` tant que le verdict n'est pas rendu. */
+  readonly verdict: Verdict | null;
+  readonly correctedAt: Date | null;
+}
+
+/** Devis d'une démo : tout est connu. */
+export interface SceneQuote extends CorrectionQuote {
   readonly category: string;
   readonly department: string;
   readonly title: string;
@@ -82,10 +140,18 @@ export interface SceneQuote {
   readonly lines: readonly SceneLine[];
   /** Totaux tels qu'écrits sur le devis. */
   readonly totals: SceneTotals;
-  readonly issues: readonly SceneIssue[];
-  readonly prices: readonly ScenePrice[];
   readonly verdict: Verdict;
   readonly correctedAt: Date;
+}
+
+/** Sévérité effective d'un problème de ligne. */
+export function issueSeverity(issue: SceneIssue): IssueSeverity {
+  return issue.severity ?? (issue.kind === "calculation" ? "error" : "warning");
+}
+
+/** Nombre de gestes de la phase de vérification : lignes, totaux, remarques. */
+export function annotationCount(quote: CorrectionQuote): number {
+  return quote.issues.length + (quote.totalIssues?.length ?? 0) + (quote.remarks?.length ?? 0);
 }
 
 /** Arrondi au centime. */

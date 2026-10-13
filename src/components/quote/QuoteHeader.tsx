@@ -68,7 +68,8 @@ export function QuoteHeader({
         <div
           className={cn(
             "relative flex shrink-0 items-center justify-center rounded-[2px] border border-rule",
-            compact ? "h-[5.75rem] w-[10rem] sm:w-[12rem]" : "h-28 sm:w-[17rem]",
+            // Le libellé occupe le haut du cadre : le tampon, incliné, se pose dessous sans le couvrir.
+            compact ? "h-[6.5rem] w-[10rem] pt-4 sm:w-[12rem]" : "h-36 pt-5 sm:h-40 sm:w-[18rem] sm:pt-7",
           )}
         >
           <span

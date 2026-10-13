@@ -94,6 +94,12 @@ export const demoLoop = {
   hold: 3.6,
 } as const;
 
+/** Retours qui restent affichés un moment, en secondes. */
+export const holds = {
+  /** « Copié » reste sur le bouton, puis il redevient « Copier ». */
+  copied: 2,
+} as const;
+
 /** Distances en pixels. */
 export const offsets = {
   sheetDropY: 40,

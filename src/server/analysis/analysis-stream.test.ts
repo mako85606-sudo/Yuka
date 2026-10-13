@@ -65,6 +65,7 @@ describe("createAnalysisStream", () => {
     const last = events.at(-1);
     if (last?.type !== "verdict") throw new Error("verdict attendu");
     expect(last.analysisId).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect(Math.abs(new Date(last.correctedAt).getTime() - Date.now())).toBeLessThan(60_000);
     expect(new Date(last.expiresAt ?? "").getTime()).toBeGreaterThan(Date.now() + 29 * 24 * 60 * 60 * 1000);
 
     const id = last.analysisId ?? "";

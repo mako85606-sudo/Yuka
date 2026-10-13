@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "Scanner mon devis",
   description: "Prends ton devis en photo ou dépose le PDF : Loupe le lit et le corrige.",
   robots: { index: false, follow: false },
+  // Après l'analyse, l'adresse devient celle du résultat : elle ne doit pas fuiter vers les liens sortants.
+  referrer: "no-referrer",
 };
 
 /** Dépôt du devis (photo ou PDF, consentement) puis lecture en direct. */

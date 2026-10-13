@@ -53,6 +53,8 @@ export type AnalyzeEvent =
       readonly result: VerdictResult;
       readonly analysisId: string | null;
       readonly expiresAt: string | null;
+      /** Date de la correction (ISO), imprimée dans le tampon. */
+      readonly correctedAt: string;
     }
   /** Document refusé, sans analyse ni stockage. */
   | { readonly type: "refused"; readonly reason: RefusalReason; readonly message: string }

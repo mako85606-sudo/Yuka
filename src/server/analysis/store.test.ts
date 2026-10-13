@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { VerdictResult } from "@/lib/analysis/result";
 import { runChecks } from "@/lib/checks";
 import type { Extraction } from "@/lib/extraction/schema";
@@ -7,7 +7,14 @@ import { EMPTY_USAGE } from "@/lib/llm-cost";
 import { analyses, priceLines } from "@/server/db/schema";
 import { cleanExtraction, extractionWith, withLine } from "@/test/extraction";
 import { createTestDb } from "@/test/test-db";
-import { newAnalysisId, purgeExpiredAnalyses, quoteFingerprint, saveAnalysis, type StoredResult } from "./store";
+import {
+  loadAnalysis,
+  newAnalysisId,
+  purgeExpiredAnalyses,
+  quoteFingerprint,
+  saveAnalysis,
+  type StoredResult,
+} from "./store";
 
 const { db, close } = await createTestDb();
 
@@ -124,6 +131,35 @@ describe("saveAnalysis", () => {
     const [row] = await db.select().from(analyses).where(eq(analyses.id, nowhere.id));
     expect(row).toMatchObject({ department: null, region: null });
     expect((await linesOf(nowhere.id)).some((line) => line.comparable)).toBe(false);
+  });
+});
+
+describe("loadAnalysis", () => {
+  it("rouvre une analyse telle qu'elle a été conclue, lignes comprises", async () => {
+    const extraction = extractionWith({ meta: { quoteDate: "2026-08-10" } });
+    const saved = await save(extraction);
+    const loaded = await loadAnalysis(db, saved.id, NOW);
+    expect(loaded).not.toBeNull();
+    expect(loaded?.extraction).toEqual(extraction);
+    expect(loaded?.verdict).toEqual(verdict);
+    expect(loaded?.findings).toEqual(runChecks(extraction));
+    expect(loaded?.createdAt.toISOString()).toBe(NOW.toISOString());
+  });
+
+  it("ne rouvre ni une analyse expirée, ni un identifiant inconnu ou mal formé", async () => {
+    const saved = await save(extractionWith({ meta: { quoteDate: "2026-08-11" } }));
+    expect(await loadAnalysis(db, saved.id, new Date("2026-11-13T10:00:00Z"))).toBeNull();
+    expect(await loadAnalysis(db, newAnalysisId(), NOW)).toBeNull();
+    expect(await loadAnalysis(db, "../../etc/passwd", NOW)).toBeNull();
+  });
+
+  it("refuse un contenu enregistré illisible plutôt que d'afficher n'importe quoi", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const saved = await save(extractionWith({ meta: { quoteDate: "2026-08-12" } }));
+    await db.update(analyses).set({ result: { version: 2 } }).where(eq(analyses.id, saved.id));
+    expect(await loadAnalysis(db, saved.id, NOW)).toBeNull();
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
   });
 });
 

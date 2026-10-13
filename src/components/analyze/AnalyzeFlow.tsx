@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 import type { ScenePhase } from "@/lib/phases";
 import { fr } from "@/lib/typography";
 import { AnalysisOutcome } from "./AnalysisOutcome";
-import { LiveSheet } from "./LiveSheet";
+import { AnalysisView } from "./AnalysisView";
 import { PagePicker } from "./PagePicker";
 import { StepTracker } from "./StepTracker";
 import { usePages } from "./use-pages";
@@ -41,16 +41,22 @@ type FormError = { readonly field: "pages" | "consent"; readonly message: string
 const STILL_PREPARING = fr("Encore un instant : les photos se préparent.");
 const REMOVE_BROKEN = fr("Retire la page marquée en rouge avant d'envoyer.");
 
+/** Adresse de la page d'analyse, et de celle d'une analyse enregistrée. */
+const ANALYZE_PATH = "/analyse";
+
 /**
  * Le parcours d'une analyse : choisir les pages, accepter, envoyer, puis
- * suivre la lecture en direct. Tout ce qui s'affiche pendant l'analyse
- * vient d'un événement réel du serveur.
+ * suivre la correction en direct. Tout ce qui s'affiche pendant l'analyse
+ * vient d'un événement réel du serveur. Une fois l'analyse enregistrée,
+ * l'adresse devient celle de l'analyse (`/analyse/[id]`), sans recharger.
  */
 export function AnalyzeFlow() {
   const { pages, notice, add, remove, clear } = usePages();
   const [consent, setConsent] = useState(false);
   const [formError, setFormError] = useState<FormError | null>(null);
   const [state, dispatch] = useReducer(liveReducer, INITIAL_LIVE_STATE);
+  // Une feuille neuve à chaque envoi (nouvelle chorégraphie, nouveau tracé de tampon).
+  const [runId, setRunId] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const viewHeading = useRef<HTMLHeadingElement>(null);
   const outcomeHeading = useRef<HTMLHeadingElement>(null);
@@ -61,18 +67,25 @@ export function AnalyzeFlow() {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  // Le focus suit le parcours : vue d'analyse à l'envoi, conclusion à la fin.
+  // Le focus suit le parcours : vue d'analyse à l'envoi, conclusion d'un refus ou d'un échec.
+  // Le verdict, lui, prend le focus quand la correction a fini de s'afficher (`onShown`).
   useEffect(() => {
     if (state.status === "sending") viewHeading.current?.focus();
-    if (state.status === "done" || state.status === "refused" || state.status === "error") {
-      outcomeHeading.current?.focus();
-    }
+    if (state.status === "refused" || state.status === "error") outcomeHeading.current?.focus();
   }, [state.status]);
+
+  // L'analyse enregistrée a son adresse : on peut y revenir, la garder en favori.
+  useEffect(() => {
+    if (state.status === "done" && state.analysisId) {
+      window.history.replaceState(null, "", `${ANALYZE_PATH}/${state.analysisId}`);
+    }
+  }, [state.status, state.analysisId]);
 
   const run = async (files: readonly File[]) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    setRunId((id) => id + 1);
     dispatch({ type: "send" });
     for await (const event of streamAnalysis(files, controller.signal)) {
       if (controller.signal.aborted) return;
@@ -108,6 +121,7 @@ export function AnalyzeFlow() {
 
   const restart = () => {
     abortRef.current?.abort();
+    if (window.location.pathname !== ANALYZE_PATH) window.history.replaceState(null, "", ANALYZE_PATH);
     clear();
     setFormError(null);
     dispatch({ type: "reset" });
@@ -205,7 +219,7 @@ export function AnalyzeFlow() {
     );
   }
 
-  const showSheet = state.status !== "refused" && state.status !== "error";
+  const showView = state.status !== "refused" && state.status !== "error";
   const stepText = running ? (STEP_TEXT[state.step] ?? STEP_TEXT.received) : undefined;
 
   return (
@@ -217,7 +231,7 @@ export function AnalyzeFlow() {
           tabIndex={-1}
           className="font-display text-title text-ink outline-none"
         >
-          {stepText ? stepText.title : "Ton devis"}
+          {stepText ? stepText.title : state.status === "done" ? "Ton devis corrigé" : "Ton devis"}
         </h1>
         {running ? (
           <Button variant="quiet" onClick={cancel} className="mt-2 shrink-0">
@@ -239,8 +253,8 @@ export function AnalyzeFlow() {
         {stepText?.status ?? null}
       </p>
 
-      <div className="mt-8 space-y-8">
-        {!running ? (
+      <div className="mt-6 space-y-8">
+        {state.status === "refused" || state.status === "error" ? (
           <AnalysisOutcome
             state={state}
             headingRef={outcomeHeading}
@@ -248,7 +262,19 @@ export function AnalyzeFlow() {
             onRetry={retry}
           />
         ) : null}
-        {showSheet ? <LiveSheet state={state} /> : null}
+        {showView ? (
+          <AnalysisView
+            key={runId}
+            data={state}
+            target={state.status === "done" ? "done" : state.step}
+            live
+            sheetId={`analyse-${runId}`}
+            headingRef={outcomeHeading}
+            onRestart={restart}
+            // Sans défilement : la feuille tamponnée reste sous les yeux, le lecteur d'écran suit le focus.
+            onShown={() => outcomeHeading.current?.focus({ preventScroll: true })}
+          />
+        ) : null}
       </div>
       <p className="mt-8 text-xs leading-relaxed text-ink-muted">{fr(site.disclaimer)}</p>
     </section>
