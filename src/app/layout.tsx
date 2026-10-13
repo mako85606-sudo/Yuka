@@ -14,25 +14,35 @@ const display = Instrument_Serif({
   display: "swap",
 });
 
-/** Interface. */
+/**
+ * Interface. Pas préchargée : le premier élément affiché est un titre (police
+ * des titres) ; le texte courant s'affiche d'abord avec une police de secours
+ * aux mêmes mesures, puis bascule sans décalage.
+ */
 const sans = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
   display: "swap",
+  preload: false,
 });
 
-/** Montants et lignes de devis. */
+/**
+ * Montants et lignes de devis. Pas préchargée : chaque préchargement retarde
+ * le titre, le plus grand élément du premier écran.
+ */
 const mono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
   display: "swap",
+  preload: false,
 });
 
-/** Annotations manuscrites, avec parcimonie. */
+/** Annotations manuscrites, avec parcimonie. Pas préchargée, pour la même raison. */
 const hand = Caveat({
   subsets: ["latin"],
   variable: "--font-caveat",
   display: "swap",
+  preload: false,
 });
 
 const siteUrl = serverEnv().SITE_URL;

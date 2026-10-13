@@ -5,7 +5,7 @@ import { subscribeToNews } from "@/app/actions/signup";
 import { Button } from "@/components/ui/Button";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
-import { HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup";
+import { HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup-form";
 import { PenTick } from "./PenTick";
 
 const INITIAL_STATE: SignupState = { status: "idle" };

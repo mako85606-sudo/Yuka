@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "tsx scripts/migrate.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
@@ -16,6 +17,7 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:deploy": "tsx scripts/migrate.ts",
     "fixtures:generate": "tsx scripts/generate-fixtures.ts",
     "eval:extraction": "tsx --conditions=react-server scripts/eval-extraction.ts"
   },

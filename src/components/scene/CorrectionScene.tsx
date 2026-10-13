@@ -30,6 +30,8 @@ interface CorrectionSceneProps {
   readonly compact?: boolean;
   /** Nom accessible de la feuille. */
   readonly label?: string;
+  /** Niveau du titre du devis (`h3` par défaut, dans une section de la landing). */
+  readonly titleAs?: "h2" | "h3";
   readonly className?: string;
 }
 
@@ -52,6 +54,7 @@ export function CorrectionScene({
   entrance = true,
   compact = false,
   label,
+  titleAs,
   className,
 }: CorrectionSceneProps) {
   const { reduced } = useMotionPrefs();
@@ -100,6 +103,7 @@ export function CorrectionScene({
           validityDays={quote.validityDays}
           showDates={quote.showDates}
           compact={compact}
+          titleAs={titleAs}
           stamp={
             quote.verdict ? (
               <Stamp

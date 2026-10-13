@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useReducer, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { limits } from "@/config/limits";
@@ -40,6 +41,9 @@ const FORM_ERRORS: readonly AnalysisErrorCode[] = [
 type FormError = { readonly field: "pages" | "consent"; readonly message: string };
 
 const STILL_PREPARING = fr("Encore un instant : les photos se préparent.");
+const BLURRY_CONFIRM = fr(
+  "Une photo semble floue : reprends-la si tu peux (à plat, bien éclairée, sans bouger). Sinon, appuie encore sur « Corriger mon devis » pour l'envoyer quand même.",
+);
 const REMOVE_BROKEN = fr("Retire la page marquée en rouge avant d'envoyer.");
 
 /**
@@ -80,6 +84,8 @@ export function AnalyzeFlow() {
   const { pages, notice, add, remove, clear } = usePages();
   const [consent, setConsent] = useState(false);
   const [formError, setFormError] = useState<FormError | null>(null);
+  // Le visiteur a vu l'avertissement de flou pour ces pages-là : le second envoi passe.
+  const [blurAcknowledged, setBlurAcknowledged] = useState<string | null>(null);
   const [state, dispatch] = useReducer(liveReducer, INITIAL_LIVE_STATE);
   // Une feuille neuve à chaque envoi (nouvelle chorégraphie, nouveau tracé de tampon).
   const [runId, setRunId] = useState(0);
@@ -138,6 +144,11 @@ export function AnalyzeFlow() {
     else if (pages.some((page) => page.status === "error")) error = { field: "pages", message: REMOVE_BROKEN };
     else if (totalBytes > limits.maxUploadBytes) error = { field: "pages", message: ERROR_MESSAGES["too-large"] };
     else if (!consent) error = { field: "consent", message: ERROR_MESSAGES["consent-required"] };
+    const blurryPages = pages.filter((page) => page.blurry).map((page) => page.id).join(",");
+    if (!error && blurryPages && blurAcknowledged !== blurryPages) {
+      error = { field: "pages", message: BLURRY_CONFIRM };
+      setBlurAcknowledged(blurryPages);
+    }
     setFormError(error);
     if (!error) void run(pages.map((page) => page.file));
   };
@@ -224,6 +235,16 @@ export function AnalyzeFlow() {
                 {fr(
                   `Ton adresse IP n'est jamais enregistrée : seulement une empreinte chiffrée, qui change chaque jour et s'efface au bout de quelques jours. Elle sert à limiter les analyses à ${limits.analysesPerDay} par jour.`,
                 )}
+              </li>
+              <li>
+                {fr("Tout le détail : ")}
+                <Link
+                  href="/confidentialite"
+                  className="text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
+                >
+                  politique de confidentialité
+                </Link>
+                .
               </li>
             </ul>
           </details>

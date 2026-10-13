@@ -112,6 +112,7 @@ export function AnalysisView({
             quote={quote}
             phase={shown}
             live={live}
+            titleAs="h2"
             label={target === "done" ? "Devis corrigé" : "Devis en cours de correction"}
           />
         </div>

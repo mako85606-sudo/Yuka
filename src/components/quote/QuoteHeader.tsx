@@ -15,6 +15,8 @@ interface QuoteHeaderProps {
   readonly stamp?: ReactNode;
   /** Version resserrée, pour la démo de la landing. */
   readonly compact?: boolean;
+  /** Niveau du titre : `h2` sous le titre d'une page, `h3` dans une section (démo). */
+  readonly titleAs?: "h2" | "h3";
 }
 
 /** « Daté du 12/09/2026 · valable 30 jours », ou ce qu'on en a lu. */
@@ -43,6 +45,7 @@ export function QuoteHeader({
   showDates = true,
   stamp,
   compact = false,
+  titleAs: Title = "h3",
 }: QuoteHeaderProps) {
   return (
     <header
@@ -88,14 +91,14 @@ export function QuoteHeader({
           {stamp}
         </div>
       </div>
-      <h3
+      <Title
         className={cn(
           "font-display text-ink",
           compact ? "mt-3 text-[1.5rem] leading-[1.05] sm:text-[1.75rem]" : "mt-5 text-title",
         )}
       >
         {title}
-      </h3>
+      </Title>
     </header>
   );
 }

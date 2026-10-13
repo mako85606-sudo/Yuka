@@ -8,7 +8,8 @@ import type { QuoteDocument } from "@/server/extraction/prompt";
 
 /**
  * Lecture et contrôle de l'envoi : accord explicite, une à quatre photos ou
- * un seul PDF, 10 Mo au plus, et de vrais fichiers (reconnus à leurs octets).
+ * un seul PDF, `limits.maxUploadBytes` au plus (4 Mo), et de vrais fichiers
+ * (reconnus à leurs octets).
  * Les fichiers restent en mémoire ; rien n'est écrit sur disque.
  */
 

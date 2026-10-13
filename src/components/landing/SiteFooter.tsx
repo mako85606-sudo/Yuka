@@ -1,7 +1,13 @@
+import Link from "next/link";
 import { site } from "@/config/site";
 import { Wordmark } from "./Wordmark";
 
-/** Pied de page : l'avertissement, toujours visible, et nos engagements. */
+const LINKS = [
+  { href: "/confidentialite", label: "Confidentialité" },
+  { href: "/mentions-legales", label: "Mentions légales" },
+] as const;
+
+/** Pied de page : l'avertissement, toujours visible, nos engagements et les pages légales. */
 export function SiteFooter() {
   return (
     <footer className="border-t border-rule">
@@ -12,6 +18,20 @@ export function SiteFooter() {
         <div className="max-w-md space-y-2 text-sm text-ink-muted">
           <p className="text-ink">{site.disclaimer}</p>
           <p>Indépendant, sans publicité, sans lien affilié vers des artisans.</p>
+          <nav aria-label="Informations légales">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-2">
+              {LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </div>
     </footer>

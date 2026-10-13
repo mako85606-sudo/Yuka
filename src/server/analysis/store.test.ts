@@ -8,6 +8,7 @@ import { analyses, priceLines } from "@/server/db/schema";
 import { cleanExtraction, extractionWith, withLine } from "@/test/extraction";
 import { createTestDb } from "@/test/test-db";
 import {
+  deleteAnalysis,
   ensureShareId,
   loadAnalysis,
   loadSharedAnalysis,
@@ -187,6 +188,21 @@ describe("partage", () => {
     const later = new Date("2026-11-13T10:00:00Z");
     expect(await loadSharedAnalysis(db, shareId ?? "", later)).toBeNull();
     expect(await ensureShareId(db, saved.id, later)).toBeNull();
+  });
+});
+
+describe("deleteAnalysis", () => {
+  it("supprime l'analyse et son lien de partage, garde les lignes anonymes détachées", async () => {
+    const saved = await save(extractionWith({ meta: { quoteDate: "2026-08-25" } }));
+    const shareId = await ensureShareId(db, saved.id, NOW);
+    expect(await deleteAnalysis(db, saved.id)).toBe(true);
+    expect(await loadAnalysis(db, saved.id, NOW)).toBeNull();
+    expect(await loadSharedAnalysis(db, shareId ?? "", NOW)).toBeNull();
+    const lines = await db.select().from(priceLines).where(eq(priceLines.fingerprint, quoteFingerprint(extractionWith({ meta: { quoteDate: "2026-08-25" } }))));
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.every((line) => line.analysisId === null)).toBe(true);
+    expect(await deleteAnalysis(db, saved.id)).toBe(false);
+    expect(await deleteAnalysis(db, "pas-un-identifiant")).toBe(false);
   });
 });
 

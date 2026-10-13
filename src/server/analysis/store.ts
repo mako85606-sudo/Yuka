@@ -291,3 +291,14 @@ export async function ensureShareId(db: Database, id: string, now = new Date()):
     .returning({ shareId: analyses.shareId });
   return row?.shareId ?? null;
 }
+
+/**
+ * Supprime une analyse à la demande de qui a son lien privé : la page et son
+ * lien de partage cessent d'exister. Ses lignes de prix restent, anonymes et
+ * détachées. Vrai si une analyse a été supprimée.
+ */
+export async function deleteAnalysis(db: Database, id: string): Promise<boolean> {
+  if (!ANALYSIS_ID.test(id)) return false;
+  const deleted = await db.delete(analyses).where(eq(analyses.id, id)).returning({ id: analyses.id });
+  return deleted.length > 0;
+}

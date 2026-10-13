@@ -1,10 +1,11 @@
 import { limits } from "@/config/limits";
+import { sharpness, toGrayscale } from "@/lib/image-sharpness";
 
 /**
  * Compression des photos dans le navigateur, avant l'envoi : environ 1600 px
  * de large, en JPEG. Le réencodage efface au passage les métadonnées de la
  * photo (EXIF : position GPS, modèle du téléphone) : elles ne quittent jamais
- * le téléphone.
+ * le téléphone. On en profite pour mesurer sa netteté.
  */
 
 export interface Size {
@@ -60,8 +61,29 @@ function dimensions(image: Drawable): Size {
     : { width: image.width, height: image.height };
 }
 
+export interface CompressedPhoto {
+  readonly file: File;
+  /** Netteté mesurée (`src/lib/image-sharpness.ts`) ; voir `isBlurry`. */
+  readonly sharpness: number;
+}
+
+/** Netteté de la photo, mesurée sur une copie réduite (rapide, et indépendante de la résolution). */
+function measureSharpness(image: Drawable): number {
+  const { width, height } = fitWithin(dimensions(image), limits.sharpnessWidth, limits.sharpnessWidth * 3);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return Number.POSITIVE_INFINITY;
+  context.fillStyle = FLATTEN_BACKGROUND;
+  context.fillRect(0, 0, width, height);
+  context.drawImage(image, 0, 0, width, height);
+  const { data } = context.getImageData(0, 0, width, height);
+  return sharpness(toGrayscale(data, width, height), width, height);
+}
+
 /** Lève une erreur si la photo ne peut pas être décodée (format non pris en charge). */
-export async function compressPhoto(file: File): Promise<File> {
+export async function compressPhoto(file: File): Promise<CompressedPhoto> {
   const { image, release } = await decode(file);
   try {
     const { width, height } = fitWithin(dimensions(image), limits.photoMaxWidth, limits.photoMaxHeight);
@@ -77,7 +99,10 @@ export async function compressPhoto(file: File): Promise<File> {
       canvas.toBlob(resolve, "image/jpeg", limits.photoQuality),
     );
     if (!blob) throw new Error("Compression impossible");
-    return new File([blob], jpegName(file.name), { type: "image/jpeg", lastModified: Date.now() });
+    return {
+      file: new File([blob], jpegName(file.name), { type: "image/jpeg", lastModified: Date.now() }),
+      sharpness: measureSharpness(image),
+    };
   } finally {
     release();
   }

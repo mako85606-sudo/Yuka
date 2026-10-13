@@ -166,6 +166,11 @@ function PageThumb({
           Préparation…
         </span>
       ) : null}
+      {page.status === "ready" && page.blurry ? (
+        <span className="absolute inset-x-0 bottom-0 bg-paper-raised py-1 text-center text-xs text-stamp-orange-strong">
+          Floue ?<span className="sr-only"> Cette photo semble floue.</span>
+        </span>
+      ) : null}
       {page.status === "error" ? (
         <span className="absolute inset-x-0 bottom-0 bg-paper-raised py-1 text-center text-xs text-pen-red-strong">
           {page.kind === "pdf" ? "Trop lourd" : "Illisible"}

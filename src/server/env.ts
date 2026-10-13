@@ -21,6 +21,8 @@ const envSchema = z.object({
   ADMIN_PASSWORD: optionalString.pipe(z.string().min(16).optional()).catch(undefined),
   /** Adresse publique du site (« https://loupe.fr »), pour les liens et les images de partage. */
   SITE_URL: optionalString.pipe(z.url().optional()).catch(undefined),
+  /** Fourni par Vercel : le domaine de production (« loupe.vercel.app »), sans protocole. */
+  VERCEL_PROJECT_PRODUCTION_URL: optionalString,
   /** Fourni par Vercel : « production », « preview » ou « development ». */
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional().catch(undefined),
 });
@@ -38,4 +40,14 @@ export function serverEnv(): ServerEnv {
 /** Vrai sur le déploiement de production Vercel : aucun repli de secours n'y est permis. */
 export function isProductionDeployment(env: ServerEnv = serverEnv()): boolean {
   return env.VERCEL_ENV === "production";
+}
+
+/**
+ * Adresse publique du site, pour les liens absolus (plan du site) :
+ * `SITE_URL`, sinon le domaine de production Vercel, sinon le serveur local.
+ */
+export function siteOrigin(env: ServerEnv = serverEnv()): string {
+  if (env.SITE_URL) return env.SITE_URL.replace(/\/$/, "");
+  if (env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return "http://localhost:3000";
 }

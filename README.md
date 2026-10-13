@@ -33,7 +33,9 @@ Pour essayer sur ton téléphone, lance `npm run build` puis `npm start` et ouvr
 | `npm run typecheck` | génère les types des routes puis lance `tsc` |
 | `npm test` | tests Vitest (une passe) |
 | `npm run test:watch` | tests Vitest en continu |
-| `npm run db:migrate` | applique les migrations à la base de `DATABASE_URL` |
+| `npm run db:migrate` | applique les migrations à la base de `DATABASE_URL` (drizzle-kit) |
+| `npm run db:deploy` | applique les migrations sans drizzle-kit ; ne fait rien sans `DATABASE_URL` |
+| `npm run vercel-build` | ce que Vercel lance à chaque déploiement : migrations, puis build |
 | `npm run db:generate` | génère une migration après un changement de `src/server/db/schema.ts` |
 | `npm run fixtures:generate` | régénère les devis PDF fictifs et leur vérité terrain |
 | `npm run eval:extraction` | fait lire les devis fictifs par le modèle et affiche la précision champ par champ |
@@ -58,7 +60,7 @@ Copie `.env.example` en `.env.local` ; chaque variable y est expliquée.
 
 1. Crée une base sur [Neon](https://neon.tech) ou [Supabase](https://supabase.com).
 2. Mets sa chaîne de connexion dans `DATABASE_URL` (`.env.local` en local, réglages du projet sur Vercel).
-3. Lance `npm run db:migrate` une fois, puis après chaque nouvelle migration.
+3. En local, lance `npm run db:migrate` une fois, puis après chaque nouvelle migration. Sur Vercel, rien à faire : chaque déploiement applique les migrations avant le build.
 
 Si la migration échoue avec la chaîne « pooled » (Neon) ou « Transaction pooler » (Supabase), lance-la avec la chaîne directe (« Direct connection »), puis remets la chaîne « pooled » pour le site.
 
@@ -84,3 +86,27 @@ Le script affiche, pour chaque champ (catégorie, mentions, dates, montants, lig
 - **Partage.** Sous une analyse enregistrée, « Partager la correction » crée un lien public `/v/<identifiant>`, distinct du lien privé : il montre la feuille corrigée et le verdict, avec la région au lieu du département, sans date, sans rappel personnel ni message. Il expire avec l'analyse (30 jours) et n'est pas indexé par les moteurs de recherche. Son image de partage est générée par `next/og` (polices dans `assets/fonts`, licence OFL).
 - **Mesure.** Dix événements (`src/lib/events.ts`), sans cookie ni stockage sur l'appareil, envoyés à `/api/events`, gardés dans Postgres (13 mois) et relayés à PostHog (EU) sans adresse IP, sans géolocalisation et sans profil de personne.
 - **`/admin`.** Analyses par jour, verdicts, conversion par étape, catégories, analyses ratées, coût du modèle, sur 30 jours. Session de 12 heures, 10 essais de mot de passe par jour et par adresse.
+
+## Mettre en ligne sur Vercel
+
+Compte une demi-heure la première fois. Il te faut : le dépôt GitHub (il y est déjà), un compte [Vercel](https://vercel.com) relié à GitHub, un compte [Neon](https://neon.tech) (ou Supabase) et une clé API Claude.
+
+1. **La base.** Crée un projet Neon dans la région **Francfort** (AWS Europe Central). Copie la chaîne de connexion « pooled » : c'est `DATABASE_URL`. Les fonctions de Loupe tournent aussi à Francfort (`vercel.json`, région `fra1`) : la base est à côté.
+2. **Les secrets.** Prépare :
+   - `ANTHROPIC_API_KEY` : sur <https://platform.claude.com>, rubrique API keys ;
+   - `IP_HASH_SECRET` : `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` ;
+   - `ADMIN_PASSWORD` : 16 caractères au moins, à garder dans ton gestionnaire de mots de passe ;
+   - `POSTHOG_KEY` (facultatif) : la clé du projet PostHog, hébergement EU.
+3. **La branche.** Vercel met en ligne la branche principale du dépôt (`main`). Le travail est sur `claude/loupe-devis-analyzer-mvp-xy60ma` : fusionne-la dans `main` (une pull request sur GitHub, puis « Merge »), ou choisis cette branche comme branche de production dans les réglages du projet Vercel.
+4. **Le projet.** Sur Vercel : « Add New… » → « Project » → importe le dépôt `Yuka`. Next.js est reconnu tout seul ; ne touche ni à la commande de build ni au dossier de sortie (Vercel lance `npm run vercel-build` : migrations, puis build). Avant « Deploy », ajoute les variables de l'étape 2 et `DATABASE_URL`, pour l'environnement **Production**.
+5. **Le déploiement.** Clique « Deploy ». Dans le journal du build, tu dois voir `[migrations] base à jour.` puis la fin du build. Ouvre l'adresse donnée (`….vercel.app`) : la landing, puis `/analyse` avec un vrai devis, puis `/admin`.
+6. **Ton domaine** (facultatif). Réglages du projet → Domains. Mets ensuite son adresse dans `SITE_URL` (« https://loupe.fr ») et redéploie : les images de partage et le plan du site l'utiliseront.
+7. **Avant d'ouvrir au public.** Complète `src/config/legal.ts` (éditeur, contact, hébergeur, prestataires) : tant que ce n'est pas fait, les pages `/mentions-legales` et `/confidentialite` affichent « à compléter » en rouge.
+
+Bon à savoir :
+
+- **Les déploiements de test** (« Preview », un par branche ou pull request) appliquent eux aussi les migrations à la base qu'ils voient. Ne leur donne pas la base de production : laisse `DATABASE_URL` vide pour Preview (l'analyse y sera fermée), ou donne-leur une autre base (une branche Neon).
+- **Durée d'une analyse.** La route d'analyse peut durer jusqu'à 120 secondes (`maxDuration`). À vérifier : que ton offre Vercel l'autorise (sinon, Vercel coupe plus tôt et l'analyse s'interrompt).
+- **Poids des envois.** Vercel refuse un envoi de plus de 4,5 Mo avant qu'il n'atteigne Loupe (à vérifier dans sa documentation) : Loupe accepte donc 4 Mo au plus, au lieu des 10 Mo prévus. Les photos compressées en pèsent bien moins ; seul un gros PDF scanné est refusé, avec le conseil de prendre les pages en photo.
+- **Offre gratuite.** L'offre Hobby de Vercel est prévue pour un usage personnel, non commercial (à vérifier dans ses conditions) : pour un lancement public, prévois l'offre Pro.
+- **Sécurité.** `next.config.ts` envoie des en-têtes de sécurité (politique de contenu sans aucune ressource tierce, pas d'affichage dans un cadre, HTTPS imposé une fois en ligne).

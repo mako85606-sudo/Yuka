@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useMemo, type ReactNode, type Ref } from "react";
+import { useMemo, useState, type ReactNode, type Ref } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { PriceDelta } from "@/components/signature/PriceDelta";
 import { Button, ButtonLink, buttonClasses } from "@/components/ui/Button";
@@ -21,6 +21,7 @@ import { offsets, reducedFade, transitions } from "@/lib/motion";
 import { buildNegotiation } from "@/lib/negotiation";
 import { VERDICT_LABELS, type Verdict } from "@/lib/scene-quote";
 import { fr } from "@/lib/typography";
+import { DeleteAnalysis } from "./DeleteAnalysis";
 import { DetailedReport } from "./DetailedReport";
 import { NegotiationMessage } from "./NegotiationMessage";
 import { ShareLink } from "./ShareLink";
@@ -52,6 +53,7 @@ interface AnalysisResultProps {
  */
 export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultProps) {
   const { reduced } = useMotionPrefs();
+  const [deleted, setDeleted] = useState(false);
   const { verdict, extraction } = data;
   const findings = useMemo(() => data.findings ?? [], [data.findings]);
   const prices = useMemo(() => data.prices ?? [], [data.prices]);
@@ -61,7 +63,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
   );
   if (!verdict || !extraction) return null;
   const groups = groupFindings(findings);
-  const expiresAt = data.analysisId && data.expiresAt ? new Date(data.expiresAt) : null;
+  const expiresAt = data.analysisId && data.expiresAt && !deleted ? new Date(data.expiresAt) : null;
 
   return (
     <motion.div
@@ -234,8 +236,9 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
         <h3 id="titre-suite" className="font-display text-[1.45rem] leading-tight text-ink">
           {fr("Et maintenant ?")}
         </h3>
-        {data.analysisId ? <ShareLink analysisId={data.analysisId} expiresAt={data.expiresAt} /> : null}
+        {data.analysisId && !deleted ? <ShareLink analysisId={data.analysisId} expiresAt={data.expiresAt} /> : null}
         <DetailedReport />
+        {data.analysisId ? <DeleteAnalysis analysisId={data.analysisId} onDeleted={() => setDeleted(true)} /> : null}
       </section>
     </motion.div>
   );

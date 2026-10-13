@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { limits } from "@/config/limits";
 import { mergePages, pageKind, type PageKind } from "@/lib/analysis/pages";
 import { compressPhoto } from "@/lib/image-compression";
+import { isBlurry } from "@/lib/image-sharpness";
 import { fr } from "@/lib/typography";
 
 export type PageStatus = "preparing" | "ready" | "error";
@@ -16,9 +17,14 @@ export interface PageItem {
   /** Aperçu local (il ne quitte pas le navigateur) ; `null` pour un PDF. */
   readonly previewUrl: string | null;
   readonly status: PageStatus;
+  /** Vrai si la photo semble floue (on prévient, sans empêcher l'envoi). */
+  readonly blurry: boolean;
 }
 
 const PREPARE_FAILED = fr("Cette photo n'a pas pu être lue : essaie en JPEG, ou reprends-la.");
+export const BLURRY_NOTICE = fr(
+  "Une photo semble floue. Reprends-la à plat, bien éclairée, sans bouger, avec toute la page dans le cadre : la lecture sera bien meilleure.",
+);
 const PDF_TOO_LARGE = fr(
   `Ce PDF dépasse ${Math.round(limits.maxUploadBytes / (1024 * 1024))} Mo : prends plutôt les pages en photo.`,
 );
@@ -66,13 +72,15 @@ export function usePages() {
         .then((compressed) => {
           const current = pagesRef.current.find((item) => item.id === page.id);
           if (!current) return; // retirée entre-temps
-          const previewUrl = createUrl(compressed);
+          const previewUrl = createUrl(compressed.file);
           releaseUrl(current.previewUrl);
+          const blurry = isBlurry(compressed.sharpness);
           commit(
             pagesRef.current.map((item) =>
-              item.id === page.id ? { ...item, file: compressed, previewUrl, status: "ready" } : item,
+              item.id === page.id ? { ...item, file: compressed.file, previewUrl, status: "ready", blurry } : item,
             ),
           );
+          if (blurry) setNotice(BLURRY_NOTICE);
         })
         .catch(() => {
           if (!pagesRef.current.some((item) => item.id === page.id)) return;
@@ -98,6 +106,7 @@ export function usePages() {
           file,
           previewUrl: kind === "image" ? createUrl(file) : null,
           status: kind === "image" ? "preparing" : tooLarge ? "error" : "ready",
+          blurry: false,
         };
       });
 
@@ -122,8 +131,10 @@ export function usePages() {
     (id: string) => {
       const page = pagesRef.current.find((item) => item.id === id);
       releaseUrl(page?.previewUrl ?? null);
-      commit(pagesRef.current.filter((item) => item.id !== id));
-      setNotice(null);
+      const rest = pagesRef.current.filter((item) => item.id !== id);
+      commit(rest);
+      // L'avertissement de flou reste tant qu'une photo floue reste.
+      setNotice(rest.some((item) => item.blurry) ? BLURRY_NOTICE : null);
     },
     [commit, releaseUrl],
   );

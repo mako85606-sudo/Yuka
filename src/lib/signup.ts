@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HONEYPOT_FIELD, SIGNUP_SOURCES, type SignupSource } from "@/lib/signup-form";
 import { fr } from "@/lib/typography";
 
 /**
@@ -7,10 +8,7 @@ import { fr } from "@/lib/typography";
  * humain : s'il est rempli, c'est un robot.
  */
 
-export const SIGNUP_SOURCES = ["landing", "detailed_report"] as const;
-export type SignupSource = (typeof SIGNUP_SOURCES)[number];
-
-export const HONEYPOT_FIELD = "site_web";
+export { HONEYPOT_FIELD, SIGNUP_SOURCES, type SignupSource, type SignupState } from "@/lib/signup-form";
 
 const INVALID_EMAIL = fr(
   "Cette adresse ne ressemble pas à un email. Vérifie qu'il y a bien un @ et un domaine.",
@@ -55,9 +53,3 @@ export function maskEmail(email: string): string {
   const [local = "", domain = ""] = email.split("@");
   return `${local.slice(0, 1)}***@${domain}`;
 }
-
-export type SignupState =
-  | { readonly status: "idle" }
-  | { readonly status: "success"; readonly message: string }
-  | { readonly status: "invalid"; readonly message: string; readonly email: string }
-  | { readonly status: "unavailable"; readonly message: string };

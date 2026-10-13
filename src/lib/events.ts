@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CATEGORIES } from "@/config/taxonomy";
-import { SIGNUP_SOURCES } from "@/lib/signup";
+import { SIGNUP_SOURCES } from "@/lib/signup-form";
 
 /**
  * Événements de mesure : une liste fermée, chacun avec ses propriétés
