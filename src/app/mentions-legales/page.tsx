@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 /** Mentions légales : éditeur, directeur de la publication, hébergeur. */
 export default function LegalNoticePage() {
   return (
-    <LegalPage title="Mentions légales" updated="13 octobre 2026">
+    <LegalPage title="Mentions légales" path="/mentions-legales" updated="13 octobre 2026">
       <LegalSection title="Éditeur">
         <p>
           <Filled value={legal.publisher.name} />

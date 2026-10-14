@@ -74,8 +74,8 @@ function Tile({ label, value, detail }: { readonly label: string; readonly value
 /** Barre horizontale à une seule teinte ; la valeur est toujours écrite à côté. */
 function Bar({ ratio }: { readonly ratio: number }) {
   return (
-    <span aria-hidden className="block h-2 w-full rounded-full bg-rule">
-      <span className="block h-2 rounded-full bg-ink" style={{ width: `${Math.round(Math.min(1, ratio) * 100)}%` }} />
+    <span aria-hidden className="block h-2 w-full rounded-[1px] bg-rule">
+      <span className="block h-2 rounded-[1px] bg-ink" style={{ width: `${Math.round(Math.min(1, ratio) * 100)}%` }} />
     </span>
   );
 }
@@ -148,7 +148,7 @@ function DailyChart({ days }: { readonly days: AdminStats["days"] }) {
 function VerdictSplit({ verdicts, total }: { readonly verdicts: AdminStats["verdicts"]; readonly total: number }) {
   return (
     <div>
-      <div aria-hidden className="flex h-3 gap-[2px] overflow-hidden rounded-full bg-rule">
+      <div aria-hidden className="flex h-3 gap-[2px] overflow-hidden rounded-[1px] bg-rule">
         {total > 0
           ? VERDICTS.map((verdict) =>
               verdicts[verdict] > 0 ? (

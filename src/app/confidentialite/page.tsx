@@ -17,6 +17,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Confidentialité"
+      path="/confidentialite"
       updated="13 octobre 2026"
       intro="Ton devis dit beaucoup de choses sur toi, ton logement, ta voiture. Loupe en lit le strict nécessaire, n'en garde presque rien, et te dit exactement quoi."
     >

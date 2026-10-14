@@ -7,11 +7,14 @@ import { fr } from "@/lib/typography";
 /** Gabarit des pages légales : un titre, une date, des sections lisibles. */
 export function LegalPage({
   title,
+  path,
   intro,
   updated,
   children,
 }: {
   readonly title: string;
+  /** Adresse de la page : son lien est entouré dans le pied de page. */
+  readonly path: string;
   readonly intro?: string;
   readonly updated: string;
   readonly children: ReactNode;
@@ -25,7 +28,7 @@ export function LegalPage({
         {intro ? <p className="mt-6 text-[1.0625rem] leading-relaxed text-ink">{fr(intro)}</p> : null}
         <div className="mt-10 space-y-10">{children}</div>
       </main>
-      <SiteFooter />
+      <SiteFooter current={path} />
     </>
   );
 }

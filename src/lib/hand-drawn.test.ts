@@ -6,6 +6,9 @@ import {
   inkSplatter,
   inkStroke,
   pencilBox,
+  penRing,
+  RING_VARIANTS,
+  ringVariant,
   penLoop,
   penTick,
   penUnderline,
@@ -175,5 +178,15 @@ describe("penUnderline, penTick et pencilBox", () => {
     expect(pencilBox("l2", 80, 16)).toEqual(pencilBox("l2", 80, 16));
     expect(penTick("l5", 18, 16)).toEqual(penTick("l5", 18, 16));
     expect(penUnderline("l1", 80, 12)).toEqual(penUnderline("l1", 80, 12));
+  });
+});
+
+describe("penRing", () => {
+  it("offre quatre variantes différentes, et toujours la même pour une même cible", () => {
+    const outlines = new Set(Array.from({ length: RING_VARIANTS }, (_, variant) => penRing(variant).outline));
+    expect(outlines.size).toBe(RING_VARIANTS);
+    expect(ringVariant("Questions")).toBe(ringVariant("Questions"));
+    expect(ringVariant("Questions")).toBeGreaterThanOrEqual(0);
+    expect(ringVariant("Questions")).toBeLessThan(RING_VARIANTS);
   });
 });

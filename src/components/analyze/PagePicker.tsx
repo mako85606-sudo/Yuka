@@ -157,7 +157,7 @@ function PageThumb({
         type="button"
         onClick={() => onRemove(page.id)}
         aria-label={`Retirer ${label}`}
-        className="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-full border border-rule bg-paper-raised text-ink hover:bg-paper"
+        className="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-[3px] border border-rule bg-paper-raised text-ink hover:bg-paper"
       >
         <CloseGlyph />
       </button>

@@ -6,6 +6,7 @@ import { Faq } from "@/components/landing/Faq";
 import { HeroSheet } from "@/components/landing/HeroSheet";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { PenTick } from "@/components/landing/PenTick";
+import { Ringed } from "@/components/landing/Ringed";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { StickyCta } from "@/components/landing/StickyCta";
@@ -58,7 +59,7 @@ function Hero() {
             30&nbsp;secondes.
           </h1>
           <p className="mt-5 max-w-[34rem] text-base leading-relaxed text-ink-muted sm:mt-6 sm:text-[1.0625rem]">
-            Un chauffe-eau posé pour 1&nbsp;527&nbsp;€, c&apos;est le bon prix&nbsp;? Prends le devis en photo.
+            Un chauffe-eau posé pour <Ringed seed="hero-prix">1&nbsp;527&nbsp;€</Ringed>, c&apos;est le bon prix&nbsp;? Prends le devis en photo.
             Loupe refait les multiplications, cherche les mentions qui manquent et compare chaque ligne
             aux devis de ta région. S&apos;il y a un souci, tu repars avec un message à envoyer à
             l&apos;artisan.
@@ -109,7 +110,7 @@ function Promises({ className }: { readonly className?: string }) {
     >
       {PROMISES.map((promise) => (
         <li key={promise} className="flex items-center gap-2">
-          <PenTick />
+          <PenTick seed={promise} />
           {promise}
         </li>
       ))}
@@ -146,7 +147,7 @@ function Story() {
     <section aria-labelledby="comment" className="relative z-10 border-t border-rule bg-paper">
       <div className="mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-8 lg:pb-20 lg:pt-28">
         <SectionHeading id="comment" title="Comment ça marche">
-          {fr("Tu t'occupes de la photo. Le reste prend une demi-minute.")}
+          Tu t&apos;occupes de la photo. Le reste prend une <Ringed seed="demi-minute" shape="wide">demi-minute</Ringed>.
         </SectionHeading>
         <div className="mt-8 lg:mt-0">
           <HowItWorks quote={quote} />
@@ -197,7 +198,8 @@ function Checks() {
     <section aria-labelledby="verifications" className="border-t border-rule">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-8 lg:py-28">
         <SectionHeading id="verifications" title="Ce qu'on vérifie">
-          Ligne par ligne, avec la patience d&apos;un prof de maths qui corrige des copies le dimanche soir.
+          <Ringed seed="ligne-par-ligne" shape="wide">Ligne par ligne</Ringed>, avec la patience d&apos;un prof de maths qui corrige des
+          copies le dimanche soir.
         </SectionHeading>
         <ul className="mt-14 grid gap-14 md:grid-cols-3 md:gap-10">
           {CHECKS.map((check) => (

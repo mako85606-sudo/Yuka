@@ -1,5 +1,5 @@
 import { angles } from "@/lib/motion";
-import { between, createRandom } from "@/lib/seeded-random";
+import { between, createRandom, hashString } from "@/lib/seeded-random";
 
 /**
  * Géométrie « tracée à la main » : boucle au stylo rouge, coup de surligneur,
@@ -349,4 +349,32 @@ export function pencilBox(seed: string, width: number, height: number): Point[] 
     { x: left + corner * 2.5, y: top + between(random, -1.5, -0.4) },
     { x: left + corner * 5, y: top + between(random, -2.4, -0.8) },
   ];
+}
+
+/** Le cercle du logo, devenu motif : quatre coups de stylo différents, utilisés à tour de rôle. */
+export const RING_VARIANTS = 4;
+
+/**
+ * Repères d'un anneau : il s'étire sur sa cible. Deux proportions, pour que
+ * l'étirement reste faible et le trait fin : un mot (`word`), ou une cible
+ * large, comme un bouton ou une expression (`wide`).
+ */
+export const RING_BOXES = {
+  word: { width: 120, height: 44 },
+  wide: { width: 210, height: 48 },
+} as const;
+
+export type RingShape = keyof typeof RING_BOXES;
+
+/** Variante d'anneau d'une cible donnée : toujours la même pour la même graine. */
+export function ringVariant(seed: string): number {
+  return hashString(`anneau:${seed}`) % RING_VARIANTS;
+}
+
+/** L'anneau au stylo, variante `variant` : boucle imparfaite, largeur variable, petit dépassement. */
+export function penRing(variant: number, shape: RingShape = "word"): InkStroke {
+  const seed = `anneau-${((variant % RING_VARIANTS) + RING_VARIANTS) % RING_VARIANTS}`;
+  const box = RING_BOXES[shape];
+  const loop = penLoop(seed, box.width, box.height);
+  return inkStroke(seed, loop.points, { min: 0.6, max: 2 });
 }

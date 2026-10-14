@@ -197,19 +197,20 @@
 }
 
 /*
- * Faisceau de scan : le calque fait toute la hauteur de la feuille, le faisceau
- * en occupe le bas (traîne bleue, bord d'attaque net).
+ * Faisceau de scan : le calque fait toute la hauteur de la feuille, le
+ * faisceau en occupe le bas. Une bande à plat et un bord d'attaque net :
+ * pas de dégradé.
  */
 @utility scan-beam {
-  background-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent 82%,
-    color-mix(in srgb, var(--annotation-blue) 6%, transparent) 90%,
-    color-mix(in srgb, var(--annotation-blue) 18%, transparent) 99.2%,
-    color-mix(in srgb, var(--annotation-blue) 65%, transparent) 99.6%,
-    color-mix(in srgb, var(--annotation-blue) 65%, transparent) 100%
-  );
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 18%;
+    background-color: color-mix(in srgb, var(--annotation-blue) 7%, transparent);
+    border-bottom: 2px solid color-mix(in srgb, var(--annotation-blue) 65%, transparent);
+  }
 }
 
 /*
@@ -357,6 +358,30 @@
     animation-iteration-count: infinite;
   }
 
+  /*
+   * L'anneau au stylo (le cercle du logo, devenu motif). Au survol ou au
+   * focus de son parent `.group`, il se trace ; au défilement, il se trace
+   * quand sa cible passe à l'écran (sans cette fonction : déjà tracé).
+   */
+  .ring-hover {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .group:is(:hover, :focus-visible) .ring-hover {
+    stroke-dashoffset: 0;
+    animation: ink-draw var(--d) var(--e) backwards;
+  }
+
+  @supports (animation-timeline: view()) {
+    .ring-view {
+      stroke-dasharray: 1;
+      animation: ink-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 60% cover 45%;
+    }
+  }
+
   /* Changement d'état d'un objet (la feuille de « Comment ça marche ») : une transition, pas un geste. */
   .settle {
     transition-property: transform, opacity;
@@ -421,6 +446,11 @@
 
     .settle {
       transition: none;
+    }
+
+    .group:is(:hover, :focus-visible) .ring-hover,
+    .ring-view {
+      animation: none;
     }
 
     .story-step,

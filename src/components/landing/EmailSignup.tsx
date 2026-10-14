@@ -32,7 +32,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
   if (state.status === "success") {
     return (
       <p role="status" className={cn("flex items-start gap-2.5 text-[1.0625rem]", className)}>
-        <PenTick className="mt-1" />
+        <PenTick seed="inscription" className="mt-1" />
         {state.message}
       </p>
     );
