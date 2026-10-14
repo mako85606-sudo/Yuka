@@ -1,0 +1,51 @@
+"use server";
+
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { clientIp } from "@/lib/client-ip";
+import { fr } from "@/lib/typography";
+import {
+  ADMIN_COOKIE,
+  ADMIN_PATH,
+  adminPassword,
+  createSessionToken,
+  passwordMatches,
+} from "@/server/admin/auth";
+import { isProductionDeployment } from "@/server/env";
+import { consumeAdminAttempt } from "@/server/rate-limit";
+
+export interface AdminSignInState {
+  readonly message: string | null;
+}
+
+/** Un mauvais mot de passe coûte une seconde : de quoi décourager les essais en rafale. */
+const FAILURE_DELAY_MS = 1_000;
+
+export async function signInAdmin(_previous: AdminSignInState, formData: FormData): Promise<AdminSignInState> {
+  const password = adminPassword();
+  if (!password) return { message: fr("L'administration est fermée : ADMIN_PASSWORD n'est pas défini.") };
+
+  if (!(await consumeAdminAttempt(clientIp(await headers())))) {
+    return { message: fr("Trop d'essais aujourd'hui. Réessaie demain.") };
+  }
+  const candidate = formData.get("password");
+  if (typeof candidate !== "string" || !passwordMatches(candidate, password)) {
+    await new Promise((resolve) => setTimeout(resolve, FAILURE_DELAY_MS));
+    return { message: "Mot de passe incorrect." };
+  }
+
+  const { token, expiresAt } = createSessionToken(password);
+  (await cookies()).set(ADMIN_COOKIE, token, {
+    httpOnly: true,
+    secure: isProductionDeployment() || process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: ADMIN_PATH,
+    expires: new Date(expiresAt),
+  });
+  redirect(ADMIN_PATH);
+}
+
+export async function signOutAdmin(): Promise<void> {
+  (await cookies()).delete({ name: ADMIN_COOKIE, path: ADMIN_PATH });
+  redirect(ADMIN_PATH);
+}

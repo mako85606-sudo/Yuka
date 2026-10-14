@@ -1,0 +1,117 @@
+{
+  "id": "03-electricite-tableau",
+  "description": "Électricité, tableau et prises : devis correct, validité en date, acompte en euros.",
+  "expectedOutcome": "extracted",
+  "extraction": {
+    "documentKind": "devis",
+    "category": "electricite",
+    "readability": "good",
+    "subject": "Remplacement du tableau électrique et ajout de prises",
+    "issuer": {
+      "hasCompanyName": true,
+      "hasSiret": true,
+      "hasAddress": true,
+      "hasInsuranceMention": true,
+      "hasValidityDate": true,
+      "hasTravelFees": true,
+      "hasClientIdentity": true,
+      "hasPaymentTerms": true
+    },
+    "meta": {
+      "isDoorToDoorSale": false,
+      "quoteDate": "2026-09-30",
+      "validUntil": "2026-10-30",
+      "depositAmount": 300,
+      "executionDelayDays": 21,
+      "department": "44"
+    },
+    "lines": [
+      {
+        "label": "Tableau électrique 3 rangées équipé (interrupteurs différentiels 30 mA, disjoncteurs)",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "unite",
+        "unitPriceHT": 620,
+        "totalHT": 620,
+        "vatRate": 10,
+        "canonicalItem": "electricite.tableau.fourniture"
+      },
+      {
+        "label": "Main-d'œuvre : dépose de l'ancien tableau, pose et raccordement",
+        "confidence": "high",
+        "quantity": 6,
+        "unit": "heure",
+        "unitPriceHT": 52,
+        "totalHT": 312,
+        "vatRate": 10,
+        "canonicalItem": "electricite.main-oeuvre"
+      },
+      {
+        "label": "Création de prises de courant 16 A",
+        "confidence": "high",
+        "quantity": 4,
+        "unit": "unite",
+        "unitPriceHT": 68,
+        "totalHT": 272,
+        "vatRate": 10,
+        "canonicalItem": "electricite.prise.creation"
+      },
+      {
+        "label": "Câble R2V 3G2,5 mm²",
+        "confidence": "high",
+        "quantity": 25,
+        "unit": "ml",
+        "unitPriceHT": 2.4,
+        "totalHT": 60,
+        "vatRate": 10,
+        "canonicalItem": "electricite.cable"
+      },
+      {
+        "label": "Goulotte PVC 40 × 16",
+        "confidence": "high",
+        "quantity": 12,
+        "unit": "ml",
+        "unitPriceHT": 4.5,
+        "totalHT": 54,
+        "vatRate": 10,
+        "canonicalItem": "electricite.goulotte"
+      },
+      {
+        "label": "Attestation de conformité (Consuel)",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 180,
+        "totalHT": 180,
+        "vatRate": 10
+      },
+      {
+        "label": "Déplacement",
+        "confidence": "high",
+        "quantity": 1,
+        "unit": "forfait",
+        "unitPriceHT": 35,
+        "totalHT": 35,
+        "vatRate": 10,
+        "canonicalItem": "electricite.deplacement"
+      }
+    ],
+    "totals": {
+      "totalHT": 1533,
+      "totalVAT": 153.3,
+      "totalTTC": 1686.3
+    },
+    "confidence": {
+      "category": "high",
+      "issuer": "high",
+      "quoteDate": "high",
+      "validity": "high",
+      "deposit": "high",
+      "executionDelay": "high",
+      "department": "high",
+      "doorToDoorSale": "high",
+      "totals": "high"
+    }
+  },
+  "knownIssues": []
+}

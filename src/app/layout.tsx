@@ -1,0 +1,85 @@
+import type { Metadata, Viewport } from "next";
+import { Caveat, Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { MotionPreferences } from "@/components/motion/MotionPreferences";
+import { site } from "@/config/site";
+import { serverEnv } from "@/server/env";
+import "./globals.css";
+
+/** Titres éditoriaux. */
+const display = Instrument_Serif({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+/**
+ * Interface. Pas préchargée : le premier élément affiché est un titre (police
+ * des titres) ; le texte courant s'affiche d'abord avec une police de secours
+ * aux mêmes mesures, puis bascule sans décalage.
+ */
+const sans = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
+  preload: false,
+});
+
+/**
+ * Montants et lignes de devis. Pas préchargée : chaque préchargement retarde
+ * le titre, le plus grand élément du premier écran.
+ */
+const mono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+  preload: false,
+});
+
+/**
+ * Annotations manuscrites, avec parcimonie. Pas préchargée, pour la même raison.
+ * Une seule graisse : le fichier pèse trois fois moins que la police variable.
+ */
+const hand = Caveat({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-caveat",
+  display: "swap",
+  preload: false,
+});
+
+const siteUrl = serverEnv().SITE_URL;
+
+export const metadata: Metadata = {
+  // Adresse publique du site, pour les liens absolus (images de partage). Sans elle, Next.js
+  // prend l'adresse du déploiement Vercel.
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
+  title: {
+    default: `${site.name} — ${site.tagline}`,
+    template: `%s · ${site.name}`,
+  },
+  description: site.description,
+  applicationName: site.name,
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: site.themeColor.light },
+    { media: "(prefers-color-scheme: dark)", color: site.themeColor.dark },
+  ],
+  colorScheme: "light dark",
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    <html
+      lang="fr"
+      className={`${display.variable} ${sans.variable} ${mono.variable} ${hand.variable}`}
+    >
+      <body className="min-h-dvh font-sans text-ink antialiased">
+        <MotionPreferences>{children}</MotionPreferences>
+      </body>
+    </html>
+  );
+}
