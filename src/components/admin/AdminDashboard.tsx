@@ -53,7 +53,7 @@ function share(part: number, whole: number): string {
 
 function Section({ title, children, note }: { readonly title: string; readonly note?: string; readonly children: ReactNode }) {
   return (
-    <section className="rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6">
+    <section className="surface-paper rounded-[4px] border border-rule p-5 sm:p-6">
       <h2 className="font-display text-[1.5rem] leading-tight text-ink">{title}</h2>
       {note ? <p className="mt-1 text-sm text-ink-muted">{note}</p> : null}
       <div className="mt-4">{children}</div>
@@ -63,7 +63,7 @@ function Section({ title, children, note }: { readonly title: string; readonly n
 
 function Tile({ label, value, detail }: { readonly label: string; readonly value: string; readonly detail?: string }) {
   return (
-    <div className="rounded-[4px] border border-rule bg-paper-raised p-4">
+    <div className="surface-paper rounded-[4px] border border-rule p-4">
       <p className="font-mono text-label uppercase text-ink-muted">{label}</p>
       <p className="mt-2 font-mono text-[1.75rem] font-semibold tabular-nums text-ink">{value}</p>
       {detail ? <p className="mt-1 text-sm text-ink-muted">{detail}</p> : null}
@@ -74,8 +74,8 @@ function Tile({ label, value, detail }: { readonly label: string; readonly value
 /** Barre horizontale à une seule teinte ; la valeur est toujours écrite à côté. */
 function Bar({ ratio }: { readonly ratio: number }) {
   return (
-    <span aria-hidden className="block h-2 w-full rounded-full bg-rule">
-      <span className="block h-2 rounded-full bg-ink" style={{ width: `${Math.round(Math.min(1, ratio) * 100)}%` }} />
+    <span aria-hidden className="block h-2 w-full rounded-[1px] bg-rule">
+      <span className="block h-2 rounded-[1px] bg-ink" style={{ width: `${Math.round(Math.min(1, ratio) * 100)}%` }} />
     </span>
   );
 }
@@ -148,7 +148,7 @@ function DailyChart({ days }: { readonly days: AdminStats["days"] }) {
 function VerdictSplit({ verdicts, total }: { readonly verdicts: AdminStats["verdicts"]; readonly total: number }) {
   return (
     <div>
-      <div aria-hidden className="flex h-3 gap-[2px] overflow-hidden rounded-full bg-rule">
+      <div aria-hidden className="flex h-3 gap-[2px] overflow-hidden rounded-[1px] bg-rule">
         {total > 0
           ? VERDICTS.map((verdict) =>
               verdicts[verdict] > 0 ? (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PenRing } from "@/components/signature/PenRing";
 import { ButtonLink } from "@/components/ui/Button";
 import { Wordmark } from "./Wordmark";
 
@@ -10,14 +11,13 @@ export function SiteHeader() {
         <Wordmark />
       </Link>
       <nav aria-label="Navigation principale" className="flex items-center gap-6">
-        <a
-          href="#verifications"
-          className="hidden text-sm text-ink underline-offset-4 hover:underline sm:inline"
-        >
+        <a href="#verifications" className="group relative hidden text-sm text-ink sm:inline">
           Ce qu&apos;on vérifie
+          <PenRing mode="hover" seed="nav-verifications" />
         </a>
-        <a href="#faq" className="hidden text-sm text-ink underline-offset-4 hover:underline sm:inline">
+        <a href="#faq" className="group relative hidden text-sm text-ink sm:inline">
           Questions
+          <PenRing mode="hover" seed="nav-questions" />
         </a>
         <ButtonLink href="/analyse" size="sm">
           Scanner mon devis

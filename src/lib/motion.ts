@@ -1,4 +1,5 @@
 import type { Transition } from "motion/react";
+import type { CSSProperties } from "react";
 
 /**
  * Langage de mouvement de Loupe.
@@ -41,16 +42,6 @@ export const durations = {
   message: 0.3,
   /** Une demi-respiration de l'étape en cours (aller ou retour). */
   pulse: 0.9,
-  /** Une pièce qui tombe du devis jusqu'au compteur d'économie. */
-  coinFall: 0.72,
-  /** Le cercle d'encre qui s'élargit sous le tampon (démo de la landing). */
-  inkRing: 0.42,
-  /** Un mot du message de la démo qui apparaît. */
-  wordReveal: 0.22,
-  /** Changement d'étape dans « Comment ça marche ». */
-  storyStep: 0.35,
-  /** Éclair de l'appareil photo, dans « Comment ça marche ». */
-  flash: 0.3,
   /** Plafond d'une séquence, par bloc. */
   blockMax: 1.2,
 } as const;
@@ -66,8 +57,10 @@ export const easings = {
   inOut: [0.65, 0, 0.35, 1],
   /** Vitesse constante : secousse, fondus en mouvement réduit. */
   linear: [0, 0, 1, 1],
-  /** Accélère comme une chute : les pièces qui tombent. */
+  /** Accélère jusqu'à l'impact : le tampon qui s'abat. */
   fall: [0.55, 0, 1, 0.45],
+  /** Main qui écrit : départ net, vitesse presque régulière. */
+  write: [0.3, 0.2, 0.55, 1],
 } as const satisfies Record<string, CubicBezier>;
 
 /**
@@ -106,12 +99,70 @@ export const beats = {
  */
 export const LAZY_MOUNT_MARGIN = "600px 0px";
 
-/** Boucle de démo de la landing. */
-export const demoLoop = {
-  /** Temps laissé pour lire le devis corrigé avant de passer au suivant (s). */
-  hold: 3.6,
-  /** Pièces qui tombent au plus, pour un devis à négocier. */
-  coins: 8,
+/**
+ * La feuille du hero : une seule séquence d'environ 3,5 s, jouée en CSS (elle
+ * tourne sans JavaScript). Les lignes se tapent, le stylo entoure le montant
+ * faux, la correction et la note s'écrivent, puis le tampon tombe.
+ */
+export const hero = {
+  /** La page vient de s'afficher : la machine commence à taper. */
+  start: 0.3,
+  /** Une frappe : un caractère. */
+  keystroke: 0.016,
+  /** Plafond d'une ligne tapée. */
+  typeMax: 0.42,
+  /** Entre le début de deux lignes : elles se chevauchent, comme une imprimante pressée. */
+  lineGap: 0.12,
+  /** Le libellé, le détail et le montant d'une même ligne partent à quelques frappes d'écart. */
+  columnGap: 0.06,
+  /** Le stylo entoure le montant. */
+  circle: 0.55,
+  /** Fraction du cercle tracée quand la correction commence. */
+  correctionAfterCircle: 0.85,
+  /** Le chiffre corrigé, écrit à la main. */
+  correction: 0.32,
+  /** La note de marge part un peu après la correction. */
+  noteAfterCorrection: 0.18,
+  /** La note de marge, écrite à la main. */
+  note: 0.55,
+  /** Un temps entre deux gestes du correcteur. */
+  breath: 0.12,
+  /** Le correcteur relit avant de tamponner. */
+  beforeStamp: 0.3,
+  /** Le tampon s'abat : un seul impact, sans rebond. */
+  stamp: 0.16,
+  /**
+   * Sur petit écran, les lignes sont déjà imprimées : la correction commence
+   * dès que la ligne fautive est à l'écran, après ce court délai.
+   */
+  narrowStart: 0.25,
+  /** Une ligne choisie au doigt ou à la souris : le stylo part aussitôt. */
+  pickStart: 0.05,
+} as const;
+
+/**
+ * « Comment ça marche » : une seule feuille qui change avec l'étape lue. Les
+ * gestes d'une étape partent quand elle devient l'étape en cours.
+ */
+export const story = {
+  /** La feuille passe d'un état à l'autre : photo redressée, recul pour le feuillet. */
+  settle: 0.6,
+  /** Un passage de la ligne de scan sur la photo. */
+  scan: 1.6,
+  /** Le premier cadre au crayon part un instant après l'arrivée sur l'étape. */
+  pencilStart: 0.12,
+  /** Un cadre au crayon autour d'une ligne. */
+  pencil: 0.36,
+  /** Entre deux cadres : ligne après ligne. */
+  pencilGap: 0.24,
+  /** Le stylo rouge part un instant après l'arrivée sur l'étape. */
+  penStart: 0.15,
+  /** Le feuillet quadrillé glisse sur le bureau. */
+  slip: 0.45,
+  /** Un mot du message qui s'écrit. */
+  word: 0.16,
+  /** Entre deux mots. */
+  wordGap: 0.045,
 } as const;
 
 /** Retours qui restent affichés un moment, en secondes. */
@@ -129,29 +180,20 @@ export const offsets = {
   noteShiftX: -6,
   shakeX: 2,
   stampFromScale: 1.6,
-  /** La feuille de la démo arrive d'un peu plus haut, comme lancée sur le bureau. */
-  sheetTossY: -36,
-  /** Petit rebond d'une pièce avant sa chute. */
-  coinHopY: -14,
-  /** Dérive latérale maximale d'une pièce pendant sa chute. */
-  coinDriftX: 14,
-  /** Le visuel de « Comment ça marche » glisse légèrement entre deux étapes. */
-  storyShiftY: 10,
+  /** Le feuillet du message arrive d'un peu plus bas. */
+  storySlipFromY: 28,
+  /** La feuille recule vers le haut quand le feuillet arrive. */
+  storyRecedeY: -18,
 } as const;
 
 /** Échelles. */
 export const scales = {
-  /** La feuille lancée arrive un peu plus près, puis se pose. */
-  sheetToss: 1.06,
-  /** Cercle d'encre sous le tampon : de 0,6 à 1,9 fois sa taille. */
-  inkRingFrom: 0.6,
-  inkRingTo: 1.9,
-  /** Le compteur d'économie se gonfle quand la dernière pièce arrive. */
-  pocketPop: 1.06,
-  /** Le devis vu dans le viseur, un peu plus loin. */
-  storyPhoto: 0.94,
-  /** Le devis recule pour laisser la place au message, l'erreur entourée restant visible. */
-  storyMessage: 0.8,
+  /** Le tampon du hero tombe d'un peu plus haut : de 1,3 fois sa taille à 1. */
+  heroStampFrom: 1.3,
+  /** La feuille photographiée, vue d'un peu plus loin. */
+  storyPhoto: 0.86,
+  /** La feuille recule pour laisser la place au feuillet du message. */
+  storyRecede: 0.9,
 } as const;
 
 /** Angles en degrés. */
@@ -159,12 +201,19 @@ export const angles = {
   sheetDrop: 3,
   sheetRest: -0.6,
   sheetExit: -1.5,
-  /** La feuille lancée tourne de 9° avant de se poser. */
-  sheetToss: 9,
-  /** Une pièce tourne sur elle-même en tombant. */
-  coinSpin: 220,
-  /** Le devis tenu devant l'appareil photo, un peu de travers (« Comment ça marche »). */
-  storyPhoto: 2.5,
+  /** La feuille du hero, posée de travers sur le bureau. */
+  heroSheet: 2.5,
+  /** Le tampon du hero. */
+  heroStamp: -6,
+  /** Un chiffre corrigé, écrit à la main, un peu penché. */
+  handNote: -4,
+  /** « Comment ça marche » : la feuille photographiée, couchée sur la table (rotateX) et de biais. */
+  storyPhotoTilt: 24,
+  storyPhotoTurn: -6,
+  /** Le ruban adhésif de l'étiquette « Photo du devis ». */
+  storyTape: -4,
+  /** Le feuillet quadrillé du message. */
+  storySlip: 3,
   stampMin: -12,
   stampMax: -8,
 } as const;
@@ -175,10 +224,6 @@ export const stagger = {
   linesMin: 0.04,
   linesMax: 0.06,
   prices: 0.12,
-  /** Entre deux pièces qui tombent. */
-  coins: 0.06,
-  /** Entre deux mots du message de la démo. */
-  words: 0.025,
 } as const;
 
 /** Positions successives de la micro-secousse (px). */
@@ -272,35 +317,35 @@ export const transitions = {
     ease: easings.out,
     delay,
   }),
-  /** Une pièce : petit rebond, puis chute accélérée ; elle disparaît en arrivant. */
-  coinFall: (delay = 0): Transition => ({
-    x: { duration: durations.coinFall, ease: easings.out, delay },
-    y: { duration: durations.coinFall, ease: [easings.out, easings.fall], times: [0, 0.25, 1], delay },
-    rotate: { duration: durations.coinFall, ease: easings.linear, delay },
-    opacity: { duration: durations.coinFall, ease: easings.linear, times: [0, 0.08, 0.96, 1], delay },
-  }),
-  /** Le cercle s'élargit en s'effaçant, puis reprend sa taille, invisible (rien ne déborde). */
-  inkRing: (delay = 0): Transition => ({
-    scale: { duration: durations.inkRing, ease: easings.out, times: [0, 0.98, 1], delay },
-    opacity: { duration: durations.inkRing, ease: easings.out, times: [0, 0.3, 0.98, 1], delay },
-  }),
-  word: (delay = 0): Transition => ({
-    duration: durations.wordReveal,
-    ease: easings.out,
-    delay,
-  }),
-  /** Le stylo souligne le montant de l'économie. */
-  underline: (delay = 0): Transition => ({
-    pathLength: { duration: durations.highlight, ease: easings.out, delay },
-    opacity: { duration: durations.appear, ease: easings.linear, delay },
-  }),
-  /** Aller-retour d'échelle (trois valeurs) : une tween, un spring n'en accepte que deux. */
-  pocketPop: (delay = 0): Transition => ({ duration: durations.microSlow, ease: easings.out, delay }),
-  storyStep: { duration: durations.storyStep, ease: easings.out } satisfies Transition,
-  flash: (delay = 0): Transition => ({
-    duration: durations.flash,
-    ease: easings.out,
-    times: [0, 0.2, 1],
-    delay,
-  }),
 } as const;
+
+/** Une courbe de motion.ts écrite pour le CSS. */
+export function cssEase(ease: CubicBezier): string {
+  return `cubic-bezier(${ease.join(", ")})`;
+}
+
+/** Un geste joué en CSS : départ, durée et courbe, en variables (`--t`, `--d`, `--e`). */
+export interface CssGesture {
+  readonly start: number;
+  readonly duration: number;
+  readonly ease?: CubicBezier;
+  /** Départ sur petit écran, s'il diffère (la feuille du hero n'y tape pas ses lignes). */
+  readonly narrowStart?: number;
+  /** Nombre de frappes, pour un texte tapé (`--steps`). */
+  readonly steps?: number;
+}
+
+/**
+ * Variables CSS d'un geste, lues par les animations de globals.css : les
+ * durées restent écrites ici, jamais en dur dans une feuille de style.
+ */
+export function cssGesture({ start, duration, ease = easings.out, narrowStart, steps }: CssGesture): CSSProperties {
+  const round = (value: number) => Math.round(value * 1000) / 1000;
+  return {
+    "--t": `${round(start)}s`,
+    "--d": `${round(duration)}s`,
+    "--e": cssEase(ease),
+    ...(narrowStart === undefined ? {} : { "--tn": `${round(narrowStart)}s` }),
+    ...(steps === undefined ? {} : { "--steps": String(Math.max(1, Math.round(steps))) }),
+  } as CSSProperties;
+}

@@ -64,7 +64,7 @@ export const tradeQuotes: readonly DemoQuote[] = [
         id: "carte-garage-calcul",
         kind: "calculation",
         lineId: "l3",
-        note: "1,5 × 70 = 105, pas 140",
+        note: fr("1,5 h × 70 € = 105 €, pas 140"),
         detail: fr("Erreur de calcul : 1,5 heure à 70,00 € fait 105,00 €, le devis indique 140,00 €."),
       },
     ],

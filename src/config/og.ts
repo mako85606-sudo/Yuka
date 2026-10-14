@@ -1,20 +1,22 @@
 /**
  * Couleurs de l'image de partage (`next/og`) : l'image se dessine hors du
- * navigateur, sans les variables CSS. Ce sont les tokens du thème clair de
- * `globals.css`, recopiés ; `tokens.test.ts` vérifie qu'ils restent identiques.
+ * navigateur, sans les variables CSS. Ce sont les tokens de `globals.css`
+ * recopiés : le bureau, puis les encres de la feuille ; `tokens.test.ts`
+ * vérifie qu'ils restent identiques.
  */
 export const ogColors = {
-  paper: "#F6F3EC",
-  paperRaised: "#FFFDF8",
-  ink: "#16140F",
-  inkMuted: "#6B655A",
-  penRed: "#D7372B",
-  annotationBlue: "#2C4E9B",
-  highlighterMark: "#FFE45C",
-  verdictOk: "#1E7F4A",
-  verdictNegotiate: "#B26C25",
-  verdictAlert: "#D7372B",
+  desk: "#221E19",
+  paperRaised: "#F2ECDD",
+  ink: "#2B2119",
+  inkMuted: "#6E6150",
+  penRed: "#D63A2B",
+  verdictOk: "#2B2119",
+  verdictNegotiate: "#B5601A",
+  verdictAlert: "#D63A2B",
 } as const;
+
+/** Ombre de la feuille sur le bureau : courte et nette (pas un token, une ombre). */
+export const ogShadow = "0 6px 14px rgba(10, 8, 5, 0.6)";
 
 /** Taille de l'image de partage (format recommandé par Open Graph). */
 export const ogSize = { width: 1200, height: 630 } as const;

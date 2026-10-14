@@ -32,7 +32,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
   if (state.status === "success") {
     return (
       <p role="status" className={cn("flex items-start gap-2.5 text-[1.0625rem]", className)}>
-        <PenTick className="mt-1" />
+        <PenTick seed="inscription" className="mt-1" />
         {state.message}
       </p>
     );
@@ -66,7 +66,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
           aria-describedby={hasError ? messageId : undefined}
           placeholder="prenom@exemple.fr"
           className={cn(
-            "h-12 min-w-0 flex-1 rounded-[6px] border bg-paper-raised px-4 text-base text-ink placeholder:text-ink-muted",
+            "h-12 min-w-0 flex-1 surface-paper rounded-[6px] border px-4 text-base text-ink placeholder:text-ink-muted",
             state.status === "invalid" ? "border-pen-red-strong" : "border-rule-strong",
           )}
         />

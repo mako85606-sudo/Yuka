@@ -1,4 +1,4 @@
-import { beats, durations, STAMP_IMPACT, stagger, springs } from "@/lib/motion";
+import { beats, durations, hero, STAMP_IMPACT, stagger, springs, story } from "@/lib/motion";
 
 /**
  * Calendrier de la correction : quand chaque geste commence, en secondes,
@@ -140,64 +140,115 @@ export function verdictBeats(options: ScheduleOptions = {}): VerdictBeats {
   };
 }
 
-export interface ChuteBeats {
-  /** Chaque pièce : départ du devis, arrivée au compteur. */
-  readonly coins: readonly Segment[];
-  /** Le compteur d'économie monte pendant que les pièces arrivent. */
-  readonly counter: Segment;
-  /** La dernière pièce arrive : le compteur se gonfle. */
-  readonly pop: number;
-  /** Le stylo souligne le montant. */
-  readonly underline: Segment;
-  /** Le message s'écrit, mot par mot. */
-  readonly words: readonly Segment[];
-  /** Fin de la chute : la démo peut tenir, puis passer au devis suivant. */
+/** Une ligne tapée : nombre de caractères de chaque colonne. */
+export interface TypedRow {
+  readonly label: number;
+  readonly detail: number;
+  readonly amount: number;
+}
+
+export interface TypedRowBeats {
+  readonly label: Segment;
+  readonly detail: Segment;
+  readonly amount: Segment;
+}
+
+/** Les gestes du correcteur sur une ligne : cercle, chiffre corrigé, note de marge. */
+export interface PenBeats {
+  readonly circle: Segment;
+  readonly correction: Segment;
+  readonly note: Segment;
+}
+
+export interface HeroBeats {
+  readonly rows: readonly TypedRowBeats[];
+  /** Dernière frappe. */
+  readonly typingEnd: number;
+  /** La correction sur grand écran, après la frappe. */
+  readonly pen: PenBeats;
+  readonly stamp: Segment;
+  /** Sur petit écran, lignes déjà imprimées : la correction part dès que la ligne est à l'écran. */
+  readonly narrowPen: PenBeats;
+  readonly narrowStamp: Segment;
+  /** Fin de la séquence sur grand écran. */
   readonly end: number;
 }
 
-/**
- * La chute, à la fin d'une démo : les euros en trop tombent du devis dans le
- * compteur d'économie, le montant est souligné, puis le message s'écrit.
- * Deux blocs (pièces, message), chacun sous 1,2 s. En mouvement réduit, tout
- * apparaît d'un seul fondu.
- */
-export function chuteSchedule(
-  coinCount: number,
-  wordCount: number,
-  options: ScheduleOptions = {},
-): ChuteBeats {
-  const { startAt = 0, reduced = false } = options;
-  if (reduced) {
-    const fade = reducedSegment(startAt);
-    return {
-      coins: [],
-      counter: fade,
-      pop: startAt,
-      underline: fade,
-      words: Array.from({ length: wordCount }, () => fade),
-      end: endOf(fade),
-    };
-  }
-
-  const coins = Array.from({ length: Math.max(0, coinCount) }, (_, index) => ({
-    start: startAt + index * stagger.coins,
-    duration: durations.coinFall,
-  }));
-  const firstLand = coins.length > 0 ? endOf(coins[0]!) : startAt;
-  const lastLand = coins.length > 0 ? endOf(coins[coins.length - 1]!) : startAt;
-  const counter = {
-    start: firstLand,
-    duration: coins.length > 0 ? Math.min(durations.counter, Math.max(durations.micro, lastLand - firstLand)) : 0,
+/** Le stylo entoure, la correction s'écrit pendant qu'il referme la boucle, puis la note. */
+export function penBeats(startAt: number): PenBeats {
+  const circle = { start: startAt, duration: hero.circle };
+  const correction = {
+    start: circle.start + hero.circle * hero.correctionAfterCircle,
+    duration: hero.correction,
   };
-  const underline = { start: Math.max(endOf(counter), lastLand), duration: durations.highlight };
+  const note = { start: correction.start + hero.noteAfterCorrection, duration: hero.note };
+  return { circle, correction, note };
+}
 
-  const wordsStart = endOf(underline) + durations.micro;
-  const lastStart = durations.blockMax - durations.wordReveal;
-  const step = wordCount > 1 ? Math.min(stagger.words, lastStart / (wordCount - 1)) : 0;
-  const words = Array.from({ length: wordCount }, (_, index) => ({
-    start: wordsStart + index * step,
-    duration: durations.wordReveal,
+function stampAfter(pen: PenBeats): Segment {
+  return { start: endOf(pen.note) + hero.beforeStamp, duration: hero.stamp };
+}
+
+/**
+ * La séquence du hero, en un seul passage : les lignes se tapent (elles se
+ * chevauchent, le bloc tient en 1,2 s), le stylo entoure le montant faux, la
+ * correction et la note s'écrivent, le correcteur relit, puis le tampon tombe.
+ * Environ 3,5 s en tout.
+ */
+export function heroSchedule(rows: readonly TypedRow[]): HeroBeats {
+  const typed = (start: number, characters: number): Segment => ({
+    start,
+    duration: Math.min(hero.typeMax, Math.max(1, characters) * hero.keystroke),
+  });
+  const beats = rows.map((row, index) => {
+    const start = hero.start + index * hero.lineGap;
+    return {
+      label: typed(start, row.label),
+      detail: typed(start + hero.columnGap, row.detail),
+      amount: typed(start + 2 * hero.columnGap, row.amount),
+    };
+  });
+  const typingEnd = Math.max(
+    hero.start,
+    ...beats.flatMap((row) => [endOf(row.label), endOf(row.detail), endOf(row.amount)]),
+  );
+  const pen = penBeats(typingEnd + hero.breath);
+  const stamp = stampAfter(pen);
+  const narrowPen = penBeats(hero.narrowStart);
+  return { rows: beats, typingEnd, pen, stamp, narrowPen, narrowStamp: stampAfter(narrowPen), end: endOf(stamp) };
+}
+
+export interface StoryBeats {
+  /** Étape « lecture » : un cadre au crayon par ligne, l'un après l'autre. */
+  readonly pencils: readonly Segment[];
+  /** Étape « stylo rouge » : cercle, correction, note, puis l'avis de prix (souligné, noté) et le tampon. */
+  readonly pen: PenBeats;
+  readonly price: PenBeats;
+  readonly stamp: Segment;
+  /** Étape « message » : le feuillet glisse, puis le message s'écrit mot à mot. */
+  readonly slip: Segment;
+  readonly words: readonly Segment[];
+}
+
+/**
+ * Les gestes de « Comment ça marche », comptés depuis l'arrivée sur leur
+ * étape. Le message tient en un bloc de 1,2 s, quelle que soit sa longueur.
+ */
+export function storySchedule(lineCount: number, wordCount: number): StoryBeats {
+  const pencils = Array.from({ length: Math.max(0, lineCount) }, (_, index) => ({
+    start: story.pencilStart + index * story.pencilGap,
+    duration: story.pencil,
   }));
-  const end = words.length > 0 ? endOf(words[words.length - 1]!) : endOf(underline);
-  return { coins, counter, pop: lastLand, underline, words, end };
+  const pen = penBeats(story.penStart);
+  // L'avis de prix suit la correction sans attendre la fin de la note : un seul passage de stylo.
+  const price = penBeats(endOf(pen.correction));
+  const stamp = { start: endOf(price.note) + hero.beforeStamp, duration: hero.stamp };
+  const slip = { start: 0, duration: story.slip };
+  const lastStart = durations.blockMax - story.word;
+  const step = wordCount > 1 ? Math.min(story.wordGap, lastStart / (wordCount - 1)) : 0;
+  const words = Array.from({ length: Math.max(0, wordCount) }, (_, index) => ({
+    start: endOf(slip) + index * step,
+    duration: story.word,
+  }));
+  return { pencils, pen, price, stamp, slip, words };
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ComponentProps } from "react";
+import { PenRing } from "@/components/signature/PenRing";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "secondary" | "quiet";
@@ -9,8 +10,8 @@ const base =
   "inline-flex select-none items-center justify-center gap-2 rounded-[6px] font-medium motion-safe:active:translate-y-px disabled:pointer-events-none disabled:opacity-45";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-paper-raised hover:bg-ink/88",
-  secondary: "border border-rule-strong bg-paper-raised text-ink hover:bg-paper",
+  primary: "bg-ink text-paper hover:bg-ink/88",
+  secondary: "group relative border border-rule-strong text-ink",
   quiet: "text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink",
 };
 
@@ -31,15 +32,26 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly size?: Size;
 }
 
+/** Au survol d'un bouton secondaire, le stylo l'entoure (le cercle du logo, devenu motif). */
+function HoverRing({ variant }: { readonly variant: Variant }) {
+  return variant === "secondary" ? <PenRing mode="hover" shape="wide" className="-inset-x-[0.6em] -inset-y-[0.45em]" /> : null;
+}
+
 /** Bouton de Loupe. Le retour d'appui est une translation d'un pixel. */
 export function Button({
   variant = "primary",
   size = "md",
   className,
   type = "button",
+  children,
   ...props
 }: ButtonProps) {
-  return <button type={type} className={buttonClasses(variant, size, className)} {...props} />;
+  return (
+    <button type={type} className={buttonClasses(variant, size, className)} {...props}>
+      {children}
+      <HoverRing variant={variant} />
+    </button>
+  );
 }
 
 interface ButtonLinkProps extends ComponentProps<typeof Link> {
@@ -48,6 +60,11 @@ interface ButtonLinkProps extends ComponentProps<typeof Link> {
 }
 
 /** Lien de navigation qui a l'allure d'un bouton. */
-export function ButtonLink({ variant = "primary", size = "md", className, ...props }: ButtonLinkProps) {
-  return <Link className={buttonClasses(variant, size, className)} {...props} />;
+export function ButtonLink({ variant = "primary", size = "md", className, children, ...props }: ButtonLinkProps) {
+  return (
+    <Link className={buttonClasses(variant, size, className)} {...props}>
+      {children}
+      <HoverRing variant={variant} />
+    </Link>
+  );
 }

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 /** Mentions légales : éditeur, directeur de la publication, hébergeur. */
 export default function LegalNoticePage() {
   return (
-    <LegalPage title="Mentions légales" updated="13 octobre 2026">
+    <LegalPage title="Mentions légales" path="/mentions-legales" updated="13 octobre 2026">
       <LegalSection title="Éditeur">
         <p>
           <Filled value={legal.publisher.name} />
@@ -62,7 +62,7 @@ export default function LegalNoticePage() {
       <LegalSection title="Polices et crédits">
         <p>
           {fr(
-            "Polices Instrument Serif, Geist, Geist Mono et Caveat, sous licence SIL Open Font License 1.1.",
+            "Polices Instrument Serif, Geist, Geist Mono et La Belle Aurore, sous licence SIL Open Font License 1.1.",
           )}
         </p>
       </LegalSection>

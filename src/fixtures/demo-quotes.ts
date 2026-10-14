@@ -38,7 +38,7 @@ export const plumbingQuote: DemoQuote = {
       id: "calcul-l2",
       kind: "calculation",
       lineId: "l2",
-      note: "4 × 65 = 260, pas 275",
+      note: fr("4 h × 65 € = 260, pas 275"),
       detail: fr("Erreur de calcul : 4 heures à 65,00 € font 260,00 €, le devis indique 275,00 €."),
     },
     {

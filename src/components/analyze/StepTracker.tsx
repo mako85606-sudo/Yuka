@@ -60,10 +60,10 @@ export function StepTracker({
         const state = stepState(target, step, running, available, failed);
         return (
           <li key={target} className="min-w-0">
-            <span className="relative block h-[3px] overflow-hidden rounded-full bg-rule">
+            <span className="relative block h-[3px] overflow-hidden rounded-[1px] bg-rule">
               <motion.span
                 className={cn(
-                  "absolute inset-0 rounded-full",
+                  "absolute inset-0 rounded-[1px]",
                   state === "failed" ? "bg-pen-red-strong" : "bg-ink",
                 )}
                 initial={false}

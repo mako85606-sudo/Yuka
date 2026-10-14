@@ -46,7 +46,7 @@ export function SharedConclusion({ verdict, errors, warnings, savings }: SharedC
       animate={{ opacity: 1, y: 0 }}
       transition={reduced ? reducedFade() : transitions.message()}
     >
-      <section aria-labelledby="verdict-partage" className="rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6">
+      <section aria-labelledby="verdict-partage" className="surface-paper rounded-[4px] border border-rule p-5 sm:p-6">
         <h2 id="verdict-partage" className="font-mono text-label uppercase text-ink-muted">
           Le verdict de Loupe
         </h2>

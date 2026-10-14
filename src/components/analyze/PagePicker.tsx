@@ -62,7 +62,7 @@ export function PagePicker({ pages, notice, onAdd, onRemove, noticeId }: PagePic
         onDrop={handleDrop}
         className={cn(
           "rounded-[4px] border border-dashed p-3 sm:p-4",
-          dragging ? "border-ink bg-paper-raised" : "border-rule-strong",
+          dragging ? "border-ink bg-ink/5" : "border-rule-strong",
         )}
       >
         {pages.length === 0 ? (
@@ -134,7 +134,7 @@ function PageThumb({
 }) {
   const label = page.kind === "pdf" ? "le PDF" : `la page ${number}`;
   return (
-    <li className="relative aspect-[3/4] overflow-hidden rounded-[3px] border border-rule bg-paper-raised">
+    <li className="surface-paper relative aspect-[3/4] overflow-hidden rounded-[3px] border border-rule">
       {page.kind === "image" && page.previewUrl ? (
         // Aperçu local (adresse blob:) : next/image n'a rien à optimiser ici.
         // eslint-disable-next-line @next/next/no-img-element
@@ -157,7 +157,7 @@ function PageThumb({
         type="button"
         onClick={() => onRemove(page.id)}
         aria-label={`Retirer ${label}`}
-        className="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-full border border-rule bg-paper-raised text-ink hover:bg-paper"
+        className="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-[3px] border border-rule bg-paper-raised text-ink hover:bg-paper"
       >
         <CloseGlyph />
       </button>

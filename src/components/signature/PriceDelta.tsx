@@ -27,8 +27,9 @@ interface PriceDeltaProps {
  * (600 ms au plus) et, toujours, sa source et son niveau de confiance.
  *
  * Volontairement distinct des erreurs vérifiées : pas d'encre rouge ici.
- * Orange au-dessus de la référence (il y a matière à négocier), vert en
- * dessous ; une estimation IA reste à l'encre neutre, soulignée en pointillé.
+ * Orange au-dessus de la référence (il y a matière à négocier), encre
+ * neutre en dessous ; une estimation IA reste à l'encre neutre, soulignée en
+ * pointillé.
  */
 export function PriceDelta({
   amount,
@@ -39,7 +40,8 @@ export function PriceDelta({
   className,
 }: PriceDeltaProps) {
   const { reduced, skip } = useMotionPrefs();
-  const counter = useMotionValue(0);
+  // La vraie valeur dès le rendu serveur : le compteur ne repart de zéro que pour s'animer.
+  const counter = useMotionValue(amount);
   const shown = useTransform(counter, (latest) => formatSignedEuros(latest));
   const finalText = formatSignedEuros(amount);
   const phrase = describeDelta(amount, source);
@@ -52,15 +54,10 @@ export function PriceDelta({
       ? "text-ink"
       : rounded > 0
         ? "text-stamp-orange-strong"
-        : rounded < 0
-          ? "text-stamp-green-strong"
-          : "text-ink-muted";
+        : "text-ink";
 
   useEffect(() => {
-    if (!active) {
-      counter.jump(0);
-      return;
-    }
+    if (!active) return;
     if (reduced || skip) {
       // Même chemin que l'animation, sans durée : un saut direct n'était pas toujours affiché
       // quand l'avis apparaissait déjà actif (carte montée à l'approche, mouvement réduit).

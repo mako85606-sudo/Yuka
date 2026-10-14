@@ -70,7 +70,7 @@ export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: Analy
   return (
     <motion.section
       aria-labelledby="issue-analyse"
-      className="rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6"
+      className="surface-paper rounded-[4px] border border-rule p-5 sm:p-6"
       initial={{ opacity: 0, y: offsets.lineRiseY }}
       animate={{ opacity: 1, y: 0 }}
       transition={reduced ? reducedFade() : transitions.message()}

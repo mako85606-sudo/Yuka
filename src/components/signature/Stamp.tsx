@@ -6,7 +6,7 @@ import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { cn } from "@/lib/cn";
 import { formatStampDate } from "@/lib/format";
 import { inkSplatter, stampTilt } from "@/lib/hand-drawn";
-import { offsets, reducedFade, scales, STAMP_IMPACT, transitions } from "@/lib/motion";
+import { offsets, reducedFade, STAMP_IMPACT, transitions } from "@/lib/motion";
 import { VERDICT_LABELS, type Verdict } from "@/lib/scene-quote";
 
 export type { Verdict };
@@ -46,8 +46,6 @@ const SIZES = {
 } as const;
 
 const INK_DROPLETS = 9;
-/** Gouttes du coup de tampon renforcé de la démo. */
-const BURST_DROPLETS = 14;
 
 interface StampProps {
   readonly verdict: Verdict;
@@ -62,8 +60,6 @@ interface StampProps {
   /** Appelé quand le tampon touche la feuille (pour la faire tressaillir). */
   readonly onImpact?: () => void;
   readonly size?: keyof typeof SIZES;
-  /** Coup de tampon renforcé (démo de la landing) : plus d'encre et un cercle qui s'élargit. */
-  readonly burst?: boolean;
   readonly className?: string;
 }
 
@@ -80,12 +76,11 @@ export function Stamp({
   delay = 0,
   onImpact,
   size = "md",
-  burst = false,
   className,
 }: StampProps) {
   const { reduced, skip } = useMotionPrefs();
   const tilt = useMemo(() => stampTilt(id), [id]);
-  const droplets = useMemo(() => inkSplatter(id, burst ? BURST_DROPLETS : INK_DROPLETS), [id, burst]);
+  const droplets = useMemo(() => inkSplatter(id, INK_DROPLETS), [id]);
   const { label, headline, subline, ink } = VERDICTS[verdict];
   const sizes = SIZES[size];
   const impactAt = delay + STAMP_IMPACT;
@@ -135,24 +130,6 @@ export function Stamp({
           ) : null}
         </div>
       </div>
-
-      {burst ? (
-        // Cercle d'encre qui s'élargit à l'impact. Toujours rendu ; invisible en mouvement réduit.
-        <motion.span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[10px] border-2 border-current"
-          initial={{ opacity: 0, scale: scales.inkRingFrom }}
-          animate={
-            active && !reduced
-              ? {
-                  opacity: [0, 0.45, 0, 0],
-                  scale: [scales.inkRingFrom, scales.inkRingTo, scales.inkRingFrom],
-                }
-              : { opacity: 0 }
-          }
-          transition={transitions.inkRing(impactAt)}
-        />
-      ) : null}
 
       {/* Toujours rendues (même DOM côté serveur et client) ; immobiles en mouvement réduit. */}
       {droplets.map((drop, index) => (

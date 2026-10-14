@@ -1,14 +1,16 @@
 "use client";
 
 import { motion, useInView } from "motion/react";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { HighlighterMark } from "@/components/signature/HighlighterMark";
+import { InkStroke } from "@/components/signature/InkStroke";
 import { PaperSheet } from "@/components/signature/PaperSheet";
 import { PriceDelta } from "@/components/signature/PriceDelta";
 import { RedCircle } from "@/components/signature/RedCircle";
 import { endOf, issueBeats } from "@/lib/choreography";
-import { durations, offsets, reducedFade, stagger, transitions } from "@/lib/motion";
+import { inkStroke, penTick } from "@/lib/hand-drawn";
+import { cssGesture, durations, offsets, reducedFade, stagger, transitions } from "@/lib/motion";
 
 type Kind = "calculation" | "mentions" | "prices";
 
@@ -47,7 +49,7 @@ function Calculation({ active }: { readonly active: boolean }) {
   return (
     <>
       <p className="font-mono text-label uppercase text-ink-muted">Main-d&apos;œuvre</p>
-      <div className="relative isolate mt-9 flex items-baseline justify-between font-mono text-[0.95rem] tabular-nums">
+      <div className="relative mt-9 flex items-baseline justify-between font-mono text-[0.95rem] tabular-nums">
         <HighlighterMark id="vitrine-calcul" active={active} delay={beats.highlight.start} />
         <span>4 h × 65,00</span>
         <span className="relative px-1">
@@ -93,11 +95,11 @@ function Mentions({ active }: { readonly active: boolean }) {
       <ul className="mt-3 space-y-2 text-[0.9rem]">
         {MENTIONS.map((mention, index) => (
           <li key={mention} className="flex items-center gap-2.5">
-            <DrawnTick active={active} delay={tickAt(index)} />
+            <DrawnTick seed={mention} active={active} delay={tickAt(index)} />
             {mention}
           </li>
         ))}
-        <li className="relative isolate flex items-center gap-2.5">
+        <li className="relative flex items-center gap-2.5">
           <HighlighterMark id="vitrine-mention" active={active} delay={missing.highlight.start} />
           <span className="size-4 shrink-0" />
           <span>Assurance professionnelle</span>
@@ -111,22 +113,19 @@ function Mentions({ active }: { readonly active: boolean }) {
   );
 }
 
-/** Coche verte tracée au stylo, comme `PenTick`, mais qui se dessine. */
-function DrawnTick({ active, delay }: { readonly active: boolean; readonly delay: number }) {
-  const { reduced } = useMotionPrefs();
+/** Repère d'une coche, en px pour un texte de 16 px. */
+const TICK = { width: 16, height: 15 } as const;
+
+/**
+ * Coche au stylo rouge, comme `PenTick` (trait à largeur variable), mais qui
+ * se dessine quand la fiche arrive à l'écran : elle n'existe pas avant.
+ */
+function DrawnTick({ seed, active, delay }: { readonly seed: string; readonly active: boolean; readonly delay: number }) {
+  const stroke = useMemo(() => inkStroke(`vitrine:${seed}`, penTick(`vitrine:${seed}`, TICK.width, TICK.height), { min: 0.8, max: 2.3 }), [seed]);
   return (
-    <svg aria-hidden viewBox="0 0 16 16" className="size-4 shrink-0 overflow-visible" fill="none">
-      <motion.path
-        d="M2.6 8.6c1.2.9 2.2 2 3 3.4 1.6-3.6 4.2-6.8 7.6-9.2"
-        className="stroke-stamp-green-strong"
-        strokeWidth={1.9}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={active ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
-        transition={reduced ? reducedFade(delay) : transitions.circle(delay)}
-      />
-    </svg>
+    <span aria-hidden className="inline-block size-4 shrink-0 text-pen-red">
+      {active ? <InkStroke stroke={stroke} {...TICK} gesture={cssGesture({ start: delay, duration: durations.circle })} /> : null}
+    </span>
   );
 }
 
@@ -149,9 +148,9 @@ function Prices({ active }: { readonly active: boolean }) {
       </div>
 
       {/* La jauge : zone habituelle, médiane, et le devis qui glisse à sa place. */}
-      <div className="relative mt-7 h-1.5 rounded-full bg-rule">
+      <div className="relative mt-7 h-1.5 rounded-[1px] bg-rule">
         <span
-          className="absolute inset-y-0 rounded-full bg-stamp-green/30"
+          className="absolute inset-y-0 rounded-[1px] bg-ink/20"
           style={{ left: `${at(GAUGE.low) * 100}%`, width: `${(at(GAUGE.high) - at(GAUGE.low)) * 100}%` }}
         />
         <span className="absolute -top-1.5 h-[1.125rem] w-px bg-ink" style={{ left: `${at(GAUGE.median) * 100}%` }} />

@@ -4,7 +4,14 @@ import {
   HIGHLIGHTER_VIEWBOX,
   highlighterShape,
   inkSplatter,
+  inkStroke,
+  pencilBox,
+  penRing,
+  RING_VARIANTS,
+  ringVariant,
   penLoop,
+  penTick,
+  penUnderline,
   smoothPath,
   stampTilt,
 } from "@/lib/hand-drawn";
@@ -127,5 +134,59 @@ describe("stampTilt", () => {
       expect(tilt).toBeLessThanOrEqual(-8);
       expect(stampTilt(`analyse-${i}`)).toBe(tilt);
     }
+  });
+});
+
+describe("inkStroke", () => {
+  const loop = penLoop("calcul-l2", 100, 36);
+  const stroke = inkStroke("calcul-l2", loop.points, { min: 1, max: 3 });
+
+  it("trace le même trait pour la même graine", () => {
+    expect(inkStroke("calcul-l2", loop.points, { min: 1, max: 3 })).toEqual(stroke);
+  });
+
+  it("donne un contour fermé et une ligne médiane qui suit le geste", () => {
+    expect(stroke.outline.startsWith("M")).toBe(true);
+    expect(stroke.outline.endsWith("Z")).toBe(true);
+    expect(stroke.centerline).toBe(loop.d);
+  });
+
+  it("prévoit un masque plus large que le trait le plus épais", () => {
+    expect(stroke.maskWidth).toBeGreaterThan(3);
+  });
+
+  it("reste près de sa ligne médiane", () => {
+    const xs = numbersIn(stroke.outline).filter((_, index) => index % 2 === 0);
+    expect(Math.min(...xs)).toBeGreaterThan(-6);
+    expect(Math.max(...xs)).toBeLessThan(106);
+  });
+});
+
+describe("penUnderline, penTick et pencilBox", () => {
+  it("restent dans leur boîte, à quelques pixels près", () => {
+    for (const points of [penUnderline("l1", 80, 12), penTick("l5", 18, 16), pencilBox("l2", 80, 16)]) {
+      for (const point of points) {
+        expect(point.x).toBeGreaterThan(-2);
+        expect(point.x).toBeLessThan(82);
+        expect(point.y).toBeGreaterThan(-2);
+        expect(point.y).toBeLessThan(18);
+      }
+    }
+  });
+
+  it("sont déterministes", () => {
+    expect(pencilBox("l2", 80, 16)).toEqual(pencilBox("l2", 80, 16));
+    expect(penTick("l5", 18, 16)).toEqual(penTick("l5", 18, 16));
+    expect(penUnderline("l1", 80, 12)).toEqual(penUnderline("l1", 80, 12));
+  });
+});
+
+describe("penRing", () => {
+  it("offre quatre variantes différentes, et toujours la même pour une même cible", () => {
+    const outlines = new Set(Array.from({ length: RING_VARIANTS }, (_, variant) => penRing(variant).outline));
+    expect(outlines.size).toBe(RING_VARIANTS);
+    expect(ringVariant("Questions")).toBe(ringVariant("Questions"));
+    expect(ringVariant("Questions")).toBeGreaterThanOrEqual(0);
+    expect(ringVariant("Questions")).toBeLessThan(RING_VARIANTS);
   });
 });

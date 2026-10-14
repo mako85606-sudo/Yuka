@@ -4,16 +4,12 @@ import { AnimatePresence, motion, useAnimate } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { cn } from "@/lib/cn";
-import { angles, offsets, reducedFade, scales, shakeKeyframes, transitions } from "@/lib/motion";
+import { angles, offsets, reducedFade, shakeKeyframes, transitions } from "@/lib/motion";
 
 interface PaperSheetProps {
   readonly children: ReactNode;
-  /**
-   * Joue le dépôt de la feuille sur le bureau au montage. `toss` : la feuille
-   * arrive d'un peu plus haut et plus près, en tournant, comme lancée sur le
-   * bureau (démo de la landing).
-   */
-  readonly entrance?: boolean | "toss";
+  /** Joue le dépôt de la feuille sur le bureau au montage. */
+  readonly entrance?: boolean;
   /** Délai avant le dépôt, en secondes. */
   readonly delay?: number;
   /** Faisceau de scan : à activer pendant l'étape de lecture réelle. */
@@ -62,13 +58,7 @@ export function PaperSheet({
     <motion.div
       ref={scope}
       className={cn("relative isolate", className)}
-      initial={
-        entrance === "toss"
-          ? { opacity: 0, y: offsets.sheetTossY, rotate: angles.sheetToss, scale: scales.sheetToss }
-          : entrance
-            ? { opacity: 0, y: offsets.sheetDropY, rotate: angles.sheetDrop }
-            : false
-      }
+      initial={entrance ? { opacity: 0, y: offsets.sheetDropY, rotate: angles.sheetDrop } : false}
       animate={{ opacity: 1, y: 0, rotate: angles.sheetRest, scale: 1 }}
       transition={reduced ? reducedFade(delay) : transitions.sheetDrop(delay)}
     >
@@ -86,7 +76,7 @@ export function PaperSheet({
         animate={{ opacity: 1 }}
         transition={shadowTransition}
       />
-      <section aria-label={label} className="paper-grain relative rounded-[3px] bg-paper-raised">
+      <section aria-label={label} className="surface-paper paper-grain relative rounded-[3px]">
         {children}
         <AnimatePresence>{scanning ? <ScanBeam key="scan" reduced={reduced} /> : null}</AnimatePresence>
       </section>
