@@ -15,7 +15,7 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
         <main className="mx-auto max-w-3xl px-4 pb-24 pt-16 sm:px-8">
           <h1 className="text-[2.25rem] leading-tight">Quelque chose a coincé.</h1>
           <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
-            Ce n&apos;est pas toi, c&apos;est nous. Réessaie dans un instant.
+            Le problème vient de chez nous. Réessaie dans un instant.
           </p>
           <button
             type="button"

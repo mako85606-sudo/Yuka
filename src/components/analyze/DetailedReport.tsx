@@ -41,7 +41,7 @@ export function DetailedReport() {
           >
             <p className="font-medium text-ink">{fr("Bientôt disponible, laisse ton email pour l'avoir en premier.")}</p>
             <p className="mt-1 text-sm text-ink-muted">
-              {fr("Rien à payer aujourd'hui : on te prévient quand il sort, c'est tout.")}
+              {fr("Tu ne paies rien aujourd'hui. On t'écrit simplement le jour où il sort.")}
             </p>
             <EmailSignup source="detailed_report" className="mt-4" />
           </motion.div>

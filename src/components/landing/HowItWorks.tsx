@@ -30,19 +30,19 @@ import { fr } from "@/lib/typography";
 const STEPS = [
   {
     title: "Tu le prends en photo",
-    text: "Une photo par page, ou le PDF. Pas besoin de scanner : ton téléphone suffit.",
+    text: "Page par page, posée à plat sur la table, ou directement le PDF reçu par mail. Pas besoin de scanner.",
   },
   {
     title: "Loupe le lit, ligne par ligne",
-    text: "Les montants sont recopiés tels qu'imprimés, même faux : c'est justement ce qu'on vérifie.",
+    text: "Chaque montant est recopié tel qu'il est imprimé, même quand le total est faux. C'est justement là qu'on va regarder.",
   },
   {
     title: "Le stylo rouge passe",
-    text: "Calculs refaits, mentions vérifiées, chaque prix comparé à des devis de ta région.",
+    text: "Ici, 1,5 heure à 70 € fait 105 €, pas 140. Loupe le voit, l'entoure, puis compare le prix des disques à ceux d'autres garages du coin.",
   },
   {
     title: "Ton message est prêt",
-    text: "Poli, factuel, prêt à copier. Tu négocies sans te fâcher, et sans y passer la soirée.",
+    text: "Un texte courtois, au vouvoiement, qui pose des questions plutôt que d'accuser. Tu le modifies si tu veux, puis tu l'envoies par mail ou par SMS.",
   },
 ] as const;
 

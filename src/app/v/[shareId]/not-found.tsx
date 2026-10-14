@@ -13,7 +13,7 @@ export default function SharedNotFound() {
         <h1 className="font-display text-title text-ink">{fr("Ce lien a fait son temps.")}</h1>
         <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
           {fr(
-            `Une correction partagée reste visible ${limits.analysisRetentionDays} jours, puis elle est effacée. Tu as un devis à faire relire ?`,
+            `Une correction partagée reste en ligne ${limits.analysisRetentionDays} jours, puis elle disparaît. Et toi, tu as un devis à faire relire ?`,
           )}
         </p>
         <ButtonLink href="/analyse" size="lg" className="mt-8">

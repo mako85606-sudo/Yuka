@@ -176,7 +176,7 @@ export function SavingsDrop({ quote, active, onDone, children }: SavingsDropProp
         {savings === null ? (
           <div className="flex items-center gap-3 rounded-[4px] border border-rule bg-paper-raised px-4 py-3">
             <PenTick className="size-5" />
-            <p className="text-[0.95rem] text-ink">{fr("Rien à redire : tu peux signer tranquille.")}</p>
+            <p className="text-[0.95rem] text-ink">{fr("Rien à redire. Ce devis-là, tu peux le signer.")}</p>
           </div>
         ) : (
           <>
@@ -218,7 +218,7 @@ export function SavingsDrop({ quote, active, onDone, children }: SavingsDropProp
                   animate={{ opacity: active ? 1 : 0 }}
                   transition={fade(chute.words[0]?.start ?? 0)}
                 >
-                  Ton message, prêt à envoyer
+                  Le message que tu pourrais envoyer
                 </motion.p>
                 <motion.p
                   className="max-w-[30rem] rounded-[14px] rounded-br-[4px] bg-annotation-blue px-4 py-3 text-[0.9rem] leading-snug text-paper-raised"

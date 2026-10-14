@@ -104,7 +104,7 @@ export async function renderShareImage(input: ShareImageInput | null): Promise<I
               {site.name}
             </div>
             <div style={{ display: "flex", fontSize: 24, color: ogColors.inkMuted }}>
-              {input ? "Avis indicatif · sans nom ni adresse" : "Avis indicatif · indépendant, sans pub"}
+              {input ? "Avis indicatif · sans nom ni adresse" : "Avis indicatif · aucun artisan ne nous paie"}
             </div>
           </div>
 
@@ -152,7 +152,7 @@ export async function renderShareImage(input: ShareImageInput | null): Promise<I
           </div>
 
           <div style={{ display: "flex", fontSize: 30, color: ogColors.ink }}>
-            {input ? summary(input) : "Erreurs de calcul, lignes floues, prix qui dépassent : en moins de 30 secondes."}
+            {input ? summary(input) : "Une photo du devis, et une demi-minute plus tard, tu sais quoi négocier."}
           </div>
         </div>
       </div>

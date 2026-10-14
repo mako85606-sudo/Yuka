@@ -17,7 +17,7 @@ interface PagePickerProps {
 }
 
 const HINT = fr(
-  `Une photo par page (${limits.maxPhotos} au maximum), ou le PDF. ${Math.round(limits.maxUploadBytes / (1024 * 1024))} Mo en tout.`,
+  `Jusqu'à ${limits.maxPhotos} pages en photo, ou un PDF de ${Math.round(limits.maxUploadBytes / (1024 * 1024))} Mo maximum.`,
 );
 
 function formatSize(bytes: number): string {

@@ -82,7 +82,9 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
           state.status === "invalid" ? "text-pen-red-strong" : "text-ink-muted",
         )}
       >
-        {hasError ? state.message : "Un email quand il y a du nouveau. Pas de pub, désinscription en un clic."}
+        {hasError
+          ? state.message
+          : "Ton adresse ne sert qu'à ça. Tu peux demander à être retiré de la liste quand tu veux."}
       </p>
     </form>
   );

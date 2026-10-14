@@ -80,8 +80,8 @@ export function ShareLink({ analysisId, expiresAt }: ShareLinkProps) {
       ) : null}
       <p className="mt-2 text-sm text-ink-muted">
         {fr(
-          `Le lien montre la feuille corrigée et le verdict : ni date, ni département, ni ton message.${
-            expiresAt ? ` Il s'éteint avec l'analyse, le ${formatShortDate(new Date(expiresAt))}.` : ""
+          `Le lien montre la feuille corrigée et le verdict. La date, le département et ton message restent privés.${
+            expiresAt ? ` Il cessera de fonctionner le ${formatShortDate(new Date(expiresAt))}, en même temps que l'analyse.` : ""
           }`,
         )}
       </p>

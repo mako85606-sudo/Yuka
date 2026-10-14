@@ -21,11 +21,11 @@ import { usePages } from "./use-pages";
 
 /** Titre et annonce (lecteurs d'écran) de chaque étape réelle du serveur. */
 const STEP_TEXT: Partial<Record<ScenePhase, { readonly title: string; readonly status: string }>> = {
-  received: { title: "Envoi…", status: "Envoi du devis." },
-  reading: { title: "Lecture en cours…", status: "Lecture du devis en cours." },
-  checking: { title: "Vérifications…", status: "Vérification des calculs et des mentions." },
-  pricing: { title: "Comparaison des prix…", status: "Comparaison des prix." },
-  verdict: { title: "Verdict…", status: "Verdict en cours." },
+  received: { title: "Envoi du devis…", status: "Envoi du devis." },
+  reading: { title: "Lecture ligne par ligne…", status: "Lecture du devis en cours." },
+  checking: { title: "On refait les calculs…", status: "Vérification des calculs et des mentions." },
+  pricing: { title: "On compare les prix…", status: "Comparaison des prix." },
+  verdict: { title: "Coup de tampon…", status: "Verdict en cours." },
 };
 
 /** Refus « de formulaire » renvoyés par le serveur : on revient au formulaire pour corriger. */
@@ -40,9 +40,9 @@ const FORM_ERRORS: readonly AnalysisErrorCode[] = [
 
 type FormError = { readonly field: "pages" | "consent"; readonly message: string };
 
-const STILL_PREPARING = fr("Encore un instant : les photos se préparent.");
+const STILL_PREPARING = fr("Deux secondes, on prépare tes photos.");
 const BLURRY_CONFIRM = fr(
-  "Une photo semble floue : reprends-la si tu peux (à plat, bien éclairée, sans bouger). Sinon, appuie encore sur « Corriger mon devis » pour l'envoyer quand même.",
+  "Cette photo a l'air floue. Si tu peux, reprends-la à plat, avec plus de lumière. Sinon, appuie une deuxième fois sur « Corriger mon devis » et on fera avec.",
 );
 const REMOVE_BROKEN = fr("Retire la page marquée en rouge avant d'envoyer.");
 
@@ -178,7 +178,7 @@ export function AnalyzeFlow() {
         </h1>
         <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
           {fr(
-            "Une photo par page, bien à plat, ou le PDF. On le lit, on le corrige, et on ne garde rien de personnel.",
+            "Pose chaque page à plat, près d'une fenêtre si possible, et prends-la en photo. Si tu as reçu le devis par mail, le PDF marche aussi.",
           )}
         </p>
 
@@ -212,32 +212,32 @@ export function AnalyzeFlow() {
             />
             <label htmlFor={consentId} className="text-[0.95rem] leading-relaxed text-ink">
               {fr(
-                "J'accepte que Loupe fasse lire mon devis par son prestataire d'intelligence artificielle (Anthropic). Loupe ne garde jamais l'original : seulement des lignes de prix anonymes, la catégorie et le département.",
+                "J'accepte que mon devis soit lu par l'intelligence artificielle d'Anthropic, le prestataire de Loupe. L'original est effacé juste après ; seules les lignes de prix rendues anonymes, la catégorie et le département sont conservés.",
               )}
             </label>
           </div>
           <details className="ml-8 mt-3 text-sm text-ink-muted">
             <summary className="w-fit cursor-pointer text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink">
-              {fr("Ce qu'on garde, ce qu'on jette")}
+              {fr("Ce qu'on garde, et ce qu'on efface")}
             </summary>
             <ul className="mt-3 max-w-prose list-disc space-y-2 pl-5 leading-relaxed">
               <li>
                 {fr(
-                  "Jeté après la lecture : la photo ou le PDF, et tout ce qui est personnel (noms, adresses, téléphones, numéros).",
+                  "Effacé dès la lecture terminée : la photo ou le PDF. Les noms, adresses et numéros de téléphone ne sont jamais recopiés.",
                 )}
               </li>
               <li>
                 {fr(
-                  "Gardé pour comparer les prix : des lignes anonymes (« chauffe-eau 200 L, 890 € HT »), la catégorie et le département.",
+                  "Conservé pour affiner les comparaisons : des lignes du type « chauffe-eau 200 L, 890 € HT », avec la catégorie et le département.",
                 )}
               </li>
               <li>
                 {fr(
-                  `Ton adresse IP n'est jamais enregistrée : seulement une empreinte chiffrée, qui change chaque jour et s'efface au bout de quelques jours. Elle sert à limiter les analyses à ${limits.analysesPerDay} par jour.`,
+                  `Ton adresse IP n'est jamais enregistrée en clair. On en garde une empreinte chiffrée, différente chaque jour, juste pour compter tes ${limits.analysesPerDay} analyses quotidiennes. Elle disparaît au bout de quelques jours.`,
                 )}
               </li>
               <li>
-                {fr("Tout le détail : ")}
+                {fr("Pour tout savoir : ")}
                 <Link
                   href="/confidentialite"
                   className="text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
@@ -261,7 +261,7 @@ export function AnalyzeFlow() {
           <Button type="submit" size="xl" className="w-full sm:w-auto">
             Corriger mon devis
           </Button>
-          <p className="text-sm text-ink-muted">{fr("Moins de 30 secondes, en général.")}</p>
+          <p className="text-sm text-ink-muted">{fr("Compte une trentaine de secondes.")}</p>
         </div>
         <p className="mt-8 text-xs leading-relaxed text-ink-muted">{fr(site.disclaimer)}</p>
       </form>

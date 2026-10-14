@@ -58,7 +58,7 @@ export default async function SharedAnalysisPage({ params }: PageProps<"/v/[shar
         </h1>
         <p className="mt-2 max-w-prose text-sm text-ink-muted">
           {fr(
-            `${place ? `${place}. ` : ""}Les noms, adresses et numéros n'apparaissent jamais : Loupe ne les lit pas.`,
+            `${place ? `${place}. ` : ""}Tu ne verras ici ni nom ni adresse : Loupe ne les relève même pas.`,
           )}
         </p>
         <div className="mt-4">

@@ -9,37 +9,37 @@ const QUESTIONS: readonly Question[] = [
   {
     question: "C'est vraiment gratuit ?",
     answer:
-      "Oui. L'analyse est gratuite, sans compte et sans carte bancaire. Pour éviter les abus, on limite à cinq analyses par jour.",
+      "Oui. Pas de compte à créer, pas de carte bancaire à donner. On limite seulement à cinq analyses par jour et par personne, sinon la facture d'IA nous ruinerait.",
   },
   {
     question: "Que devient la photo de mon devis ?",
     answer:
-      "Elle est lue en mémoire, puis effacée. On ne garde ni la photo, ni le PDF, ni les noms, adresses ou numéros. Seulement des lignes anonymes (« chauffe-eau 200 L, 890 € HT »), la catégorie et le département, pour comparer les prix.",
+      "Elle est lue puis effacée dans la foulée, sans jamais être enregistrée. Les noms, adresses et numéros de téléphone ne sont même pas recopiés. Ce qu'on garde ressemble à ça : « chauffe-eau 200 L, 890 € HT », avec la catégorie et le département. Rien qui permette de savoir qui tu es, ni qui est l'artisan.",
   },
   {
     question: "D'où viennent les prix de comparaison ?",
     answer:
-      "De devis déjà analysés par Loupe, anonymisés : même prestation, région proche, moins de 24 mois. Quand on en a moins de cinq, on te donne une estimation IA, présentée comme telle, avec une confiance faible.",
+      "Des devis déjà passés par Loupe, une fois rendus anonymes : même prestation, même région, moins de deux ans. Il en faut au moins cinq pour parler de médiane. Sinon, l'IA propose une fourchette, affichée avec la mention « confiance faible » pour que tu la prennes avec des pincettes.",
   },
   {
     question: "Quels devis peut-on analyser ?",
     answer:
-      "Garage, plomberie, électricité, chauffage, serrurerie, travaux et déménagement. Pas encore les devis de santé (dentaire, optique, audition) : ceux-là, on préfère ne pas s'y risquer pour l'instant.",
+      "Ceux du garagiste, du plombier, de l'électricien, du chauffagiste, du serrurier et du déménageur, plus les petits travaux. Les devis de dentiste, d'opticien ou d'audioprothésiste attendront : la santé a ses propres règles, et on préfère ne pas improviser.",
   },
   {
     question: "Et si Loupe se trompe ?",
     answer:
-      "Ça peut arriver : lire une photo n'est jamais parfait. Chaque point dit s'il est vérifié (un calcul, une mention) ou estimé (un prix), avec sa source. Relis avant d'envoyer quoi que ce soit.",
+      "Ça arrive, surtout sur une photo prise de travers. C'est pour ça que chaque remarque indique si elle est vérifiée (un calcul, une mention) ou estimée (un prix), et d'où elle vient. Garde ton devis papier à côté et relis avant d'envoyer quoi que ce soit.",
   },
   {
     question: "L'artisan saura-t-il que j'ai utilisé Loupe ?",
     answer:
-      "Non, sauf si tu le lui dis. Le message de négociation est le tien : poli, factuel, sans accusation. Le verdict reste privé.",
+      "Seulement si tu le lui dis. Le message est écrit en ton nom, sur un ton courtois, et le verdict ne quitte pas ton écran.",
   },
   {
     question: "Loupe remplace-t-il un professionnel ?",
     answer:
-      "Non. C'est un avis indicatif, pas un conseil juridique. En cas de litige, adresse-toi à un professionnel ou à une association de consommateurs.",
+      "Non. Loupe donne un avis indicatif, pas un conseil juridique. Si ça tourne au litige, une association de consommateurs ou un professionnel du droit t'aidera bien mieux.",
   },
 ];
 

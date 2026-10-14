@@ -13,7 +13,7 @@ export default function AnalysisNotFound() {
         <h1 className="font-display text-title text-ink">{fr("Cette analyse n'est plus là.")}</h1>
         <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
           {fr(
-            `Le lien est peut-être incomplet, ou l'analyse a plus de ${limits.analysisRetentionDays} jours : on l'a effacée, comme prévu. Le devis, lui, n'a jamais été gardé.`,
+            `Soit le lien est incomplet, soit l'analyse a dépassé ses ${limits.analysisRetentionDays} jours et a été effacée. Ton devis, lui, n'a jamais été conservé.`,
           )}
         </p>
         <ButtonLink href="/analyse" size="lg" className="mt-8">

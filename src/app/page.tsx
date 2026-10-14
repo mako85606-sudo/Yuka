@@ -50,15 +50,17 @@ function Hero() {
     <section className="mx-auto grid max-w-6xl items-start gap-10 px-4 pb-20 pt-4 sm:px-8 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,33rem)] lg:gap-14 lg:pb-28">
       <div className="lg:pt-12">
         <p className="mb-4 hidden font-mono text-label uppercase text-ink-muted sm:block">
-          Garage, plomberie, électricité, travaux…
+          Garagiste, plombier, électricien, serrurier…
         </p>
         <h1 className="font-display text-display text-ink">
           Ton devis, corrigé <em className="text-pen-red-strong">au stylo rouge</em> en
           30&nbsp;secondes.
         </h1>
         <p className="mt-5 max-w-[34rem] text-base leading-relaxed text-ink-muted sm:mt-6 sm:text-[1.0625rem]">
-          Prends-le en photo. Loupe vérifie les calculs et les mentions obligatoires, compare chaque
-          prix et te prépare un message pour négocier, poliment.
+          Un chauffe-eau posé pour 1&nbsp;500&nbsp;€, c&apos;est le bon prix&nbsp;? Prends le devis en photo.
+          Loupe refait les multiplications, cherche les mentions qui manquent et compare chaque ligne
+          aux devis de ta région. S&apos;il y a un souci, tu repars avec un message à envoyer à
+          l&apos;artisan.
         </p>
         <div className="mt-7 flex flex-col gap-4 sm:mt-8 sm:flex-row sm:items-center sm:gap-6">
           <ButtonLink id={HERO_CTA_ID} href="/analyse" size="xl" className="w-full sm:w-auto">
@@ -83,9 +85,9 @@ function Hero() {
 }
 
 const PROMISES = [
-  "Gratuit, sans compte",
-  "Aucun artisan partenaire",
-  "Ton devis n'est jamais conservé",
+  "Gratuit et sans inscription",
+  "Aucun artisan ne nous paie",
+  "La photo est effacée après lecture",
 ] as const;
 
 function Promises({ className }: { readonly className?: string }) {
@@ -135,7 +137,7 @@ function Story() {
     <section aria-labelledby="comment" className="border-t border-rule">
       <div className="mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-8 lg:pb-20 lg:pt-28">
         <SectionHeading id="comment" title="Comment ça marche">
-          {fr("Une photo de ta part. Le reste, c'est le stylo rouge.")}
+          {fr("Tu t'occupes de la photo. Le reste prend une demi-minute.")}
         </SectionHeading>
         <div className="mt-8 lg:mt-0">
           <HowItWorks quote={quote} />
@@ -150,8 +152,10 @@ function Trades() {
   return (
     <section aria-labelledby="metiers" className="border-t border-rule">
       <div className="mx-auto max-w-6xl px-4 pt-20 sm:px-8 lg:pt-28">
-        <SectionHeading id="metiers" title="Un devis, quel que soit le métier">
-          {fr("Garage, plombier, serrurier, déménageur… Fais glisser : chaque devis se corrige sous tes yeux.")}
+        <SectionHeading id="metiers" title="Du garage au déménageur">
+          {fr(
+            "Une ouverture de porte à 390 €, un « forfait intervention » jamais détaillé, des cartons mal comptés… Fais glisser les fiches pour voir chaque exemple se corriger.",
+          )}
         </SectionHeading>
       </div>
       <div className="mx-auto mt-6 max-w-6xl pb-20 lg:pb-28">
@@ -165,17 +169,17 @@ const CHECKS = [
   {
     kind: "calculation",
     title: "Les calculs",
-    text: "Quantité × prix unitaire, total HT, TVA, total TTC. Une erreur de calcul, on l'entoure en rouge. Ce n'est pas un avis, c'est de l'arithmétique.",
+    text: "Quantité fois prix unitaire, puis le total HT, la TVA et le TTC. Une faute de calcul se démontre : on l'entoure en rouge et on écrit le bon chiffre au-dessus.",
   },
   {
     kind: "mentions",
     title: "Les mentions obligatoires",
-    text: "Durée de validité, décompte détaillé, assurance pour les travaux, frais de déplacement… On repère ce qui manque, sans jouer les juristes.",
+    text: "Durée de validité, détail des prestations, assurance pour les travaux, frais de déplacement… On te signale ce qui manque sur la feuille. Pour savoir ce que ça change en droit, mieux vaut demander à une association de consommateurs.",
   },
   {
     kind: "prices",
     title: "Les prix",
-    text: "Chaque ligne comparée à des devis similaires de ta région, quand on en a au moins cinq. Sinon, une estimation IA, annoncée comme telle, avec sa confiance.",
+    text: "Dès qu'on a au moins cinq devis comparables dans ta région, tu vois où se situe le tien par rapport à la médiane. En dessous, c'est une estimation par IA, et on te le dit en toutes lettres.",
   },
 ] as const;
 
@@ -184,7 +188,7 @@ function Checks() {
     <section aria-labelledby="verifications" className="border-t border-rule">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-8 lg:py-28">
         <SectionHeading id="verifications" title="Ce qu'on vérifie">
-          Une relecture complète, ligne par ligne, comme le ferait un prof un peu tatillon.
+          Ligne par ligne, avec la patience d&apos;un prof de maths qui corrige des copies le dimanche soir.
         </SectionHeading>
         <ul className="mt-14 grid gap-14 md:grid-cols-3 md:gap-10">
           {CHECKS.map((check) => (
@@ -210,16 +214,16 @@ function Checks() {
 
 const COMMITMENTS = [
   {
-    title: "Indépendant",
-    text: "Aucun artisan ne nous paie. Pas de commission, pas de lien affilié, pas de « partenaire recommandé ».",
+    title: "Être payés par des artisans",
+    text: "Loupe ne touche rien si tu choisis un pro plutôt qu'un autre, et ne te pousse vers personne. Il n'y a pas d'annuaire sponsorisé caché derrière le verdict.",
   },
   {
-    title: "Sans pub",
-    text: "Pas de publicité, pas de revente de données. Les avis de Loupe ne sont à vendre à personne.",
+    title: "Vendre tes données",
+    text: "Tu ne verras aucune publicité ici, et ton adresse mail ne finira jamais chez un courtier ou une plateforme de devis.",
   },
   {
-    title: "Ton devis n'est jamais conservé",
-    text: "La photo ou le PDF est lu en mémoire, puis effacé. On garde seulement des lignes anonymes, la catégorie et le département, pour affiner les comparaisons.",
+    title: "Garder ton devis",
+    text: "La photo ou le PDF est lu en mémoire puis effacé. On conserve seulement des lignes rendues anonymes (« chauffe-eau 200 L, 890 € HT »), la catégorie et le département, pour que les comparaisons s'affinent avec le temps.",
   },
 ] as const;
 
@@ -227,7 +231,7 @@ function Trust() {
   return (
     <section aria-labelledby="confiance" className="border-t border-rule bg-paper-raised">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-8 lg:py-28">
-        <SectionHeading id="confiance" title="Pourquoi nous faire confiance" />
+        <SectionHeading id="confiance" title="Ce qu'on s'interdit" />
         <ul className="mt-12 grid gap-10 md:grid-cols-3">
           {COMMITMENTS.map((commitment) => (
             <li key={commitment.title} className="border-t-2 border-ink pt-5">
@@ -247,7 +251,7 @@ function Questions() {
   return (
     <section aria-labelledby="faq" className="border-t border-rule">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-16 lg:py-28">
-        <SectionHeading id="faq" title="Questions fréquentes" />
+        <SectionHeading id="faq" title="Avant de te lancer" />
         <Faq />
       </div>
     </section>
@@ -260,7 +264,7 @@ function Signup() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-end lg:gap-16 lg:py-28">
         <SectionHeading id="inscription" title="On te prévient ?">
           {fr(
-            "Nouvelles catégories, rapport détaillé, prix plus précis dans ta région : un email quand il y a du nouveau.",
+            "Un mail le jour où Loupe saura lire les devis de nouveaux métiers, ou quand le rapport détaillé sera prêt. Rarement, et seulement quand ça vaut le coup.",
           )}
         </SectionHeading>
         <EmailSignup />

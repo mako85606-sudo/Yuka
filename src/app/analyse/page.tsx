@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/landing/SiteHeader";
 
 export const metadata: Metadata = {
   title: "Scanner mon devis",
-  description: "Prends ton devis en photo ou dépose le PDF : Loupe le lit et le corrige.",
+  description: "Prends ton devis en photo ou envoie le PDF, Loupe le relit au stylo rouge.",
   robots: { index: false, follow: false },
   // Après l'analyse, l'adresse devient celle du résultat : elle ne doit pas fuiter vers les liens sortants.
   referrer: "no-referrer",

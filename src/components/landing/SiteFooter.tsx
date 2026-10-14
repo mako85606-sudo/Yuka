@@ -17,7 +17,7 @@ export function SiteFooter() {
         </div>
         <div className="max-w-md space-y-2 text-sm text-ink-muted">
           <p className="text-ink">{site.disclaimer}</p>
-          <p>Indépendant, sans publicité, sans lien affilié vers des artisans.</p>
+          <p>Loupe ne touche rien des artisans et n&apos;affiche aucune publicité.</p>
           <nav aria-label="Informations légales">
             <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-2">
               {LINKS.map((link) => (

@@ -4,9 +4,9 @@ import { parseSignupForm, type SignupState } from "@/lib/signup";
 import { fr } from "@/lib/typography";
 import { saveSignup } from "@/server/signups";
 
-const SUCCESS = fr("C'est noté. On t'écrit quand il y a du nouveau, pas avant.");
+const SUCCESS = fr("C'est noté. Tu auras de nos nouvelles quand il y aura vraiment quelque chose à dire.");
 const UNAVAILABLE = fr("L'inscription ouvre très bientôt. Repasse dans quelques jours.");
-const FAILED = fr("Petit souci de notre côté : ton adresse n'a pas été enregistrée. Réessaie dans un instant.");
+const FAILED = fr("Ton adresse n'a pas pu être enregistrée, le souci vient de chez nous. Réessaie dans un instant.");
 
 /** Inscription aux nouvelles de Loupe (landing, rapport détaillé). */
 export async function subscribeToNews(

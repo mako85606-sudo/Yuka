@@ -92,7 +92,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
         ) : null}
         {verdict.savings && savingsRelyOnAi(prices) ? (
           <p className="mt-1 text-sm text-ink-muted">
-            {fr("Le haut de la fourchette repose sur une estimation IA, à confiance faible.")}
+            {fr("Le haut de cette fourchette vient d'une estimation IA, à prendre avec prudence.")}
           </p>
         ) : null}
 
@@ -111,7 +111,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
 
         {extraction.readability === "partial" ? (
           <p className="mt-4 text-sm text-ink-muted">
-            {fr("Certaines zones étaient difficiles à lire : compare les montants avec ton devis papier.")}
+            {fr("Une partie du devis était difficile à lire. Compare les montants avec ton exemplaire papier.")}
           </p>
         ) : null}
 
@@ -141,7 +141,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
         {expiresAt ? (
           <p className="mt-4 text-sm text-ink-muted">
             {fr(
-              `Cette analyse reste consultable à cette adresse jusqu'au ${formatShortDate(expiresAt)}, puis elle est effacée. Personne d'autre ne la voit sans le lien.`,
+              `Garde cette page dans tes favoris : elle reste accessible jusqu'au ${formatShortDate(expiresAt)}, puis elle sera effacée. Sans le lien, personne ne peut la retrouver.`,
             )}
           </p>
         ) : null}
@@ -152,7 +152,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
           <FindingList findings={groups.errors} extraction={extraction} />
         ) : (
           <p className="text-ink-muted">
-            {fr("Aucune erreur trouvée dans les calculs ni dans les mentions essentielles.")}
+            {fr("Les calculs tombent juste et les mentions essentielles sont là.")}
           </p>
         )}
       </ResultBlock>
@@ -160,7 +160,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
       {groups.toConfirm.length > 0 ? (
         <ResultBlock
           title="À confirmer sur ton devis"
-          intro={fr("Ces chiffres étaient difficiles à lire : vérifie-les sur le papier avant d'en parler.")}
+          intro={fr("On a eu du mal à lire ces chiffres. Vérifie-les sur le papier avant d'en parler à l'artisan.")}
         >
           <FindingList findings={groups.toConfirm} extraction={extraction} />
         </ResultBlock>
@@ -168,7 +168,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
 
       <ResultBlock
         title="Avis sur les prix"
-        intro={fr("Des repères, pas des certitudes : chaque avis dit d'où il vient et à quel point s'y fier.")}
+        intro={fr("Ce sont des repères. Chaque avis indique sa source et le crédit qu'on peut lui accorder.")}
       >
         {prices.length > 0 ? (
           <ul className="divide-y divide-rule">
@@ -179,13 +179,13 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
         ) : (
           <p className="text-ink-muted">
             {fr(
-              "Rien à comparer cette fois : pas assez de devis comparables dans ta région, et des lignes trop particulières pour une estimation.",
+              "Pour l'instant, trop peu de devis semblables dans ta région, et des lignes trop particulières pour une estimation fiable.",
             )}
           </p>
         )}
         {!data.pricesComplete ? (
           <p className="mt-3 text-sm text-ink-muted">
-            {fr("Certaines lignes n'ont pas pu être comparées cette fois-ci.")}
+            {fr("Quelques lignes n'ont pas pu être comparées.")}
           </p>
         ) : null}
       </ResultBlock>
@@ -214,7 +214,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
           <>
             <p className="mt-1 text-sm text-ink-muted">
               {fr(
-                "Poli et factuel : seulement ce qui est vérifié, jamais une estimation IA. Relis-le, ajuste-le, puis signe-le.",
+                "Il ne reprend que les points vérifiés, jamais une estimation IA. Relis-le et adapte-le à ta façon de parler avant de l'envoyer.",
               )}
             </p>
             <div className="mt-4">
@@ -224,9 +224,9 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
         ) : (
           <p className="mt-2 leading-relaxed text-ink-muted">
             {verdict.verdict === "ok"
-              ? fr("Rien à négocier : on n'a rien trouvé à redire sur ce devis.")
+              ? fr("Rien à négocier. On n'a trouvé aucune raison de discuter ce devis.")
               : fr(
-                  "Pas de message à envoyer : les points relevés reposent sur une estimation IA ou sur des chiffres à confirmer. Vérifie-les d'abord sur ton devis.",
+                  "On ne te propose pas de message : les points relevés reposent sur une estimation IA ou sur des chiffres mal lus. Vérifie-les d'abord sur ton devis.",
                 )}
           </p>
         )}

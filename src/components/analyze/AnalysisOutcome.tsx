@@ -11,7 +11,7 @@ import { offsets, reducedFade, transitions } from "@/lib/motion";
 const REFUSAL_TITLES: Record<RefusalReason, string> = {
   health: "Pas encore pris en charge.",
   "not-a-quote": "Ce n'est pas un devis.",
-  unreadable: "Trop difficile à lire.",
+  unreadable: "Photo trop difficile à lire.",
 };
 
 const RETRYABLE: readonly AnalysisErrorCode[] = [

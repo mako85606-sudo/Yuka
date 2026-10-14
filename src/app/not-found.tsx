@@ -12,7 +12,7 @@ export default function NotFound() {
         <p className="font-mono text-label uppercase text-ink-muted">Erreur 404</p>
         <h1 className="mt-2 font-display text-title text-ink">{fr("Cette page n'existe pas.")}</h1>
         <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
-          {fr("Le lien est peut-être incomplet. Rien de grave : ton devis, lui, t'attend toujours.")}
+          {fr("Le lien est peut-être coupé ou mal recopié. Si tu venais faire corriger un devis, c'est juste en dessous.")}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <ButtonLink href="/analyse" size="lg">

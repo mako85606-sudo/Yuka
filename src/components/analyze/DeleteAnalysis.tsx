@@ -39,7 +39,7 @@ export function DeleteAnalysis({
   if (step === "done") {
     return (
       <p role="status" className="text-sm text-ink">
-        {fr("C'est supprimé : cette analyse et son lien de partage n'existent plus. Ce qui est affiché disparaîtra quand tu quitteras la page.")}
+        {fr("Supprimé. L'analyse et son lien de partage n'existent plus ; ce que tu vois encore disparaîtra quand tu quitteras la page.")}
       </p>
     );
   }

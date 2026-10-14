@@ -21,12 +21,12 @@ export interface PageItem {
   readonly blurry: boolean;
 }
 
-const PREPARE_FAILED = fr("Cette photo n'a pas pu être lue : essaie en JPEG, ou reprends-la.");
+const PREPARE_FAILED = fr("Impossible d'ouvrir cette photo. Reprends-la, ou envoie-la en JPEG.");
 export const BLURRY_NOTICE = fr(
-  "Une photo semble floue. Reprends-la à plat, bien éclairée, sans bouger, avec toute la page dans le cadre : la lecture sera bien meilleure.",
+  "Cette photo semble floue. Pour une lecture fiable, pose la feuille à plat, cadre la page entière et tiens le téléphone bien immobile.",
 );
 const PDF_TOO_LARGE = fr(
-  `Ce PDF dépasse ${Math.round(limits.maxUploadBytes / (1024 * 1024))} Mo : prends plutôt les pages en photo.`,
+  `Ce PDF pèse plus de ${Math.round(limits.maxUploadBytes / (1024 * 1024))} Mo. Prends plutôt les pages en photo, ça passera.`,
 );
 
 /**

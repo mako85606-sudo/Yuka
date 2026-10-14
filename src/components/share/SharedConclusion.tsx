@@ -56,7 +56,7 @@ export function SharedConclusion({ verdict, errors, warnings, savings }: SharedC
         </p>
         <p className="mt-3 text-sm text-ink-muted">
           {fr(
-            "Les erreurs entourées sont vérifiées par le calcul. Les avis de prix disent leur source : base Loupe, ou estimation IA à confiance faible.",
+            "Ce qui est entouré en rouge a été vérifié par le calcul. Pour les prix, chaque avis précise s'il vient de la base Loupe ou d'une estimation IA, moins fiable.",
           )}
         </p>
       </section>
@@ -67,7 +67,7 @@ export function SharedConclusion({ verdict, errors, warnings, savings }: SharedC
         </h2>
         <p className="mt-2 max-w-prose leading-relaxed text-ink-muted">
           {fr(
-            "Prends-le en photo : Loupe le corrige au stylo rouge en moins de 30 secondes. Gratuit, sans compte, et le devis n'est jamais gardé.",
+            "Prends-le en photo et Loupe te rend la même correction en une trentaine de secondes. C'est gratuit, et ton devis est effacé juste après.",
           )}
         </p>
         <ButtonLink href="/analyse" size="lg" className="mt-5">

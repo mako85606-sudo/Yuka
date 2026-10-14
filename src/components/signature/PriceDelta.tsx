@@ -62,8 +62,10 @@ export function PriceDelta({
       return;
     }
     if (reduced || skip) {
-      counter.jump(amount);
-      return;
+      // Même chemin que l'animation, sans durée : un saut direct n'était pas toujours affiché
+      // quand l'avis apparaissait déjà actif (carte montée à l'approche, mouvement réduit).
+      const controls = animate(counter, amount, { duration: 0 });
+      return () => controls.stop();
     }
     counter.jump(0);
     const controls = animate(counter, amount, transitions.counter(delay));
