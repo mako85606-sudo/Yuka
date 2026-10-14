@@ -319,3 +319,34 @@ export function penTick(seed: string, width: number, height: number): Point[] {
     { x: width * (0.96 + jitter()), y: height * (0.05 + jitter()) },
   ];
 }
+
+/**
+ * Cadre au crayon autour d'une boîte `width × height` : quatre côtés tirés
+ * d'un trait, coins un peu arrondis, et le trait qui dépasse son point de
+ * départ en refermant le cadre.
+ */
+export function pencilBox(seed: string, width: number, height: number): Point[] {
+  const random = createRandom(`pencil:${seed}`);
+  const wobble = () => between(random, -0.9, 0.9);
+  const corner = Math.min(4, height * 0.18);
+  const left = between(random, 0, 2);
+  const right = width - between(random, 0, 2);
+  const top = between(random, 0, 1.5);
+  const bottom = height - between(random, 0, 1.5);
+  return [
+    { x: left + corner * 1.5, y: top + wobble() },
+    { x: (left + right) / 2, y: top + wobble() },
+    { x: right - corner, y: top + wobble() },
+    { x: right + wobble() * 0.5, y: top + corner },
+    { x: right + wobble(), y: (top + bottom) / 2 },
+    { x: right + wobble() * 0.5, y: bottom - corner },
+    { x: right - corner, y: bottom + wobble() },
+    { x: (left + right) / 2, y: bottom + wobble() },
+    { x: left + corner, y: bottom + wobble() },
+    { x: left + wobble() * 0.5, y: bottom - corner },
+    { x: left + wobble(), y: (top + bottom) / 2 },
+    { x: left + wobble() * 0.5, y: top + corner },
+    { x: left + corner * 2.5, y: top + between(random, -1.5, -0.4) },
+    { x: left + corner * 5, y: top + between(random, -2.4, -0.8) },
+  ];
+}

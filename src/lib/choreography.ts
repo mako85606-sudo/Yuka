@@ -1,4 +1,4 @@
-import { beats, durations, hero, STAMP_IMPACT, stagger, springs } from "@/lib/motion";
+import { beats, durations, hero, STAMP_IMPACT, stagger, springs, story } from "@/lib/motion";
 
 /**
  * Calendrier de la correction : quand chaque geste commence, en secondes,
@@ -216,4 +216,39 @@ export function heroSchedule(rows: readonly TypedRow[]): HeroBeats {
   const stamp = stampAfter(pen);
   const narrowPen = penBeats(hero.narrowStart);
   return { rows: beats, typingEnd, pen, stamp, narrowPen, narrowStamp: stampAfter(narrowPen), end: endOf(stamp) };
+}
+
+export interface StoryBeats {
+  /** Étape « lecture » : un cadre au crayon par ligne, l'un après l'autre. */
+  readonly pencils: readonly Segment[];
+  /** Étape « stylo rouge » : cercle, correction, note, puis l'avis de prix (souligné, noté) et le tampon. */
+  readonly pen: PenBeats;
+  readonly price: PenBeats;
+  readonly stamp: Segment;
+  /** Étape « message » : le feuillet glisse, puis le message s'écrit mot à mot. */
+  readonly slip: Segment;
+  readonly words: readonly Segment[];
+}
+
+/**
+ * Les gestes de « Comment ça marche », comptés depuis l'arrivée sur leur
+ * étape. Le message tient en un bloc de 1,2 s, quelle que soit sa longueur.
+ */
+export function storySchedule(lineCount: number, wordCount: number): StoryBeats {
+  const pencils = Array.from({ length: Math.max(0, lineCount) }, (_, index) => ({
+    start: story.pencilStart + index * story.pencilGap,
+    duration: story.pencil,
+  }));
+  const pen = penBeats(story.penStart);
+  // L'avis de prix suit la correction sans attendre la fin de la note : un seul passage de stylo.
+  const price = penBeats(endOf(pen.correction));
+  const stamp = { start: endOf(price.note) + hero.beforeStamp, duration: hero.stamp };
+  const slip = { start: 0, duration: story.slip };
+  const lastStart = durations.blockMax - story.word;
+  const step = wordCount > 1 ? Math.min(story.wordGap, lastStart / (wordCount - 1)) : 0;
+  const words = Array.from({ length: Math.max(0, wordCount) }, (_, index) => ({
+    start: endOf(slip) + index * step,
+    duration: story.word,
+  }));
+  return { pencils, pen, price, stamp, slip, words };
 }

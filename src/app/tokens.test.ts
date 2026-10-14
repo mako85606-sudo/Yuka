@@ -120,7 +120,7 @@ describe("identité", () => {
   });
 
   it("garde un grain à 4 % d'opacité au plus, sur le bureau comme sur la feuille", () => {
-    const opacities = [...css.matchAll(/opacity='([\d.]+)'/g)].map((match) => Number(match[1]));
+    const opacities = [...css.matchAll(/ opacity='([\d.]+)'/g)].map((match) => Number(match[1]));
     expect(opacities.length).toBeGreaterThanOrEqual(2);
     expect(Math.max(...opacities)).toBeLessThanOrEqual(0.04);
   });

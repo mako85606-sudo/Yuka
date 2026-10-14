@@ -5,6 +5,7 @@ import {
   highlighterShape,
   inkSplatter,
   inkStroke,
+  pencilBox,
   penLoop,
   penTick,
   penUnderline,
@@ -158,9 +159,9 @@ describe("inkStroke", () => {
   });
 });
 
-describe("penUnderline et penTick", () => {
+describe("penUnderline, penTick et pencilBox", () => {
   it("restent dans leur boîte, à quelques pixels près", () => {
-    for (const points of [penUnderline("l1", 80, 12), penTick("l5", 18, 16)]) {
+    for (const points of [penUnderline("l1", 80, 12), penTick("l5", 18, 16), pencilBox("l2", 80, 16)]) {
       for (const point of points) {
         expect(point.x).toBeGreaterThan(-2);
         expect(point.x).toBeLessThan(82);
@@ -171,6 +172,7 @@ describe("penUnderline et penTick", () => {
   });
 
   it("sont déterministes", () => {
+    expect(pencilBox("l2", 80, 16)).toEqual(pencilBox("l2", 80, 16));
     expect(penTick("l5", 18, 16)).toEqual(penTick("l5", 18, 16));
     expect(penUnderline("l1", 80, 12)).toEqual(penUnderline("l1", 80, 12));
   });

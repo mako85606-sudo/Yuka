@@ -128,7 +128,7 @@ function SectionHeading({
 }) {
   return (
     <div className="max-w-2xl">
-      <h2 id={id} className="font-display text-title text-ink">
+      <h2 id={id} className="font-display text-section text-ink">
         {fr(title)}
       </h2>
       {children ? (

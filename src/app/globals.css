@@ -35,6 +35,8 @@
   --verdict-alert: #F0806C;
   /* Encre imprimée, pour le texte sélectionné (surligné en jaune) où qu'il soit. */
   --sheet-ink: #2B2119;
+  /* Ruban adhésif de papier, posé sur le bureau. */
+  --tape: #D8CCAA;
 
   /* Matière : ombres de papier, courtes et nettes ; grain clair du bureau */
   --shadow-color: rgb(10 8 5 / 0.62);
@@ -96,6 +98,9 @@
   --text-display: clamp(2.75rem, 1.6rem + 5.2vw, 5.25rem);
   --text-display--line-height: 0.98;
   --text-display--letter-spacing: -0.012em;
+  --text-section: clamp(2.6rem, 1.6rem + 3.6vw, 4.25rem);
+  --text-section--line-height: 1;
+  --text-section--letter-spacing: -0.01em;
   --text-title: clamp(1.9rem, 1.45rem + 2vw, 2.75rem);
   --text-title--line-height: 1.04;
   --text-title--letter-spacing: -0.008em;
@@ -121,6 +126,7 @@
   --color-verdict-ok: var(--verdict-ok);
   --color-verdict-negotiate: var(--verdict-negotiate);
   --color-verdict-alert: var(--verdict-alert);
+  --color-tape: var(--tape);
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
   --color-margin-rule: var(--margin-rule);
@@ -161,6 +167,12 @@
     outline-offset: 3px;
     border-radius: 2px;
   }
+}
+
+/* Feuillet quadrillé : un motif SVG (pas de dégradé), carreaux de 0,9 em, encre bleue très claire. */
+@utility graph-paper {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M16 0H0V16' fill='none' stroke='%232B4A8B' stroke-opacity='0.16'/%3E%3C/svg%3E");
+  background-size: 0.9em 0.9em;
 }
 
 /* Grain papier, ≤ 4 % d'opacité (intégré au SVG). */
@@ -243,6 +255,40 @@
   }
 }
 
+@keyframes ink-scan {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes ink-slide {
+  from {
+    opacity: 0;
+    transform: translate(var(--from-x, 0), var(--from-y, 0)) rotate(var(--tilt, 0deg));
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) rotate(var(--tilt, 0deg));
+  }
+}
+
+/* « Comment ça marche » : l'étape la plus proche du centre de l'écran est la plus nette. */
+@keyframes story-focus {
+  from {
+    opacity: 0.32;
+  }
+  40%,
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.32;
+  }
+}
+
 @keyframes ink-slam {
   from {
     opacity: 0;
@@ -255,11 +301,17 @@
 }
 
 @layer components {
+  /*
+   * Le style de repos de chaque geste est son état final : l'animation ne
+   * remplit que l'attente (backwards). Une fois jouée, c'est la mise en page
+   * du moment qui compte (une police chargée entre-temps élargit le texte, et
+   * un pourcentage figé au départ de l'animation ne suivrait pas).
+   */
   .gesture {
     animation-duration: var(--d);
     animation-timing-function: var(--e);
     animation-delay: var(--t);
-    animation-fill-mode: both;
+    animation-fill-mode: backwards;
   }
 
   /* Un trait qui se dessine (chemin avec pathLength="1"). */
@@ -293,6 +345,57 @@
     animation-name: ink-slam;
   }
 
+  .gesture-slide {
+    transform: rotate(var(--tilt, 0deg));
+    animation-name: ink-slide;
+  }
+
+  /* Ligne de scan sur la photo : un passage du haut vers le bas, en boucle. */
+  .gesture-scan {
+    transform: translateY(-100%);
+    animation-name: ink-scan;
+    animation-iteration-count: infinite;
+  }
+
+  /* Changement d'état d'un objet (la feuille de « Comment ça marche ») : une transition, pas un geste. */
+  .settle {
+    transition-property: transform, opacity;
+    transition-duration: var(--d);
+    transition-timing-function: var(--e);
+  }
+
+  /*
+   * L'étape lue : sans JavaScript, toutes sont nettes. Avec, l'étape en cours
+   * l'est (IntersectionObserver) ; là où le navigateur sait lier une animation
+   * au défilement, l'étape s'éclaire en passant au centre (animation-timeline).
+   */
+  [data-story-ready] .story-step {
+    opacity: 0.32;
+    transition: opacity var(--duration-micro) ease-out;
+  }
+
+  [data-story-ready] .story-step[data-current] {
+    opacity: 1;
+  }
+
+  @supports (animation-timeline: view()) {
+    [data-story-ready] .story-step,
+    .story-step {
+      opacity: 1;
+      transition: none;
+      animation: story-focus linear both;
+      animation-timeline: view();
+    }
+
+    /* Petit écran : la feuille occupe le haut, l'étape se lit plus bas. */
+    @media (width < 64rem) {
+      .story-step,
+      [data-story-ready] .story-step {
+        animation-timeline: view(block 40% 0%);
+      }
+    }
+  }
+
   /* Petit écran : les lignes sont déjà imprimées, la correction a son propre départ. */
   @media (width < 64rem) {
     .gesture {
@@ -314,6 +417,16 @@
   @media (prefers-reduced-motion: reduce) {
     .gesture {
       animation: none;
+    }
+
+    .settle {
+      transition: none;
+    }
+
+    .story-step,
+    [data-story-ready] .story-step {
+      animation: none;
+      opacity: 1;
     }
   }
 }

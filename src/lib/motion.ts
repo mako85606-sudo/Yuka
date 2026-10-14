@@ -42,10 +42,6 @@ export const durations = {
   message: 0.3,
   /** Une demi-respiration de l'étape en cours (aller ou retour). */
   pulse: 0.9,
-  /** Changement d'étape dans « Comment ça marche ». */
-  storyStep: 0.35,
-  /** Éclair de l'appareil photo, dans « Comment ça marche ». */
-  flash: 0.3,
   /** Plafond d'une séquence, par bloc. */
   blockMax: 1.2,
 } as const;
@@ -144,6 +140,31 @@ export const hero = {
   pickStart: 0.05,
 } as const;
 
+/**
+ * « Comment ça marche » : une seule feuille qui change avec l'étape lue. Les
+ * gestes d'une étape partent quand elle devient l'étape en cours.
+ */
+export const story = {
+  /** La feuille passe d'un état à l'autre : photo redressée, recul pour le feuillet. */
+  settle: 0.6,
+  /** Un passage de la ligne de scan sur la photo. */
+  scan: 1.6,
+  /** Le premier cadre au crayon part un instant après l'arrivée sur l'étape. */
+  pencilStart: 0.12,
+  /** Un cadre au crayon autour d'une ligne. */
+  pencil: 0.36,
+  /** Entre deux cadres : ligne après ligne. */
+  pencilGap: 0.24,
+  /** Le stylo rouge part un instant après l'arrivée sur l'étape. */
+  penStart: 0.15,
+  /** Le feuillet quadrillé glisse sur le bureau. */
+  slip: 0.45,
+  /** Un mot du message qui s'écrit. */
+  word: 0.16,
+  /** Entre deux mots. */
+  wordGap: 0.045,
+} as const;
+
 /** Retours qui restent affichés un moment, en secondes. */
 export const holds = {
   /** « Copié » reste sur le bouton, puis il redevient « Copier ». */
@@ -159,18 +180,20 @@ export const offsets = {
   noteShiftX: -6,
   shakeX: 2,
   stampFromScale: 1.6,
-  /** Le visuel de « Comment ça marche » glisse légèrement entre deux étapes. */
-  storyShiftY: 10,
+  /** Le feuillet du message arrive d'un peu plus bas. */
+  storySlipFromY: 28,
+  /** La feuille recule vers le haut quand le feuillet arrive. */
+  storyRecedeY: -18,
 } as const;
 
 /** Échelles. */
 export const scales = {
   /** Le tampon du hero tombe d'un peu plus haut : de 1,3 fois sa taille à 1. */
   heroStampFrom: 1.3,
-  /** Le devis vu dans le viseur, un peu plus loin. */
-  storyPhoto: 0.94,
-  /** Le devis recule pour laisser la place au message, l'erreur entourée restant visible. */
-  storyMessage: 0.8,
+  /** La feuille photographiée, vue d'un peu plus loin. */
+  storyPhoto: 0.86,
+  /** La feuille recule pour laisser la place au feuillet du message. */
+  storyRecede: 0.9,
 } as const;
 
 /** Angles en degrés. */
@@ -184,8 +207,13 @@ export const angles = {
   heroStamp: -6,
   /** Un chiffre corrigé, écrit à la main, un peu penché. */
   handNote: -4,
-  /** Le devis tenu devant l'appareil photo, un peu de travers (« Comment ça marche »). */
-  storyPhoto: 2.5,
+  /** « Comment ça marche » : la feuille photographiée, couchée sur la table (rotateX) et de biais. */
+  storyPhotoTilt: 24,
+  storyPhotoTurn: -6,
+  /** Le ruban adhésif de l'étiquette « Photo du devis ». */
+  storyTape: -4,
+  /** Le feuillet quadrillé du message. */
+  storySlip: 3,
   stampMin: -12,
   stampMax: -8,
 } as const;
@@ -287,13 +315,6 @@ export const transitions = {
   fadeIn: (delay = 0): Transition => ({
     duration: durations.micro,
     ease: easings.out,
-    delay,
-  }),
-  storyStep: { duration: durations.storyStep, ease: easings.out } satisfies Transition,
-  flash: (delay = 0): Transition => ({
-    duration: durations.flash,
-    ease: easings.out,
-    times: [0, 0.2, 1],
     delay,
   }),
 } as const;
