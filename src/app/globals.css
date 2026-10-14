@@ -276,17 +276,21 @@
   }
 }
 
-/* « Comment ça marche » : l'étape la plus proche du centre de l'écran est la plus nette. */
+/*
+ * « Comment ça marche » : l'étape la plus proche du centre de l'écran est la
+ * plus nette. Les autres s'estompent à peine : à 76 %, le texte secondaire
+ * garde 4,5:1 sur le bureau (vérifié par tokens.test.ts).
+ */
 @keyframes story-focus {
   from {
-    opacity: 0.32;
+    opacity: 0.76;
   }
   40%,
   60% {
     opacity: 1;
   }
   to {
-    opacity: 0.32;
+    opacity: 0.76;
   }
 }
 
@@ -395,7 +399,7 @@
    * au défilement, l'étape s'éclaire en passant au centre (animation-timeline).
    */
   [data-story-ready] .story-step {
-    opacity: 0.32;
+    opacity: 0.76;
     transition: opacity var(--duration-micro) ease-out;
   }
 

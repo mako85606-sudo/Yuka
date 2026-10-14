@@ -16,7 +16,7 @@ export function Ringed({
   readonly shape?: RingShape;
 }) {
   return (
-    <span className="relative inline-block whitespace-nowrap">
+    <span className="relative whitespace-nowrap">
       {children}
       <PenRing mode="view" seed={seed} shape={shape} className="-inset-x-[0.35em] -inset-y-[0.2em]" />
     </span>

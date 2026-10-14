@@ -144,6 +144,18 @@ describe("contrastes sur le bureau", () => {
     expect(contrastRatio(token(desk, name), ground)).toBeGreaterThanOrEqual(3);
   });
 
+  it("garde lisible une étape estompée de « Comment ça marche »", () => {
+    const opacities = [...css.matchAll(/opacity:\s*(0\.\d+);/g)].map((match) => Number(match[1]));
+    const dimmest = Math.min(...opacities);
+    const blend = (top: string, bottom: string, alpha: number) => {
+      const a = parseHex(top);
+      const b = parseHex(bottom);
+      return `#${a.map((channel, index) => Math.round(channel * alpha + (b[index] ?? 0) * (1 - alpha)).toString(16).padStart(2, "0")).join("")}`;
+    };
+    expect(dimmest).toBeGreaterThan(0);
+    expect(contrastRatio(blend(token(desk, "--ink-muted"), ground, dimmest), ground)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("garde lisible le texte d'un bouton principal (fond encre, texte bureau)", () => {
     expect(contrastRatio(token(desk, "--paper"), token(desk, "--ink"))).toBeGreaterThanOrEqual(7);
   });
