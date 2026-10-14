@@ -12,7 +12,7 @@ import { SiteHeader } from "@/components/landing/SiteHeader";
 import { StickyCta } from "@/components/landing/StickyCta";
 import { TradeCarousel } from "@/components/landing/TradeCarousel";
 import { ButtonLink } from "@/components/ui/Button";
-import { CameraGlyph } from "@/components/ui/icons";
+import { CameraGlyph, ScissorsGlyph } from "@/components/ui/icons";
 import { plumbingQuote } from "@/fixtures/demo-quotes";
 import { tradeQuotes } from "@/fixtures/trade-quotes";
 import { cn } from "@/lib/cn";
@@ -133,7 +133,7 @@ function SectionHeading({
         {fr(title)}
       </h2>
       {children ? (
-        <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">{children}</p>
+        <p className="mt-4 text-[1.0625rem] leading-relaxed text-ink-muted lg:text-[1.25rem]">{children}</p>
       ) : null}
     </div>
   );
@@ -145,7 +145,7 @@ function Story() {
   if (!quote) return null;
   return (
     <section aria-labelledby="comment" className="relative z-10 border-t border-rule bg-paper">
-      <div className="mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-8 lg:pb-20 lg:pt-28">
+      <div className="mx-auto max-w-6xl px-4 pb-10 pt-16 sm:px-8 lg:pb-16 lg:pt-24">
         <SectionHeading id="comment" title="Comment ça marche">
           Tu t&apos;occupes de la photo. Le reste prend une <Ringed seed="demi-minute" shape="wide">demi-minute</Ringed>.
         </SectionHeading>
@@ -160,15 +160,15 @@ function Story() {
 /** Six métiers, six devis qui se corrigent en glissant. */
 function Trades() {
   return (
-    <section aria-labelledby="metiers" className="border-t border-rule">
-      <div className="mx-auto max-w-6xl px-4 pt-20 sm:px-8 lg:pt-28">
+    <section aria-labelledby="metiers">
+      <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-8 lg:pt-20">
         <SectionHeading id="metiers" title="Du garage au déménageur">
           {fr(
             "Une ouverture de porte à 390 €, un « forfait intervention » jamais détaillé, des cartons mal comptés… Fais glisser les fiches pour voir chaque exemple se corriger.",
           )}
         </SectionHeading>
       </div>
-      <div className="mx-auto mt-6 max-w-6xl pb-20 lg:pb-28">
+      <div className="mx-auto mt-8 max-w-6xl pb-16 lg:pb-20">
         <TradeCarousel quotes={tradeQuotes} />
       </div>
     </section>
@@ -193,28 +193,40 @@ const CHECKS = [
   },
 ] as const;
 
+/** Chaque fiche est posée sur le bureau avec son propre angle, et alterne de côté. */
+const CHECK_TILTS = [-1.4, 1, -0.6] as const;
+
 function Checks() {
   return (
-    <section aria-labelledby="verifications" className="border-t border-rule">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-8 lg:py-28">
+    <section aria-labelledby="verifications">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-8 lg:py-20">
         <SectionHeading id="verifications" title="Ce qu'on vérifie">
           <Ringed seed="ligne-par-ligne" shape="wide">Ligne par ligne</Ringed>, avec la patience d&apos;un prof de maths qui corrige des
           copies le dimanche soir.
         </SectionHeading>
-        <ul className="mt-14 grid gap-14 md:grid-cols-3 md:gap-10">
-          {CHECKS.map((check) => (
-            <li key={check.kind} className="flex flex-col gap-7">
-              {/* Les fiches reposent sur une même ligne, les titres s'alignent. */}
-              <div className="md:flex md:min-h-[13.5rem] md:items-end">
+        <ol className="mt-12 space-y-14 lg:mt-16 lg:space-y-6">
+          {CHECKS.map((check, index) => (
+            <li
+              key={check.kind}
+              className="grid items-center gap-8 lg:grid-cols-2 lg:gap-20"
+            >
+              {/* La fiche, agrandie sur grand écran, d'un côté puis de l'autre. */}
+              <div
+                className={cn("flex justify-center lg:py-6 lg:[zoom:1.3]", index % 2 === 1 && "lg:order-2")}
+                style={{ rotate: `${CHECK_TILTS[index % CHECK_TILTS.length]}deg` }}
+              >
                 <CheckIllustration kind={check.kind} />
               </div>
-              <div>
-                <h3 className="font-display text-[1.75rem] leading-tight text-ink">{check.title}</h3>
-                <p className="mt-2 leading-relaxed text-ink-muted">{fr(check.text)}</p>
+              <div className={cn("max-w-lg", index % 2 === 1 && "lg:order-1 lg:justify-self-end")}>
+                <p aria-hidden className="font-display text-[3.5rem] leading-none text-ink-muted lg:text-[4.5rem]">
+                  {index + 1}
+                </p>
+                <h3 className="mt-2 font-display text-[2rem] leading-tight text-ink lg:text-[2.6rem]">{check.title}</h3>
+                <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted lg:text-[1.2rem]">{fr(check.text)}</p>
               </div>
             </li>
           ))}
-        </ul>
+        </ol>
         <p className="mt-10 font-mono text-label uppercase text-ink-muted">
           {fr("Illustrations : exemples fictifs")}
         </p>
@@ -238,47 +250,70 @@ const COMMITMENTS = [
   },
 ] as const;
 
+/**
+ * « Ce qu'on s'interdit », comme un règlement imprimé posé sur le bureau :
+ * chaque interdit est barré au stylo rouge.
+ */
 function Trust() {
   return (
-    <section aria-labelledby="confiance" className="border-t border-rule">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-8 lg:py-28">
-        <SectionHeading id="confiance" title="Ce qu'on s'interdit" />
-        <ul className="mt-12 grid gap-10 md:grid-cols-3">
-          {COMMITMENTS.map((commitment) => (
-            <li key={commitment.title} className="border-t-2 border-ink pt-5">
-              <h3 className="font-display text-[1.75rem] leading-tight text-ink">
-                {commitment.title}
-              </h3>
-              <p className="mt-3 leading-relaxed text-ink-muted">{fr(commitment.text)}</p>
-            </li>
-          ))}
-        </ul>
+    <section aria-labelledby="confiance">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-8 lg:py-20">
+        <div className="surface-paper sheet-shadow-rest relative rounded-[2px] px-6 pb-10 pt-12 sm:px-10 lg:px-14 lg:pb-14 lg:pt-16" style={{ rotate: "-0.4deg" }}>
+          <span aria-hidden className="absolute -top-3 left-1/2 h-7 w-28 -translate-x-1/2 bg-tape/85 [clip-path:polygon(0_10%,4%_0,96%_8%,100%_0,97%_50%,100%_100%,95%_92%,5%_100%,0_90%,3%_50%)]" style={{ rotate: "2deg" }} />
+          <span aria-hidden className="paper-grain pointer-events-none absolute inset-0" />
+          <h2 id="confiance" className="font-display text-section text-ink">
+            {fr("Ce qu'on s'interdit")}
+          </h2>
+          <ol className="mt-10 grid gap-10 border-t-2 border-ink pt-10 md:grid-cols-3 md:gap-12">
+            {COMMITMENTS.map((commitment, index) => (
+              <li key={commitment.title}>
+                <p aria-hidden className="font-mono text-label uppercase text-ink-muted">{`Article ${index + 1}`}</p>
+                <h3 className="mt-3 font-display text-[1.9rem] leading-tight text-ink decoration-pen-red decoration-[0.09em] line-through lg:text-[2.2rem]">
+                  {commitment.title}
+                </h3>
+                <p className="mt-4 text-[1.0625rem] leading-relaxed text-ink-muted">{fr(commitment.text)}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   );
 }
 
+/** Les questions, sur une copie double à grands carreaux, marge rouge comprise. */
 function Questions() {
   return (
-    <section aria-labelledby="faq" className="border-t border-rule">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-16 lg:py-28">
-        <SectionHeading id="faq" title="Avant de te lancer" />
-        <Faq />
+    <section aria-labelledby="faq">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-8 lg:py-20">
+        <div className="surface-paper seyes-paper sheet-shadow-rest relative rounded-[2px] pb-8 pl-12 pr-6 pt-10 sm:pl-24 sm:pr-12 lg:pb-12 lg:pt-14" style={{ rotate: "0.4deg" }}>
+          <span aria-hidden className="absolute inset-y-0 left-8 w-px bg-margin-rule sm:left-16" />
+          <h2 id="faq" className="font-display text-section text-ink">
+            {fr("Avant de te lancer")}
+          </h2>
+          <Faq ruled className="mt-8" />
+        </div>
       </div>
     </section>
   );
 }
 
+/** L'inscription, sur un coupon à découper. */
 function Signup() {
   return (
-    <section aria-labelledby="inscription" className="border-t border-rule">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-end lg:gap-16 lg:py-28">
-        <SectionHeading id="inscription" title="On te prévient ?">
-          {fr(
-            "Un mail le jour où Loupe saura lire les devis de nouveaux métiers, ou quand le rapport détaillé sera prêt. Rarement, et seulement quand ça vaut le coup.",
-          )}
-        </SectionHeading>
-        <EmailSignup />
+    <section aria-labelledby="inscription">
+      <div className="mx-auto max-w-4xl px-4 pb-10 pt-8 sm:px-8 sm:pb-20 lg:pb-28">
+        <div className="surface-paper sheet-shadow-rest relative rounded-[2px] p-3 sm:p-4" style={{ rotate: "-0.6deg" }}>
+          <div className="relative grid gap-8 border-2 border-dashed border-rule-strong px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-end lg:gap-12 lg:px-10 lg:py-10">
+            <ScissorsGlyph className="absolute -top-[0.8rem] left-6 size-6 bg-paper-raised px-0.5 text-ink-muted" />
+            <SectionHeading id="inscription" title="On te prévient ?">
+              {fr(
+                "Un mail le jour où Loupe saura lire les devis de nouveaux métiers, ou quand le rapport détaillé sera prêt. Rarement, et seulement quand ça vaut le coup.",
+              )}
+            </SectionHeading>
+            <EmailSignup />
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -1,3 +1,4 @@
+import { cn } from "@/lib/cn";
 import { fr } from "@/lib/typography";
 
 interface Question {
@@ -43,10 +44,13 @@ const QUESTIONS: readonly Question[] = [
   },
 ];
 
-/** Questions fréquentes, en accordéons natifs (accessibles sans JavaScript). */
-export function Faq() {
+/**
+ * Questions fréquentes, en accordéons natifs (accessibles sans JavaScript).
+ * `ruled` : posées sur une copie à carreaux, sans traits de séparation.
+ */
+export function Faq({ ruled = false, className }: { readonly ruled?: boolean; readonly className?: string } = {}) {
   return (
-    <div className="divide-y divide-rule border-y border-rule">
+    <div className={cn(!ruled && "divide-y divide-rule border-y border-rule", className)}>
       {QUESTIONS.map(({ question, answer }) => (
         <details key={question} className="group">
           <summary className="flex cursor-pointer list-none items-baseline justify-between gap-6 py-5 text-[1.0625rem] font-medium text-ink [&::-webkit-details-marker]:hidden">

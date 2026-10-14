@@ -89,23 +89,28 @@ export function HowItWorks({ quote }: { readonly quote: DemoQuote }) {
   return (
     <div
       data-story-ready={ready ? "" : undefined}
-      className="relative [--story-h:25rem] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,29rem)] lg:gap-16 lg:[--story-h:34rem]"
+      className="relative [--story-h:25rem] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,35rem)] lg:gap-16 lg:[--story-h:40rem]"
     >
       <div className="sticky top-0 z-10 -mx-4 bg-paper px-4 pb-4 pt-3 sm:-mx-8 sm:px-8 lg:top-[calc(50vh-var(--story-h)/2)] lg:order-2 lg:mx-0 lg:self-start lg:bg-transparent lg:p-0">
         <StoryVisual quote={quote} step={step} />
       </div>
       {/* Chaque étape est un peu moins haute que la feuille : un retrait en haut et en bas garde la première et la dernière alignées sur son centre. */}
-      <ol ref={listRef} className="lg:order-1 lg:py-[calc(var(--story-h)*0.14)]">
+      <ol ref={listRef} className="lg:order-1 lg:py-[calc(var(--story-h)*0.2)]">
         {STEPS.map((item, index) => (
           <li
             key={item.title}
             data-step={index}
             data-current={index === step ? "" : undefined}
-            className="story-step flex min-h-[60vh] flex-col justify-start pt-8 lg:min-h-[calc(var(--story-h)*0.72)] lg:justify-center lg:pt-0"
+            className="story-step flex min-h-[60vh] flex-col justify-start pt-8 lg:min-h-[calc(var(--story-h)*0.6)] lg:justify-center lg:pt-0"
           >
-            <span className="font-mono text-label uppercase text-ink-muted">{`Étape ${index + 1} sur ${STEPS.length}`}</span>
-            <h3 className="mt-2 font-display text-[1.75rem] leading-tight text-ink sm:text-[2rem]">{item.title}</h3>
-            <p className="mt-3 max-w-md text-[1.0625rem] leading-relaxed text-ink-muted">{fr(item.text)}</p>
+            <div className="flex items-baseline gap-4">
+              <span aria-hidden className="font-display text-[3.25rem] leading-none text-ink lg:text-[5rem]">
+                {index + 1}
+              </span>
+              <span className="font-mono text-label uppercase text-ink-muted">{`Étape ${index + 1} sur ${STEPS.length}`}</span>
+            </div>
+            <h3 className="mt-3 font-display text-[1.9rem] leading-tight text-ink sm:text-[2.2rem] lg:text-[2.75rem]">{item.title}</h3>
+            <p className="mt-3 max-w-md text-[1.0625rem] leading-relaxed text-ink-muted lg:max-w-lg lg:text-[1.2rem]">{fr(item.text)}</p>
           </li>
         ))}
       </ol>
@@ -132,7 +137,7 @@ function StoryVisual({ quote, step }: { readonly quote: DemoQuote; readonly step
   const photo = step <= 0;
 
   return (
-    <div aria-hidden className="relative mx-auto h-[var(--story-h)] max-w-[23rem] text-[12px] sm:text-[13px] lg:max-w-none lg:text-[14.5px]">
+    <div aria-hidden className="relative mx-auto h-[var(--story-h)] max-w-[23rem] text-[12px] sm:text-[13px] lg:max-w-none lg:text-[18.5px]">
       {/* Le viseur de l'appareil photo et son étiquette, sur un bout de ruban adhésif. */}
       <div className={cn("settle absolute inset-x-[3%] bottom-[14%] top-[5%]", photo ? "opacity-100" : "opacity-0")} style={settle}>
         {(["left-0 top-0 border-l-2 border-t-2", "right-0 top-0 border-r-2 border-t-2", "bottom-0 left-0 border-b-2 border-l-2", "bottom-0 right-0 border-b-2 border-r-2"] as const).map(

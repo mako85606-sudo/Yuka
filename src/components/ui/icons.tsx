@@ -72,3 +72,18 @@ export function CheckGlyph({ className }: { readonly className?: string }) {
     </svg>
   );
 }
+
+export function ScissorsGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className={cn("size-5 fill-none stroke-current", className)}
+      strokeWidth={1.6}
+    >
+      <circle cx="5" cy="6" r="2.5" />
+      <circle cx="5" cy="14" r="2.5" />
+      <path d="M7.2 7.2 17.5 15M7.2 12.8 17.5 5" strokeLinecap="round" />
+    </svg>
+  );
+}
