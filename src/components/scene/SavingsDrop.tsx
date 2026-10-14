@@ -174,7 +174,7 @@ export function SavingsDrop({ quote, active, onDone, children }: SavingsDropProp
         transition={fade(instant ? chute.counter.start : (chute.coins[0]?.start ?? 0))}
       >
         {savings === null ? (
-          <div className="flex items-center gap-3 rounded-[4px] border border-rule bg-paper-raised px-4 py-3">
+          <div className="flex items-center gap-3 surface-paper rounded-[4px] border border-rule px-4 py-3">
             <PenTick className="size-5" />
             <p className="text-[0.95rem] text-ink">{fr("Rien à redire. Ce devis-là, tu peux le signer.")}</p>
           </div>
@@ -182,7 +182,7 @@ export function SavingsDrop({ quote, active, onDone, children }: SavingsDropProp
           <>
             <motion.div
               ref={pocketRef}
-              className="flex items-baseline justify-between gap-4 rounded-[4px] border border-rule bg-paper-raised px-4 py-3"
+              className="flex items-baseline justify-between gap-4 surface-paper rounded-[4px] border border-rule px-4 py-3"
             >
               <span className="font-mono text-label uppercase text-ink-muted">Économie possible</span>
               <span className="font-mono text-[1.6rem] font-semibold leading-none tabular-nums text-ink">
@@ -221,7 +221,7 @@ export function SavingsDrop({ quote, active, onDone, children }: SavingsDropProp
                   Le message que tu pourrais envoyer
                 </motion.p>
                 <motion.p
-                  className="max-w-[30rem] rounded-[14px] rounded-br-[4px] bg-annotation-blue px-4 py-3 text-[0.9rem] leading-snug text-paper-raised"
+                  className="max-w-[30rem] rounded-[14px] rounded-br-[4px] bg-annotation-blue px-4 py-3 text-[0.9rem] leading-snug text-paper"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: active ? 1 : 0 }}
                   transition={fade(chute.words[0]?.start ?? 0)}

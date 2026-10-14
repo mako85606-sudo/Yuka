@@ -32,7 +32,7 @@ const SAMPLE_LINES = plumbingQuote.lines.slice(0, 3);
 function Row({ label, amount, children }: { label: string; amount: number; children?: ReactNode }) {
   return (
     <div className="relative py-2.5">
-      <div className="relative isolate flex items-baseline gap-3">
+      <div className="relative flex items-baseline gap-3">
         {children}
         <span className="min-w-0 flex-1 text-[0.95rem] leading-snug">{label}</span>
         <span className="shrink-0 font-mono text-[0.95rem] tabular-nums">{formatAmount(amount)}</span>

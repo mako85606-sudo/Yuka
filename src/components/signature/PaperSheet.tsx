@@ -86,7 +86,7 @@ export function PaperSheet({
         animate={{ opacity: 1 }}
         transition={shadowTransition}
       />
-      <section aria-label={label} className="paper-grain relative rounded-[3px] bg-paper-raised">
+      <section aria-label={label} className="surface-paper paper-grain relative rounded-[3px]">
         {children}
         <AnimatePresence>{scanning ? <ScanBeam key="scan" reduced={reduced} /> : null}</AnimatePresence>
       </section>

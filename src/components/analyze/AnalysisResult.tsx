@@ -72,7 +72,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
       animate={{ opacity: 1, y: 0 }}
       transition={reduced ? reducedFade() : transitions.message()}
     >
-      <section aria-labelledby="issue-analyse" className="rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6">
+      <section aria-labelledby="issue-analyse" className="surface-paper rounded-[4px] border border-rule p-5 sm:p-6">
         <h2
           id="issue-analyse"
           ref={headingRef}
@@ -205,7 +205,7 @@ export function AnalysisResult({ data, headingRef, onRestart }: AnalysisResultPr
       <section
         id={MESSAGE_ANCHOR}
         aria-labelledby="titre-message"
-        className="scroll-mt-6 rounded-[4px] border border-rule bg-paper-raised p-5 sm:p-6"
+        className="scroll-mt-6 surface-paper rounded-[4px] border border-rule p-5 sm:p-6"
       >
         <h3 id="titre-message" className="font-display text-[1.6rem] leading-tight text-ink">
           {fr("Le message à envoyer")}

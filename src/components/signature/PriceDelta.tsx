@@ -27,8 +27,9 @@ interface PriceDeltaProps {
  * (600 ms au plus) et, toujours, sa source et son niveau de confiance.
  *
  * Volontairement distinct des erreurs vérifiées : pas d'encre rouge ici.
- * Orange au-dessus de la référence (il y a matière à négocier), vert en
- * dessous ; une estimation IA reste à l'encre neutre, soulignée en pointillé.
+ * Orange au-dessus de la référence (il y a matière à négocier), encre
+ * neutre en dessous ; une estimation IA reste à l'encre neutre, soulignée en
+ * pointillé.
  */
 export function PriceDelta({
   amount,
@@ -52,9 +53,7 @@ export function PriceDelta({
       ? "text-ink"
       : rounded > 0
         ? "text-stamp-orange-strong"
-        : rounded < 0
-          ? "text-stamp-green-strong"
-          : "text-ink-muted";
+        : "text-ink";
 
   useEffect(() => {
     if (!active) {

@@ -117,7 +117,7 @@ function Marked({ issue, children }: { readonly issue: QuoteTotalIssue | undefin
       {issue.circled ? (
         <RedCircle id={issue.id} active={issue.active} delay={issue.beats.circle.start} className="-inset-x-3 -inset-y-2.5" />
       ) : null}
-      <span className="relative isolate inline-block">
+      <span className="relative inline-block">
         <HighlighterMark id={issue.id} active={issue.active} delay={issue.beats.highlight.start} />
         {children}
       </span>

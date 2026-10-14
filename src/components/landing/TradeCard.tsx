@@ -59,7 +59,7 @@ export function TradeCard({ quote, active }: TradeCardProps) {
                   {issue && beats && issueSeverity(issue) !== "unconfirmed" ? (
                     <RedCircle id={issue.id} active={active} delay={beats.circle.start} className="-inset-x-2 -inset-y-2.5" />
                   ) : null}
-                  <div className="relative isolate flex items-baseline gap-3 text-[0.85rem]">
+                  <div className="relative flex items-baseline gap-3 text-[0.85rem]">
                     {issue && beats ? (
                       <HighlighterMark id={issue.id} active={active} delay={beats.highlight.start} />
                     ) : null}

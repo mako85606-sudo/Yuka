@@ -106,7 +106,7 @@ function ArrowButton({ direction, onClick }: { readonly direction: 1 | -1; reado
       type="button"
       onClick={onClick}
       aria-label={direction === 1 ? "Exemple suivant" : "Exemple précédent"}
-      className="grid size-10 place-items-center rounded-full border border-rule-strong text-ink hover:bg-paper-raised"
+      className="grid size-10 place-items-center rounded-full border border-rule-strong text-ink hover:bg-ink/10"
     >
       <svg aria-hidden viewBox="0 0 16 16" className="size-4" fill="none">
         <path

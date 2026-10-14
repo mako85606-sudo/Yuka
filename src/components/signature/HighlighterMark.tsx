@@ -21,9 +21,11 @@ interface HighlighterMarkProps {
  * Coup de surligneur jaune derrière la ligne, aux bords irréguliers. Il balaie
  * la ligne de gauche à droite (scaleX depuis la gauche).
  *
- * À placer dans un parent `relative isolate` pour passer derrière le texte
- * sans passer sous la feuille. Décoratif : le texte reste lisible dessus
- * (contraste vérifié dans les deux thèmes).
+ * Encre en mode « produit » (mix-blend-mode: multiply), comme un vrai
+ * surligneur : le jaune se mélange au papier et l'encre imprimée reste noire
+ * au travers. À placer dans un parent `relative`, sur une feuille, sans
+ * `isolate` entre les deux (le mélange se ferait sur du vide). Décoratif : le
+ * texte reste lisible dessus (contraste vérifié par tokens.test.ts).
  */
 export function HighlighterMark({ id, active = true, delay = 0, className }: HighlighterMarkProps) {
   const { reduced } = useMotionPrefs();
@@ -32,7 +34,7 @@ export function HighlighterMark({ id, active = true, delay = 0, className }: Hig
   return (
     <motion.span
       aria-hidden
-      className={cn("pointer-events-none absolute -inset-x-1.5 -inset-y-0.5 -z-10 block", className)}
+      className={cn("pointer-events-none absolute -inset-x-1.5 -inset-y-0.5 block mix-blend-multiply", className)}
       style={{ originX: 0 }}
       initial={{ scaleX: 0, opacity: 0 }}
       animate={active ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0 }}

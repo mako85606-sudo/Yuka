@@ -64,11 +64,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: site.themeColor.light },
-    { media: "(prefers-color-scheme: dark)", color: site.themeColor.dark },
-  ],
-  colorScheme: "light dark",
+  // Une seule identité : le bureau sombre, quel que soit le réglage du système.
+  themeColor: site.themeColor,
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

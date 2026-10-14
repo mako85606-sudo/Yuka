@@ -25,7 +25,7 @@ export function AdminLogin() {
         required
         aria-invalid={state.message ? true : undefined}
         aria-describedby={messageId}
-        className="mt-2 h-12 w-full rounded-[6px] border border-rule-strong bg-paper-raised px-4 text-base text-ink"
+        className="mt-2 h-12 w-full rounded-[6px] surface-paper border border-rule-strong px-4 text-base text-ink"
       />
       <p id={messageId} aria-live="polite" className="mt-2 min-h-5 text-sm text-pen-red-strong">
         {state.message}

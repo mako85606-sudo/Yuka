@@ -229,7 +229,7 @@ const COMMITMENTS = [
 
 function Trust() {
   return (
-    <section aria-labelledby="confiance" className="border-t border-rule bg-paper-raised">
+    <section aria-labelledby="confiance" className="border-t border-rule">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-8 lg:py-28">
         <SectionHeading id="confiance" title="Ce qu'on s'interdit" />
         <ul className="mt-12 grid gap-10 md:grid-cols-3">

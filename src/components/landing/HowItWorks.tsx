@@ -196,7 +196,7 @@ function StoryVisual({ quote, step }: { readonly quote: DemoQuote; readonly step
                         {flagged && issue ? (
                           <RedCircle id={`histoire-${issue.id}`} active={checked} delay={beats.circle.start} className="-inset-x-2 -inset-y-2.5" />
                         ) : null}
-                        <div className="relative isolate flex items-baseline gap-3 text-[0.85rem]">
+                        <div className="relative flex items-baseline gap-3 text-[0.85rem]">
                           {flagged && issue ? (
                             <HighlighterMark id={`histoire-${issue.id}`} active={checked} delay={beats.highlight.start} />
                           ) : null}
@@ -230,7 +230,7 @@ function StoryVisual({ quote, step }: { readonly quote: DemoQuote; readonly step
               <span key={corner} className={cn("absolute size-7 rounded-[3px] border-ink", corner)} />
             ),
           )}
-          <span className="absolute -top-9 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-ink px-3 py-1 font-mono text-label uppercase text-paper-raised">
+          <span className="absolute -top-9 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-ink px-3 py-1 font-mono text-label uppercase text-paper">
             <CameraGlyph className="size-3.5" />
             Photo du devis
           </span>
@@ -250,10 +250,10 @@ function StoryVisual({ quote, step }: { readonly quote: DemoQuote; readonly step
         animate={messaged ? { opacity: 1, y: 0 } : { opacity: 0, y: offsets.storyShiftY }}
         transition={reduced ? reducedFade() : transitions.storyStep}
       >
-        <div className="ml-auto max-w-[19rem] rounded-[14px] rounded-br-[4px] bg-annotation-blue px-4 py-3 text-[0.875rem] leading-snug text-paper-raised">
+        <div className="ml-auto max-w-[19rem] rounded-[14px] rounded-br-[4px] bg-annotation-blue px-4 py-3 text-[0.875rem] leading-snug text-paper">
           <p>{quote.message}</p>
           <div className="mt-2 flex items-center justify-between gap-3">
-            <span className="inline-flex rounded-full bg-paper-raised/15 px-2.5 py-0.5 text-[0.75rem] font-medium">Copier</span>
+            <span className="inline-flex rounded-full bg-paper/15 px-2.5 py-0.5 text-[0.75rem] font-medium">Copier</span>
             {savings ? (
               <span className="font-mono text-[0.75rem] font-semibold tabular-nums">{fr(`Économie : ${savings}`)}</span>
             ) : null}

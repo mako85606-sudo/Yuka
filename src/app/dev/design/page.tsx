@@ -38,8 +38,8 @@ export default function DesignPage() {
               Palette
             </h2>
             <p className="mt-2 text-sm text-ink-muted">
-              Valeurs lues en direct dans le thème affiché. Les tokens « dérivés » garantissent
-              les contrastes : le petit texte tient 4,5:1, le gros texte du tampon 3:1.
+              Valeurs lues en direct. Les mêmes noms désignent les encres du bureau et celles
+              de la feuille : le petit texte tient 4,5:1, le gros texte du tampon 3:1.
             </p>
           </div>
           <Swatches />

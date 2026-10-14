@@ -95,7 +95,7 @@ export function QuoteLine({
         {issue && issue.circled !== false ? (
           <RedCircle id={issue.id} active={issue.active} delay={issue.beats.circle.start} />
         ) : null}
-        <div className="relative isolate flex items-baseline gap-3">
+        <div className="relative flex items-baseline gap-3">
           {issue ? (
             <HighlighterMark
               id={issue.id}

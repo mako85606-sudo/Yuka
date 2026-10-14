@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-/** Petite coche tracée au stylo vert : « vérifié ». Décorative. */
+/** Petite coche tracée au stylo rouge : « vérifié ». Décorative. */
 export function PenTick({ className }: { readonly className?: string }) {
   return (
     <svg
@@ -11,7 +11,7 @@ export function PenTick({ className }: { readonly className?: string }) {
     >
       <path
         d="M2.6 8.6c1.2.9 2.2 2 3 3.4 1.6-3.6 4.2-6.8 7.6-9.2"
-        className="stroke-stamp-green-strong"
+        className="stroke-pen-red"
         strokeWidth={1.9}
         strokeLinecap="round"
         strokeLinejoin="round"

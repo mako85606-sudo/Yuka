@@ -81,7 +81,7 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
               }}
               className={cn(
                 "h-8 rounded-[4px] px-3 text-sm",
-                version === key ? "bg-ink text-paper-raised" : "text-ink hover:bg-paper",
+                version === key ? "bg-ink text-paper" : "text-ink hover:bg-ink/8",
               )}
             >
               {VERSIONS[key]}
@@ -116,7 +116,7 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
         onChange={(event) => setTexts((current) => ({ ...current, [version]: event.target.value }))}
         rows={version === "email" ? 12 : 5}
         aria-describedby={statusId}
-        className="mt-3 block w-full resize-y rounded-[4px] border border-rule-strong bg-paper-raised px-4 py-3 text-[0.95rem] leading-relaxed text-ink [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="mt-3 block w-full resize-y surface-paper rounded-[4px] border border-rule-strong px-4 py-3 text-[0.95rem] leading-relaxed text-ink [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       />
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -125,7 +125,7 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
           onClick={() => void copy("text")}
           className={cn(
             "inline-flex h-11 items-center gap-2 rounded-[6px] px-5 font-medium motion-safe:active:translate-y-px",
-            copied === "text" ? "bg-stamp-green-strong text-paper-raised" : "bg-ink text-paper-raised hover:bg-ink/88",
+            copied === "text" ? "bg-ink text-paper" : "bg-ink text-paper hover:bg-ink/88",
           )}
         >
           <span className="relative inline-flex size-5">

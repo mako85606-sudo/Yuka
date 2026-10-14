@@ -20,7 +20,7 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
           <button
             type="button"
             onClick={() => retry()}
-            className="mt-8 inline-flex h-12 items-center rounded-[6px] bg-ink px-5 font-medium text-paper-raised"
+            className="mt-8 inline-flex h-12 items-center rounded-[6px] bg-ink px-5 font-medium text-paper"
           >
             Réessayer
           </button>

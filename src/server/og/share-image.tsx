@@ -2,7 +2,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { ogColors, ogSize } from "@/config/og";
+import { ogColors, ogShadow, ogSize } from "@/config/og";
 import { site } from "@/config/site";
 import { CATEGORY_LABELS, type Category } from "@/config/taxonomy";
 import type { SavingsRange } from "@/lib/analysis/result";
@@ -70,7 +70,7 @@ export async function renderShareImage(input: ShareImageInput | null): Promise<I
           width: "100%",
           height: "100%",
           display: "flex",
-          background: ogColors.paper,
+          background: ogColors.desk,
           padding: 48,
           fontFamily: "Geist",
         }}
@@ -84,8 +84,7 @@ export async function renderShareImage(input: ShareImageInput | null): Promise<I
             background: ogColors.paperRaised,
             borderRadius: 6,
             padding: "52px 60px",
-            // Ombre à l'encre, à 12 % d'opacité (alpha hexadécimal 1F).
-            boxShadow: `0 18px 40px ${ogColors.ink}1F`,
+            boxShadow: ogShadow,
             transform: "rotate(-0.6deg)",
           }}
         >

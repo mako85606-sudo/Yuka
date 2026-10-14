@@ -9,8 +9,8 @@ const base =
   "inline-flex select-none items-center justify-center gap-2 rounded-[6px] font-medium motion-safe:active:translate-y-px disabled:pointer-events-none disabled:opacity-45";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-paper-raised hover:bg-ink/88",
-  secondary: "border border-rule-strong bg-paper-raised text-ink hover:bg-paper",
+  primary: "bg-ink text-paper hover:bg-ink/88",
+  secondary: "border border-rule-strong text-ink hover:bg-ink/8",
   quiet: "text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink",
 };
 

@@ -135,7 +135,7 @@ export function DemoLoop({ quotes, className }: DemoLoopProps) {
                 onClick={() => goTo(itemIndex)}
                 className={cn(
                   "h-7 rounded-[4px] px-2.5 text-[0.8125rem]",
-                  itemIndex === index ? "bg-ink text-paper-raised" : "text-ink hover:bg-paper-raised",
+                  itemIndex === index ? "bg-ink text-paper" : "text-ink hover:bg-ink/10",
                 )}
               >
                 {item.category}
@@ -147,7 +147,7 @@ export function DemoLoop({ quotes, className }: DemoLoopProps) {
             type="button"
             aria-pressed={paused}
             onClick={togglePause}
-            className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-rule-strong px-2.5 text-[0.8125rem] text-ink hover:bg-paper-raised motion-reduce:hidden"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-rule-strong px-2.5 text-[0.8125rem] text-ink hover:bg-ink/10 motion-reduce:hidden"
           >
             <PlayPauseGlyph paused={paused} />
             {paused ? "Reprendre" : "Pause"}
