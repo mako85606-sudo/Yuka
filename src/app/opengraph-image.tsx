@@ -1,7 +1,7 @@
 import { ogSize } from "@/config/og";
 import { renderShareImage } from "@/server/og/share-image";
 
-export const alt = "Loupe : ton devis, corrigé au stylo rouge";
+export const alt = "Loupe : ne payez plus un devis trop cher";
 export const size = ogSize;
 export const contentType = "image/png";
 

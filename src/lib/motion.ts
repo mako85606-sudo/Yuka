@@ -1,5 +1,4 @@
 import type { Transition } from "motion/react";
-import type { CSSProperties } from "react";
 
 /**
  * Langage de mouvement de Loupe.
@@ -94,75 +93,31 @@ export const beats = {
 } as const;
 
 /**
- * Les illustrations sous la ligne de flottaison ne sont montées qu'à cette
- * distance de l'écran : la page s'affiche et répond plus vite au chargement.
+ * Le téléphone du haut de page : une boucle photo → analyse → résultat. Le
+ * résultat s'affiche d'abord (rendu serveur, mouvement réduit), puis la
+ * boucle repart de la photo tant que le téléphone est à l'écran.
  */
-export const LAZY_MOUNT_MARGIN = "600px 0px";
-
-/**
- * La feuille du hero : une seule séquence d'environ 3,5 s, jouée en CSS (elle
- * tourne sans JavaScript). Les lignes se tapent, le stylo entoure le montant
- * faux, la correction et la note s'écrivent, puis le tampon tombe.
- */
-export const hero = {
-  /** La page vient de s'afficher : la machine commence à taper. */
-  start: 0.3,
-  /** Une frappe : un caractère. */
-  keystroke: 0.016,
-  /** Plafond d'une ligne tapée. */
-  typeMax: 0.42,
-  /** Entre le début de deux lignes : elles se chevauchent, comme une imprimante pressée. */
-  lineGap: 0.12,
-  /** Le libellé, le détail et le montant d'une même ligne partent à quelques frappes d'écart. */
-  columnGap: 0.06,
-  /** Le stylo entoure le montant. */
-  circle: 0.55,
-  /** Fraction du cercle tracée quand la correction commence. */
-  correctionAfterCircle: 0.85,
-  /** Le chiffre corrigé, écrit à la main. */
-  correction: 0.32,
-  /** La note de marge part un peu après la correction. */
-  noteAfterCorrection: 0.18,
-  /** La note de marge, écrite à la main. */
-  note: 0.55,
-  /** Un temps entre deux gestes du correcteur. */
-  breath: 0.12,
-  /** Le correcteur relit avant de tamponner. */
-  beforeStamp: 0.3,
-  /** Le tampon s'abat : un seul impact, sans rebond. */
-  stamp: 0.16,
-  /**
-   * Sur petit écran, les lignes sont déjà imprimées : la correction commence
-   * dès que la ligne fautive est à l'écran, après ce court délai.
-   */
-  narrowStart: 0.25,
-  /** Une ligne choisie au doigt ou à la souris : le stylo part aussitôt. */
-  pickStart: 0.05,
-} as const;
-
-/**
- * « Comment ça marche » : une seule feuille qui change avec l'étape lue. Les
- * gestes d'une étape partent quand elle devient l'étape en cours.
- */
-export const story = {
-  /** La feuille passe d'un état à l'autre : photo redressée, recul pour le feuillet. */
-  settle: 0.6,
+export const phoneDemo = {
+  /** Le résultat reste affiché : c'est l'écran qu'on lit. */
+  resultHold: 6,
+  /** La photo du devis, cadrée puis scannée. */
+  photo: 2.4,
   /** Un passage de la ligne de scan sur la photo. */
-  scan: 1.6,
-  /** Le premier cadre au crayon part un instant après l'arrivée sur l'étape. */
-  pencilStart: 0.12,
-  /** Un cadre au crayon autour d'une ligne. */
-  pencil: 0.36,
-  /** Entre deux cadres : ligne après ligne. */
-  pencilGap: 0.24,
-  /** Le stylo rouge part un instant après l'arrivée sur l'étape. */
-  penStart: 0.15,
-  /** Le feuillet quadrillé glisse sur le bureau. */
-  slip: 0.45,
-  /** Un mot du message qui s'écrit. */
-  word: 0.16,
-  /** Entre deux mots. */
-  wordGap: 0.045,
+  scan: 1.2,
+  /** Une vérification de l'analyse, puis la suivante. */
+  check: 0.5,
+  /** Après la dernière vérification, un temps avant le résultat. */
+  afterChecks: 0.35,
+  /** D'un écran à l'autre : un fondu. */
+  sceneFade: 0.35,
+  /** Décalage entre deux cartes du résultat. */
+  cardStagger: 0.08,
+  /** Les cartes partent après le montant. */
+  cardsStart: 0.25,
+  /** Le montant de l'économie compte jusqu'à sa valeur. */
+  counter: 0.8,
+  /** Un tour de l'indicateur d'attente. */
+  spinner: 0.8,
 } as const;
 
 /** Retours qui restent affichés un moment, en secondes. */
@@ -180,20 +135,6 @@ export const offsets = {
   noteShiftX: -6,
   shakeX: 2,
   stampFromScale: 1.6,
-  /** Le feuillet du message arrive d'un peu plus bas. */
-  storySlipFromY: 28,
-  /** La feuille recule vers le haut quand le feuillet arrive. */
-  storyRecedeY: -18,
-} as const;
-
-/** Échelles. */
-export const scales = {
-  /** Le tampon du hero tombe d'un peu plus haut : de 1,3 fois sa taille à 1. */
-  heroStampFrom: 1.3,
-  /** La feuille photographiée, vue d'un peu plus loin. */
-  storyPhoto: 0.86,
-  /** La feuille recule pour laisser la place au feuillet du message. */
-  storyRecede: 0.9,
 } as const;
 
 /** Angles en degrés. */
@@ -201,19 +142,6 @@ export const angles = {
   sheetDrop: 3,
   sheetRest: -0.6,
   sheetExit: -1.5,
-  /** La feuille du hero, posée de travers sur le bureau. */
-  heroSheet: 2.5,
-  /** Le tampon du hero. */
-  heroStamp: -6,
-  /** Un chiffre corrigé, écrit à la main, un peu penché. */
-  handNote: -4,
-  /** « Comment ça marche » : la feuille photographiée, couchée sur la table (rotateX) et de biais. */
-  storyPhotoTilt: 24,
-  storyPhotoTurn: -6,
-  /** Le ruban adhésif de l'étiquette « Photo du devis ». */
-  storyTape: -4,
-  /** Le feuillet quadrillé du message. */
-  storySlip: 3,
   stampMin: -12,
   stampMax: -8,
 } as const;
@@ -318,34 +246,3 @@ export const transitions = {
     delay,
   }),
 } as const;
-
-/** Une courbe de motion.ts écrite pour le CSS. */
-export function cssEase(ease: CubicBezier): string {
-  return `cubic-bezier(${ease.join(", ")})`;
-}
-
-/** Un geste joué en CSS : départ, durée et courbe, en variables (`--t`, `--d`, `--e`). */
-export interface CssGesture {
-  readonly start: number;
-  readonly duration: number;
-  readonly ease?: CubicBezier;
-  /** Départ sur petit écran, s'il diffère (la feuille du hero n'y tape pas ses lignes). */
-  readonly narrowStart?: number;
-  /** Nombre de frappes, pour un texte tapé (`--steps`). */
-  readonly steps?: number;
-}
-
-/**
- * Variables CSS d'un geste, lues par les animations de globals.css : les
- * durées restent écrites ici, jamais en dur dans une feuille de style.
- */
-export function cssGesture({ start, duration, ease = easings.out, narrowStart, steps }: CssGesture): CSSProperties {
-  const round = (value: number) => Math.round(value * 1000) / 1000;
-  return {
-    "--t": `${round(start)}s`,
-    "--d": `${round(duration)}s`,
-    "--e": cssEase(ease),
-    ...(narrowStart === undefined ? {} : { "--tn": `${round(narrowStart)}s` }),
-    ...(steps === undefined ? {} : { "--steps": String(Math.max(1, Math.round(steps))) }),
-  } as CSSProperties;
-}

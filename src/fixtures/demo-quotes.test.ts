@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { demoQuotes } from "@/fixtures/demo-quotes";
-import { tradeQuotes } from "@/fixtures/trade-quotes";
 import { demoSavings, demoVerdict } from "@/lib/demo-outcome";
 import { roundCents, totalsFromLines } from "@/lib/scene-quote";
 
@@ -9,9 +8,7 @@ import { roundCents, totalsFromLines } from "@/lib/scene-quote";
  * les chiffres, une ligne sans erreur annoncée est juste, et le verdict est
  * celui que les règles de l'analyse réelle rendraient.
  */
-const allQuotes = [...demoQuotes, ...tradeQuotes];
-
-describe.each(allQuotes.map((quote) => [quote.id, quote] as const))("démo %s", (_id, quote) => {
+describe.each(demoQuotes.map((quote) => [quote.id, quote] as const))("démo %s", (_id, quote) => {
   const lineIds = new Set(quote.lines.map((line) => line.id));
   const calculationLines = new Set(
     quote.issues.filter((issue) => issue.kind === "calculation").map((issue) => issue.lineId),
@@ -69,30 +66,21 @@ describe.each(allQuotes.map((quote) => [quote.id, quote] as const))("démo %s", 
   });
 });
 
-describe("boucle de démo", () => {
-  it("montre un verdict de chaque couleur", () => {
+describe("démos", () => {
+  it("montrent un verdict de chaque couleur", () => {
     expect(new Set(demoQuotes.map((quote) => quote.verdict))).toEqual(
       new Set(["ok", "negotiate", "alert"]),
     );
   });
 
-  it("a un message pour chaque devis à négocier", () => {
+  it("ont un message pour chaque devis à négocier", () => {
     for (const quote of demoQuotes) {
       if (quote.verdict !== "ok") expect(quote.message).toBeTruthy();
     }
   });
-});
 
-describe("carrousel des métiers", () => {
-  it("montre un verdict de chaque couleur, sur des métiers tous différents", () => {
-    expect(new Set(tradeQuotes.map((quote) => quote.verdict))).toEqual(
-      new Set(["ok", "negotiate", "alert"]),
-    );
-    expect(new Set(tradeQuotes.map((quote) => quote.category)).size).toBe(tradeQuotes.length);
-  });
-
-  it("garde des identifiants uniques (ils fixent les tracés à la main)", () => {
-    const ids = [...demoQuotes, ...tradeQuotes].map((quote) => quote.id);
+  it("gardent des identifiants uniques (ils fixent les tracés à la main)", () => {
+    const ids = demoQuotes.map((quote) => quote.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 });

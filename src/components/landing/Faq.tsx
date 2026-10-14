@@ -10,59 +10,56 @@ const QUESTIONS: readonly Question[] = [
   {
     question: "C'est vraiment gratuit ?",
     answer:
-      "Oui. Pas de compte à créer, pas de carte bancaire à donner. On limite seulement à cinq analyses par jour et par personne, sinon la facture d'IA nous ruinerait.",
+      "Oui. Pas de compte à créer, pas de carte bancaire. Nous limitons seulement l'usage à cinq analyses par jour et par personne, pour garder le service gratuit.",
   },
   {
     question: "Que devient la photo de mon devis ?",
     answer:
-      "Elle est lue puis effacée dans la foulée, sans jamais être enregistrée. Les noms, adresses et numéros de téléphone ne sont même pas recopiés. Ce qu'on garde ressemble à ça : « chauffe-eau 200 L, 890 € HT », avec la catégorie et le département. Rien qui permette de savoir qui tu es, ni qui est l'artisan.",
+      "Elle est lue puis effacée aussitôt, sans jamais être enregistrée. Les noms, adresses et numéros de téléphone ne sont même pas recopiés. Nous gardons seulement des lignes anonymes, du type « chauffe-eau 200 L, 890 € HT », avec la catégorie et le département : rien qui permette de savoir qui vous êtes, ni qui est l'artisan.",
   },
   {
     question: "D'où viennent les prix de comparaison ?",
     answer:
-      "Des devis déjà passés par Loupe, une fois rendus anonymes : même prestation, même région, moins de deux ans. Il en faut au moins cinq pour parler de médiane. Sinon, l'IA propose une fourchette, affichée avec la mention « confiance faible » pour que tu la prennes avec des pincettes.",
+      "Des devis déjà analysés par Loupe, une fois rendus anonymes : même prestation, même région, moins de deux ans. Il en faut au moins cinq pour parler de médiane. Sinon, l'IA propose une fourchette, toujours signalée comme une estimation à confiance faible.",
   },
   {
     question: "Quels devis peut-on analyser ?",
     answer:
-      "Ceux du garagiste, du plombier, de l'électricien, du chauffagiste, du serrurier et du déménageur, plus les petits travaux. Les devis de dentiste, d'opticien ou d'audioprothésiste attendront : la santé a ses propres règles, et on préfère ne pas improviser.",
+      "Ceux du garagiste, du plombier, de l'électricien, du chauffagiste, du serrurier et du déménageur, ainsi que les petits travaux. Les devis de santé (dentiste, opticien, audioprothésiste) ne sont pas encore pris en charge.",
   },
   {
     question: "Et si Loupe se trompe ?",
     answer:
-      "Ça arrive, surtout sur une photo prise de travers. C'est pour ça que chaque remarque indique si elle est vérifiée (un calcul, une mention) ou estimée (un prix), et d'où elle vient. Garde ton devis papier à côté et relis avant d'envoyer quoi que ce soit.",
+      "Cela peut arriver, surtout sur une photo prise de travers. C'est pourquoi chaque remarque indique si elle est vérifiée (un calcul, une mention) ou estimée (un prix), et d'où elle vient. Gardez votre devis sous les yeux et relisez avant d'envoyer quoi que ce soit.",
   },
   {
     question: "L'artisan saura-t-il que j'ai utilisé Loupe ?",
     answer:
-      "Seulement si tu le lui dis. Le message est écrit en ton nom, sur un ton courtois, et le verdict ne quitte pas ton écran.",
+      "Seulement si vous le lui dites. Le message est rédigé en votre nom, sur un ton courtois, et le verdict reste sur votre écran.",
   },
   {
     question: "Loupe remplace-t-il un professionnel ?",
     answer:
-      "Non. Loupe donne un avis indicatif, pas un conseil juridique. Si ça tourne au litige, une association de consommateurs ou un professionnel du droit t'aidera bien mieux.",
+      "Non. Loupe donne un avis indicatif, pas un conseil juridique. En cas de litige, une association de consommateurs ou un professionnel du droit vous aidera bien mieux.",
   },
 ];
 
-/**
- * Questions fréquentes, en accordéons natifs (accessibles sans JavaScript).
- * `ruled` : posées sur une copie à carreaux, sans traits de séparation.
- */
-export function Faq({ ruled = false, className }: { readonly ruled?: boolean; readonly className?: string } = {}) {
+/** Questions fréquentes, en accordéons natifs (accessibles sans JavaScript), séparées par un filet. */
+export function Faq({ className }: { readonly className?: string } = {}) {
   return (
-    <div className={cn(!ruled && "divide-y divide-rule border-y border-rule", className)}>
+    <div className={cn("divide-y divide-rule", className)}>
       {QUESTIONS.map(({ question, answer }) => (
         <details key={question} className="group">
-          <summary className="flex cursor-pointer list-none items-baseline justify-between gap-6 py-5 text-[1.0625rem] font-medium text-ink [&::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[1.0625rem] font-medium text-ink [&::-webkit-details-marker]:hidden">
             {fr(question)}
             <span
               aria-hidden
-              className="font-mono text-xl leading-none text-pen-red-strong group-open:rotate-45 motion-safe:transition-transform motion-safe:duration-(--duration-micro)"
+              className="grid size-7 shrink-0 place-items-center rounded-sm bg-mist text-lg leading-none text-brand-strong group-open:rotate-45 motion-safe:transition-transform motion-safe:duration-(--duration-micro)"
             >
               +
             </span>
           </summary>
-          <p className="max-w-prose pb-6 leading-relaxed text-ink-muted">{fr(answer)}</p>
+          <p className="max-w-prose pb-6 pr-12 leading-relaxed text-ink-muted">{fr(answer)}</p>
         </details>
       ))}
     </div>

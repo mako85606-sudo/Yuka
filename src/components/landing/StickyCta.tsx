@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { ButtonLink } from "@/components/ui/Button";
+import { CameraGlyph } from "@/components/ui/icons";
 import { reducedFade, springs } from "@/lib/motion";
 
 interface StickyCtaProps {
@@ -39,6 +40,7 @@ export function StickyCta({ targetId }: StickyCtaProps) {
       transition={reduced ? reducedFade() : springs.snappy}
     >
       <ButtonLink href="/analyse" size="lg" className="w-full">
+        <CameraGlyph />
         Scanner mon devis
       </ButtonLink>
     </motion.div>

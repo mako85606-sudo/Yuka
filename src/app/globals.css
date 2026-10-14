@@ -1,91 +1,81 @@
 @import "tailwindcss";
 
 /*
- * Loupe — « le correcteur au stylo rouge ».
- * Concept de mise en page : un bureau sombre (paper) sur lequel sont posées des
- * feuilles de papier crème (paper-raised) que l'on corrige au stylo rouge, au
- * surligneur et au tampon. Une seule identité : pas de thème clair ni sombre.
+ * Loupe — identité claire (refonte « expert rassurant »).
+ * Fond blanc, une couleur de marque : un vert vif et frais pour les boutons,
+ * les accents et l'argent économisé ; sa version foncée (`-strong`) pour le
+ * texte. Les erreurs vérifiées en rouge, les points d'attention en orange,
+ * toujours avec retenue. Le correcteur subsiste en interface propre : ligne
+ * surlignée, pastille, montant faux barré et bon montant à côté.
  *
- * Deux surfaces, deux jeux d'encres. Sur le bureau (`:root`), les encres sont
- * claires et un seul rouge, clair, sert au texte. Sur une feuille
- * (`.surface-paper`), les mêmes noms désignent les encres imprimées : brun-noir,
- * vrai rouge correcteur, orange de tampon. Un composant écrit `text-ink` ou
- * `text-pen-red-strong` et prend l'encre de la surface où il est posé.
- * « -strong » : petit texte (≥ 4,5:1) ; « verdict-* » : tampon (gros texte, ≥ 3:1).
- * Contrastes vérifiés par tokens.test.ts. Pas de vert.
+ * Les anciens noms (paper, ink, pen-red, stamp-orange…) restent : `paper` est
+ * le fond de page, `paper-raised` une carte, `pen-red` le rouge des erreurs.
+ * `.surface-paper` désigne désormais une carte blanche, aux mêmes encres.
+ * Contrastes vérifiés par tokens.test.ts.
  */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Le bureau */
-  --paper: #221E19;
-  --paper-raised: #F2ECDD;
-  --ink: #EEE6D4;
-  --ink-muted: #B4A994;
-  --pen-red: #F0806C;
-  --pen-red-strong: #F0806C;
+  /* Surfaces : la page, une carte, un fond de section gris-vert très pâle */
+  --paper: #FFFFFF;
+  --paper-raised: #FFFFFF;
+  --mist: #F3F6F4;
+
+  /* Encres */
+  --ink: #0E1B16;
+  --ink-muted: #56645E;
+  --sheet-ink: #0E1B16;
+
+  /*
+   * Marque : vert vif pour les aplats (texte en encre dessus), vert foncé pour
+   * le texte, vert pâle pour les fonds. Jamais de texte blanc sur le vert vif.
+   */
+  --brand: #17C26B;
+  --brand-hover: #12AE5F;
+  --brand-strong: #0A7A45;
+  --brand-soft: #E6F8EE;
+
+  /* Constats : la couleur pour les pictogrammes et les traits, `-strong` pour le petit texte */
+  --pen-red: #D92D20;
+  --pen-red-strong: #B42318;
+  --error-soft: #FDECEA;
+  --stamp-orange: #C2410C;
+  --stamp-orange-strong: #9A3412;
+  --warning-soft: #FFF4E5;
+  --annotation-blue: #2454D6;
   --highlighter: #FFE45C;
-  --highlighter-mark: #FFE45C;
-  --stamp-orange: #E9A15C;
-  --stamp-orange-strong: #E9A15C;
-  --annotation-blue: #9DB6F2;
-  --verdict-ok: #EEE6D4;
-  --verdict-negotiate: #E9A15C;
-  --verdict-alert: #F0806C;
-  /* Encre imprimée, pour le texte sélectionné (surligné en jaune) où qu'il soit. */
-  --sheet-ink: #2B2119;
-  /* Ruban adhésif de papier, posé sur le bureau. */
-  --tape: #D8CCAA;
+  --highlighter-mark: #FFF2B3;
+  --verdict-ok: #0A7A45;
+  --verdict-negotiate: #C2410C;
+  --verdict-alert: #D92D20;
 
-  /* Matière : ombres de papier, courtes et nettes ; grain clair du bureau */
-  --shadow-color: rgb(10 8 5 / 0.62);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.86 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.035'/%3E%3C/svg%3E");
+  /* Matière : ombres douces, pas de grain */
+  --shadow-color: rgb(14 27 22 / 0.1);
+  --grain: none;
 
   /* Durée des micro-interactions en CSS : miroir de durations.micro (motion.ts), vérifié par les tests */
   --duration-micro: 180ms;
 
-  /* Calculés à partir des encres : redéclarés sur la feuille (une variable se résout là où elle est déclarée) */
-  --rule: color-mix(in srgb, var(--ink) 14%, transparent);
-  --rule-strong: color-mix(in srgb, var(--ink) 55%, transparent);
-  --margin-rule: color-mix(in srgb, var(--pen-red) 42%, transparent);
-  --sheet-shadow-rest:
-    0 0.5px 0.5px var(--shadow-color),
-    0 1.5px 2px color-mix(in srgb, var(--shadow-color) 80%, transparent),
-    0 5px 9px -3px color-mix(in srgb, var(--shadow-color) 70%, transparent);
-  --sheet-shadow-lifted:
-    0 2px 4px color-mix(in srgb, var(--shadow-color) 60%, transparent),
-    0 16px 26px -8px color-mix(in srgb, var(--shadow-color) 85%, transparent),
-    0 34px 54px -18px var(--shadow-color);
+  --rule: color-mix(in srgb, var(--ink) 10%, transparent);
+  --rule-strong: color-mix(in srgb, var(--ink) 28%, transparent);
+  --margin-rule: color-mix(in srgb, var(--pen-red) 35%, transparent);
+
+  /* Une carte posée sur la page, puis un objet qui flotte (le téléphone) */
+  --elevation-1:
+    0 1px 2px color-mix(in srgb, var(--shadow-color) 60%, transparent),
+    0 8px 24px -12px var(--shadow-color);
+  --elevation-2:
+    0 2px 6px color-mix(in srgb, var(--shadow-color) 70%, transparent),
+    0 32px 64px -24px color-mix(in srgb, var(--shadow-color) 220%, transparent);
+  --sheet-shadow-rest: var(--elevation-1);
+  --sheet-shadow-lifted: var(--elevation-2);
   --stamp-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -11 0 0 0 7.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
 }
 
-/*
- * Une feuille posée sur le bureau : papier crème, encres imprimées. Classe de
- * la couche « components » : une couleur de texte utilitaire posée sur le même
- * élément l'emporte.
- */
+/* Une carte : fond blanc, mêmes encres que la page (couche « components » : un utilitaire l'emporte). */
 @layer components {
   .surface-paper {
-    --paper: #E8E0CC;
-    --paper-raised: #F2ECDD;
-    --ink: #2B2119;
-    --ink-muted: #6E6150;
-    --pen-red: #D63A2B;
-    --pen-red-strong: #B42A1E;
-    --highlighter-mark: #FFE45C;
-    --stamp-orange: #C46A1C;
-    --stamp-orange-strong: #8E4B12;
-    --annotation-blue: #2B4A8B;
-    --verdict-ok: #2B2119;
-    --verdict-negotiate: #B5601A;
-    --verdict-alert: #D63A2B;
-
-    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.13 0 0 0 0 0.1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E");
-    --rule: color-mix(in srgb, var(--ink) 14%, transparent);
-    --rule-strong: color-mix(in srgb, var(--ink) 55%, transparent);
-    --margin-rule: color-mix(in srgb, var(--pen-red) 42%, transparent);
-
     background-color: var(--paper-raised);
     color: var(--ink);
   }
@@ -95,11 +85,16 @@
 @theme {
   --color-*: initial;
 
-  --text-display: clamp(2.75rem, 1.6rem + 5.2vw, 5.25rem);
-  --text-display--line-height: 0.98;
-  --text-display--letter-spacing: -0.012em;
-  --text-section: clamp(2.6rem, 1.6rem + 3.6vw, 4.25rem);
-  --text-section--line-height: 1;
+  /* Légèrement arrondi : 6 px (pastilles), 8 px (boutons, champs), 10 px (cartes). */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+
+  --text-hero: clamp(2.75rem, 1.4rem + 4.4vw, 4.75rem);
+  --text-hero--line-height: 1;
+  --text-hero--letter-spacing: -0.015em;
+  --text-section: clamp(2.25rem, 1.55rem + 2.4vw, 3.25rem);
+  --text-section--line-height: 1.04;
   --text-section--letter-spacing: -0.01em;
   --text-title: clamp(1.9rem, 1.45rem + 2vw, 2.75rem);
   --text-title--line-height: 1.04;
@@ -114,6 +109,13 @@
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
+  --color-mist: var(--mist);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-error-soft: var(--error-soft);
+  --color-warning-soft: var(--warning-soft);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-pen-red: var(--pen-red);
@@ -126,7 +128,6 @@
   --color-verdict-ok: var(--verdict-ok);
   --color-verdict-negotiate: var(--verdict-negotiate);
   --color-verdict-alert: var(--verdict-alert);
-  --color-tape: var(--tape);
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
   --color-margin-rule: var(--margin-rule);
@@ -144,7 +145,6 @@
 
   body {
     background-color: var(--paper);
-    background-image: var(--grain);
     color: var(--ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -158,33 +158,25 @@
   }
 
   ::selection {
-    background-color: var(--highlighter);
+    background-color: var(--highlighter-mark);
     color: var(--sheet-ink);
   }
 
   :focus-visible {
     outline: 2px solid var(--annotation-blue);
     outline-offset: 3px;
-    border-radius: 2px;
   }
 }
 
-/* Feuillet quadrillé : un motif SVG (pas de dégradé), carreaux de 0,9 em, encre bleue très claire. */
-@utility graph-paper {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M16 0H0V16' fill='none' stroke='%232B4A8B' stroke-opacity='0.16'/%3E%3C/svg%3E");
-  background-size: 0.9em 0.9em;
+@utility elevation-1 {
+  box-shadow: var(--elevation-1);
 }
 
-/*
- * Copie double à grands carreaux (réglure Seyès) : trois lignes fines, une
- * ligne forte tous les 2 em, et un trait vertical. Un motif SVG, pas un dégradé.
- */
-@utility seyes-paper {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cg fill='none' stroke='%232B4A8B'%3E%3Cpath d='M0 8.5H32M0 16.5H32M0 24.5H32' stroke-opacity='0.09'/%3E%3Cpath d='M0 31.5H32' stroke-opacity='0.2'/%3E%3Cpath d='M31.5 0V32' stroke-opacity='0.12'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 2em 2em;
+@utility elevation-2 {
+  box-shadow: var(--elevation-2);
 }
 
-/* Grain papier, ≤ 4 % d'opacité (intégré au SVG). */
+/* Grain papier (désactivé dans l'identité claire : `--grain` vaut `none`). */
 @utility paper-grain {
   background-image: var(--grain);
 }
@@ -219,257 +211,5 @@
     height: 18%;
     background-color: color-mix(in srgb, var(--annotation-blue) 7%, transparent);
     border-bottom: 2px solid color-mix(in srgb, var(--annotation-blue) 65%, transparent);
-  }
-}
-
-/*
- * Gestes joués en CSS (feuille du hero) : départ, durée et courbe arrivent en
- * variables depuis motion.ts (`cssGesture`) : --t, --d, --e, --steps, et --tn
- * pour le départ sur petit écran. Ils jouent même sans JavaScript ; en
- * mouvement réduit, aucun ne joue : tout est déjà à sa place (état final).
- * N'animent que transform, opacity et le tracé d'un chemin SVG.
- */
-@keyframes ink-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes ink-wipe {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(101%);
-  }
-}
-
-@keyframes ink-sweep {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-@keyframes ink-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes ink-scan {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes ink-slide {
-  from {
-    opacity: 0;
-    transform: translate(var(--from-x, 0), var(--from-y, 0)) rotate(var(--tilt, 0deg));
-  }
-  to {
-    opacity: 1;
-    transform: translate(0, 0) rotate(var(--tilt, 0deg));
-  }
-}
-
-/*
- * « Comment ça marche » : l'étape la plus proche du centre de l'écran est la
- * plus nette. Les autres s'estompent à peine : à 76 %, le texte secondaire
- * garde 4,5:1 sur le bureau (vérifié par tokens.test.ts).
- */
-@keyframes story-focus {
-  from {
-    opacity: 0.76;
-  }
-  40%,
-  60% {
-    opacity: 1;
-  }
-  to {
-    opacity: 0.76;
-  }
-}
-
-@keyframes ink-slam {
-  from {
-    opacity: 0;
-    transform: rotate(var(--tilt, 0deg)) scale(var(--from, 1));
-  }
-  to {
-    opacity: 1;
-    transform: rotate(var(--tilt, 0deg)) scale(1);
-  }
-}
-
-@layer components {
-  /*
-   * Le style de repos de chaque geste est son état final : l'animation ne
-   * remplit que l'attente (backwards). Une fois jouée, c'est la mise en page
-   * du moment qui compte (une police chargée entre-temps élargit le texte, et
-   * un pourcentage figé au départ de l'animation ne suivrait pas).
-   */
-  .gesture {
-    animation-duration: var(--d);
-    animation-timing-function: var(--e);
-    animation-delay: var(--t);
-    animation-fill-mode: backwards;
-  }
-
-  /* Un trait qui se dessine (chemin avec pathLength="1"). */
-  .gesture-draw {
-    stroke-dasharray: 1;
-    animation-name: ink-draw;
-  }
-
-  /* Un cache couleur papier qui glisse et découvre le texte : à la frappe (par crans), ou à la main. */
-  .gesture-type,
-  .gesture-wipe {
-    transform: translateX(101%);
-    animation-name: ink-wipe;
-  }
-
-  .gesture-type {
-    animation-timing-function: steps(var(--steps), jump-end);
-  }
-
-  .gesture-sweep {
-    transform-origin: left center;
-    animation-name: ink-sweep;
-  }
-
-  .gesture-fade {
-    animation-name: ink-fade;
-  }
-
-  .gesture-slam {
-    transform: rotate(var(--tilt, 0deg));
-    animation-name: ink-slam;
-  }
-
-  .gesture-slide {
-    transform: rotate(var(--tilt, 0deg));
-    animation-name: ink-slide;
-  }
-
-  /* Ligne de scan sur la photo : un passage du haut vers le bas, en boucle. */
-  .gesture-scan {
-    transform: translateY(-100%);
-    animation-name: ink-scan;
-    animation-iteration-count: infinite;
-  }
-
-  /*
-   * L'anneau au stylo (le cercle du logo, devenu motif). Au survol ou au
-   * focus de son parent `.group`, il se trace ; au défilement, il se trace
-   * quand sa cible passe à l'écran (sans cette fonction : déjà tracé).
-   */
-  .ring-hover {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-  }
-
-  .group:is(:hover, :focus-visible) .ring-hover {
-    stroke-dashoffset: 0;
-    animation: ink-draw var(--d) var(--e) backwards;
-  }
-
-  @supports (animation-timeline: view()) {
-    .ring-view {
-      stroke-dasharray: 1;
-      animation: ink-draw linear both;
-      animation-timeline: view();
-      animation-range: entry 60% cover 45%;
-    }
-  }
-
-  /* Changement d'état d'un objet (la feuille de « Comment ça marche ») : une transition, pas un geste. */
-  .settle {
-    transition-property: transform, opacity;
-    transition-duration: var(--d);
-    transition-timing-function: var(--e);
-  }
-
-  /*
-   * L'étape lue : sans JavaScript, toutes sont nettes. Avec, l'étape en cours
-   * l'est (IntersectionObserver) ; là où le navigateur sait lier une animation
-   * au défilement, l'étape s'éclaire en passant au centre (animation-timeline).
-   */
-  [data-story-ready] .story-step {
-    opacity: 0.76;
-    transition: opacity var(--duration-micro) ease-out;
-  }
-
-  [data-story-ready] .story-step[data-current] {
-    opacity: 1;
-  }
-
-  @supports (animation-timeline: view()) {
-    [data-story-ready] .story-step,
-    .story-step {
-      opacity: 1;
-      transition: none;
-      animation: story-focus linear both;
-      animation-timeline: view();
-    }
-
-    /* Petit écran : la feuille occupe le haut, l'étape se lit plus bas. */
-    @media (width < 64rem) {
-      .story-step,
-      [data-story-ready] .story-step {
-        animation-timeline: view(block 40% 0%);
-      }
-    }
-  }
-
-  /* Petit écran : les lignes sont déjà imprimées, la correction a son propre départ. */
-  @media (width < 64rem) {
-    .gesture {
-      animation-delay: var(--tn, var(--t));
-    }
-
-    .gesture-type {
-      animation: none;
-    }
-  }
-
-  /* Avec JavaScript, sur petit écran, la correction attend que la ligne soit à l'écran. */
-  @media (scripting: enabled) and (width < 64rem) {
-    [data-hold] .gesture {
-      animation-play-state: paused;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .gesture {
-      animation: none;
-    }
-
-    .settle {
-      transition: none;
-    }
-
-    .group:is(:hover, :focus-visible) .ring-hover,
-    .ring-view {
-      animation: none;
-    }
-
-    .story-step,
-    [data-story-ready] .story-step {
-      animation: none;
-      opacity: 1;
-    }
   }
 }

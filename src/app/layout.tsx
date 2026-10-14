@@ -65,9 +65,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Une seule identité : le bureau sombre, quel que soit le réglage du système.
+  // Une seule identité, claire, quel que soit le réglage du système.
   themeColor: site.themeColor,
-  colorScheme: "dark",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
