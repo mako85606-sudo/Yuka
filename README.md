@@ -21,6 +21,8 @@ Puis ouvre :
 - <http://localhost:3000/dev/design> : la planche de style ;
 - <http://localhost:3000/admin> : le tableau de bord (il faut `ADMIN_PASSWORD` et `DATABASE_URL`).
 
+Sans rien installer : sur la page du dépôt GitHub, « Code » → onglet « Codespaces » → « Create codespace » (sur la branche de travail). `.devcontainer/devcontainer.json` installe tout et lance `npm run dev` à chaque ouverture, après un `git pull` ; le site s'ouvre dans un nouvel onglet. L'adresse publique du codespace est autorisée par `next.config.ts` (`allowedDevOrigins`, Server Actions) et par le contrôle d'origine des routes (`codespaceHost`). Les comptes GitHub personnels ont un quota mensuel gratuit (120 heures de calcul et 15 Go de stockage pour l'offre gratuite, d'après la documentation de GitHub).
+
 Sous Windows, une fois le dépôt cloné avec Git (`git clone -b claude/loupe-devis-analyzer-mvp-xy60ma https://github.com/mako85606-sudo/Yuka.git Loupe`), un double-clic sur `lancer-loupe.bat` récupère les nouveautés (`git pull`), installe ce qui manque et lance le site en ouvrant le navigateur.
 
 Pour essayer sur ton téléphone, lance `npm run build` puis `npm start` et ouvre l'adresse « Network » affichée, sur le même Wi-Fi.

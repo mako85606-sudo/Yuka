@@ -83,6 +83,13 @@ describe("isSameOrigin", () => {
     ).toBe(true);
   });
 
+  it("accepte l'adresse publique d'un codespace, et elle seule", () => {
+    const codespace = ["octocat-loupe-3000.app.github.dev"];
+    const headers = (origin: string) => new Headers({ origin, host: "localhost:3000" });
+    expect(isSameOrigin(headers("https://octocat-loupe-3000.app.github.dev"), codespace)).toBe(true);
+    expect(isSameOrigin(headers("https://autre-3000.app.github.dev"), codespace)).toBe(false);
+  });
+
   it("refuse une demande venue d'ailleurs, ou sans origine", () => {
     expect(isSameOrigin(new Headers({ origin: "https://ailleurs.fr", host: "loupe.fr" }))).toBe(false);
     expect(isSameOrigin(new Headers({ host: "loupe.fr" }))).toBe(false);

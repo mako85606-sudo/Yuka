@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isProductionDeployment, siteOrigin, type ServerEnv } from "@/server/env";
+import { codespaceHost, isProductionDeployment, siteOrigin, type ServerEnv } from "@/server/env";
 
 describe("siteOrigin", () => {
   it("prend SITE_URL en priorité, sans barre finale", () => {
@@ -21,5 +21,18 @@ describe("isProductionDeployment", () => {
     expect(isProductionDeployment({ VERCEL_ENV: "production" })).toBe(true);
     expect(isProductionDeployment({ VERCEL_ENV: "preview" })).toBe(false);
     expect(isProductionDeployment({})).toBe(false);
+  });
+});
+
+describe("codespaceHost", () => {
+  it("donne l'adresse publique du port dans un codespace", () => {
+    const env: ServerEnv = { CODESPACE_NAME: "octocat-loupe", GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN: "app.github.dev" };
+    expect(codespaceHost(env)).toBe("octocat-loupe-3000.app.github.dev");
+    expect(codespaceHost({ ...env, PORT: "3001" })).toBe("octocat-loupe-3001.app.github.dev");
+  });
+
+  it("vaut null hors Codespaces", () => {
+    expect(codespaceHost({})).toBeNull();
+    expect(codespaceHost({ CODESPACE_NAME: "octocat-loupe" })).toBeNull();
   });
 });

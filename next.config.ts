@@ -3,6 +3,18 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 /**
+ * GitHub Codespaces : le site s'ouvre sur l'adresse publique du port
+ * (« nom-3000.app.github.dev »), que le serveur ne connaît pas. Cet hôte-là,
+ * et lui seul, est autorisé pour les ressources de développement et les
+ * Server Actions (doc Next : allowedDevOrigins, serverActions.allowedOrigins).
+ * Variables absentes hors Codespaces : rien ne change en production.
+ */
+const codespaceHost =
+  process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
+    ? `${process.env.CODESPACE_NAME}-${process.env.PORT ?? "3000"}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
+    : null;
+
+/**
  * Politique de contenu sans nonce (guide « Content Security Policy » de la
  * doc Next.js) : tout vient du site lui-même. Aucun script, style, police ou
  * appel tiers : la mesure part du serveur. `blob:` et `data:` servent aux
@@ -35,6 +47,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  ...(codespaceHost
+    ? {
+        allowedDevOrigins: [codespaceHost],
+        experimental: { serverActions: { allowedOrigins: [codespaceHost] } },
+      }
+    : {}),
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

@@ -25,6 +25,11 @@ const envSchema = z.object({
   VERCEL_PROJECT_PRODUCTION_URL: optionalString,
   /** Fourni par Vercel : « production », « preview » ou « development ». */
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional().catch(undefined),
+  /** Fournis par GitHub Codespaces : nom du codespace et domaine de ses ports (« app.github.dev »). */
+  CODESPACE_NAME: optionalString,
+  GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN: optionalString,
+  /** Port du serveur (3000 par défaut). */
+  PORT: optionalString,
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;
@@ -50,4 +55,16 @@ export function siteOrigin(env: ServerEnv = serverEnv()): string {
   if (env.SITE_URL) return env.SITE_URL.replace(/\/$/, "");
   if (env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`;
   return "http://localhost:3000";
+}
+
+/**
+ * Dans un GitHub Codespace, le site s'ouvre à l'adresse publique du port
+ * (« nom-3000.app.github.dev ») alors que le serveur se croit sur localhost :
+ * cet hôte-là est aussi le nôtre. `null` hors Codespaces (en production, toujours).
+ */
+export function codespaceHost(env: ServerEnv = serverEnv()): string | null {
+  const name = env.CODESPACE_NAME;
+  const domain = env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+  if (!name || !domain) return null;
+  return `${name}-${env.PORT ?? "3000"}.${domain}`;
 }

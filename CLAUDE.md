@@ -96,6 +96,8 @@ Effets de la landing (étape 8) :
 - « Ce qu'on vérifie » : calcul barré puis corrigé au-dessus, coches tracées une à une puis mention absente entourée, jauge de prix (zone habituelle, médiane, le devis glisse à sa place).
 - Performance : carrousel et visuel de l'histoire montés à l'approche (`LAZY_MOUNT_MARGIN`), Caveat en une seule graisse (−50 Ko). Lighthouse mobile mesuré en alternance avec la version d'avant, mêmes conditions : médiane identique (89 contre 89,5 dans ce conteneur, scores de 88 à 98 selon les passages) ; accessibilité, bonnes pratiques et SEO à 100. `experimental.inlineCss` essayé : aucun gain mesurable, non retenu.
 
+Lancement sans installation (après l'étape 8) : GitHub Codespaces (`.devcontainer/devcontainer.json`, image Node 24 : `git pull`, `npm install`, `npm run dev` à chaque ouverture, port 3000 ouvert dans le navigateur). L'hôte public du codespace (`codespaceHost()`, d'après `CODESPACE_NAME` et `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`) est accepté par `isSameOrigin`, `allowedDevOrigins` et `serverActions.allowedOrigins` ; ces variables n'existent pas en production. Sous Windows, `lancer-loupe.bat` (CRLF) fait la même chose sur un clone Git local.
+
 ## Commandes
 
 - `npm run dev`, `npm run build`, `npm start`
