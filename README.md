@@ -21,6 +21,8 @@ Puis ouvre :
 - <http://localhost:3000/dev/design> : la planche de style ;
 - <http://localhost:3000/admin> : le tableau de bord (il faut `ADMIN_PASSWORD` et `DATABASE_URL`).
 
+Sous Windows, une fois le dépôt cloné avec Git (`git clone -b claude/loupe-devis-analyzer-mvp-xy60ma https://github.com/mako85606-sudo/Yuka.git Loupe`), un double-clic sur `lancer-loupe.bat` récupère les nouveautés (`git pull`), installe ce qui manque et lance le site en ouvrant le navigateur.
+
 Pour essayer sur ton téléphone, lance `npm run build` puis `npm start` et ouvre l'adresse « Network » affichée, sur le même Wi-Fi.
 
 ## Scripts

@@ -1,6 +1,8 @@
 # Fins de ligne LF partout, y compris sous Windows : évite les diffs fantômes
 # et les erreurs de lint liées aux CRLF.
 * text=auto eol=lf
+# Sauf le lanceur Windows : cmd.exe attend des fins de ligne CRLF.
+*.bat text eol=crlf
 *.png binary
 *.jpg binary
 *.ico binary
