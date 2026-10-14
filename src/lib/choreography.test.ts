@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   CHECKS_PHASE_TARGET,
   endOf,
-  heroSchedule,
-  storySchedule,
   ISSUE_DURATION,
   ISSUE_INTERVAL,
   issueBeats,
@@ -107,74 +105,5 @@ describe("verdictBeats", () => {
   it("se contente d'un fondu en mouvement réduit", () => {
     const beats = verdictBeats({ startAt: 3, reduced: true });
     expect(beats.stamp).toEqual({ start: 3, duration: 0.15 });
-  });
-});
-
-describe("heroSchedule", () => {
-  // Le devis du hero : cinq lignes, puis les trois totaux.
-  const rows = [
-    { label: 27, detail: 12, amount: 6 },
-    { label: 18, detail: 11, amount: 6 },
-    { label: 18, detail: 11, amount: 5 },
-    { label: 14, detail: 12, amount: 6 },
-    { label: 11, detail: 11, amount: 5 },
-    { label: 8, detail: 0, amount: 8 },
-    { label: 8, detail: 0, amount: 6 },
-    { label: 9, detail: 0, amount: 10 },
-  ];
-  const beats = heroSchedule(rows);
-
-  it("tape toutes les lignes en un bloc de 1,2 s au plus", () => {
-    const first = beats.rows[0]!.label.start;
-    expect(beats.typingEnd - first).toBeLessThanOrEqual(1.2);
-  });
-
-  it("enchaîne frappe, cercle, correction, note puis tampon", () => {
-    expect(beats.pen.circle.start).toBeGreaterThan(beats.typingEnd);
-    expect(beats.pen.correction.start).toBeGreaterThan(beats.pen.circle.start);
-    expect(beats.pen.correction.start).toBeLessThan(endOf(beats.pen.circle));
-    expect(beats.pen.note.start).toBeGreaterThan(beats.pen.correction.start);
-    expect(beats.stamp.start).toBeGreaterThan(endOf(beats.pen.note));
-  });
-
-  it("tient en environ 3,5 s", () => {
-    expect(beats.end).toBeGreaterThan(2.8);
-    expect(beats.end).toBeLessThanOrEqual(3.6);
-  });
-
-  it("sur petit écran, corrige sans attendre la frappe, au même rythme", () => {
-    expect(beats.narrowPen.circle.start).toBeLessThan(beats.pen.circle.start);
-    expect(endOf(beats.narrowStamp) - beats.narrowPen.circle.start).toBeCloseTo(
-      endOf(beats.stamp) - beats.pen.circle.start,
-      10,
-    );
-  });
-
-  it("donne une durée minimale à une colonne vide", () => {
-    expect(beats.rows[5]!.detail.duration).toBeGreaterThan(0);
-  });
-});
-
-describe("storySchedule", () => {
-  it("encadre les lignes une à une", () => {
-    const beats = storySchedule(3, 20);
-    expect(beats.pencils).toHaveLength(3);
-    expect(beats.pencils[1]!.start).toBeGreaterThan(beats.pencils[0]!.start);
-    expect(endOf(beats.pencils[2]!)).toBeLessThanOrEqual(1.2);
-  });
-
-  it("fait passer le stylo, puis l'avis de prix, puis le tampon", () => {
-    const beats = storySchedule(3, 20);
-    expect(beats.price.circle.start).toBeGreaterThan(beats.pen.correction.start);
-    expect(endOf(beats.stamp)).toBeLessThanOrEqual(3);
-    expect(beats.stamp.start).toBeGreaterThan(endOf(beats.price.note));
-  });
-
-  it("écrit le message en un bloc de 1,2 s au plus, même long", () => {
-    const beats = storySchedule(3, 80);
-    const first = beats.words[0]!;
-    const last = beats.words[beats.words.length - 1]!;
-    expect(first.start).toBeGreaterThanOrEqual(endOf(beats.slip));
-    expect(endOf(last) - first.start).toBeLessThanOrEqual(1.2 + 1e-9);
   });
 });

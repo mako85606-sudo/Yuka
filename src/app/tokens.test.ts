@@ -1,15 +1,16 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ogColors } from "@/config/og";
 import { site } from "@/config/site";
-import { contrastRatio, parseHex } from "@/lib/color";
+import { contrastRatio } from "@/lib/color";
 import { durations } from "@/lib/motion";
 
 /**
- * Garde-fous de la direction artistique : un bureau sombre, des feuilles
- * crème, pas de vert, et chaque couple encre/fond tient son contraste WCAG
- * sur la surface où il est posé.
+ * Garde-fous de l'identité claire : une page blanche, un vert vif pour les
+ * aplats et un vert foncé pour le texte, des rouges et des oranges réservés
+ * aux constats ; chaque couple encre/fond tient son contraste WCAG.
  */
 
 function source(path: string): string {
@@ -42,76 +43,80 @@ function hexTokens(block: string): Record<string, string> {
   return tokens;
 }
 
-const desk = hexTokens(blockAfter("\n:root"));
-/** Une feuille hérite du bureau ce qu'elle ne redéfinit pas. */
-const sheet = { ...desk, ...hexTokens(blockAfter(".surface-paper")) };
+const root = hexTokens(blockAfter("\n:root"));
 
-function token(surface: Record<string, string>, name: string): string {
-  const value = surface[name];
+function token(name: string): string {
+  const value = root[name];
   if (!value) throw new Error(`Token manquant : ${name}`);
   return value;
 }
 
-/** Couleur obtenue par un surligneur en mode « produit » (multiply) sur un fond. */
-function multiply(top: string, bottom: string): string {
-  const a = parseHex(top);
-  const b = parseHex(bottom);
-  return `#${a.map((channel, index) => Math.round((channel * (b[index] ?? 0)) / 255).toString(16).padStart(2, "0")).join("")}`;
+/** Les fichiers d'interface, pour vérifier comment les tokens y sont employés. */
+function interfaceSources(): { readonly path: string; readonly text: string }[] {
+  const base = fileURLToPath(new URL("../", import.meta.url));
+  return readdirSync(base, { recursive: true, encoding: "utf8" })
+    .filter((path) => path.endsWith(".tsx"))
+    .map((path) => ({ path, text: readFileSync(join(base, path), "utf8") }));
 }
 
 describe("identité", () => {
-  it("pose des feuilles crème sur un bureau sombre", () => {
-    expect(token(desk, "--paper")).toBe("#221E19");
-    expect(token(desk, "--paper-raised")).toBe("#F2ECDD");
-    expect(token(sheet, "--paper-raised")).toBe("#F2ECDD");
-    expect(token(sheet, "--ink")).toBe("#2B2119");
-    expect(token(sheet, "--pen-red")).toBe("#D63A2B");
-  });
-
-  it("n'a plus de vert", () => {
-    expect(css).not.toMatch(/green/i);
+  it("pose une page blanche, une encre presque noire et un vert vif", () => {
+    expect(token("--paper")).toBe("#FFFFFF");
+    expect(token("--paper-raised")).toBe("#FFFFFF");
+    expect(token("--ink")).toBe("#0E1B16");
+    expect(token("--brand")).toBe("#17C26B");
   });
 
   it("n'utilise jamais de noir pur", () => {
-    for (const surface of [desk, sheet]) {
-      expect(Object.values(surface)).not.toContain("#000000");
-    }
+    expect(Object.values(root)).not.toContain("#000000");
   });
 
-  it("n'a qu'un seul rouge sur le bureau, clair, pour le texte", () => {
-    expect(token(desk, "--pen-red-strong")).toBe(token(desk, "--pen-red"));
-    expect(token(desk, "--verdict-alert")).toBe(token(desk, "--pen-red"));
+  it("n'a ni dégradé ni grain", () => {
+    expect(css).not.toMatch(/gradient\(/i);
+    expect(css).toMatch(/--grain:\s*none;/);
   });
 
-  it("garde le jaune du surligneur, mélangé au papier", () => {
-    expect(token(sheet, "--highlighter-mark")).toBe("#FFE45C");
-    expect(source("../components/signature/HighlighterMark.tsx")).toContain("mix-blend-multiply");
+  it("reste légèrement arrondie : 10 px au plus", () => {
+    const radii = [...css.matchAll(/--radius-[a-z]+:\s*(\d+)px;/g)].map((match) => Number(match[1]));
+    expect(radii.length).toBeGreaterThanOrEqual(3);
+    expect(Math.max(...radii)).toBeLessThanOrEqual(10);
   });
 
-  it("donne au navigateur la couleur du bureau", () => {
-    expect(site.themeColor).toBe(token(desk, "--paper"));
-    expect(css).toMatch(/color-scheme:\s*dark;/);
+  it("donne au navigateur la couleur de la page", () => {
+    expect(site.themeColor).toBe(token("--paper"));
+    expect(css).toMatch(/color-scheme:\s*light;/);
   });
 
-  it("donne à l'image de partage le bureau et les encres de la feuille", () => {
-    const names: Record<keyof typeof ogColors, [Record<string, string>, string]> = {
-      desk: [desk, "--paper"],
-      paperRaised: [sheet, "--paper-raised"],
-      ink: [sheet, "--ink"],
-      inkMuted: [sheet, "--ink-muted"],
-      penRed: [sheet, "--pen-red"],
-      verdictOk: [sheet, "--verdict-ok"],
-      verdictNegotiate: [sheet, "--verdict-negotiate"],
-      verdictAlert: [sheet, "--verdict-alert"],
+  it("donne à l'image de partage les couleurs du site", () => {
+    const names: Record<keyof typeof ogColors, string> = {
+      page: "--mist",
+      card: "--paper-raised",
+      ink: "--ink",
+      inkMuted: "--ink-muted",
+      brand: "--brand",
+      brandStrong: "--brand-strong",
+      brandSoft: "--brand-soft",
+      warningSoft: "--warning-soft",
+      errorSoft: "--error-soft",
+      verdictOk: "--verdict-ok",
+      verdictNegotiate: "--verdict-negotiate",
+      verdictAlert: "--verdict-alert",
     };
-    for (const [key, [surface, name]] of Object.entries(names)) {
-      expect(ogColors[key as keyof typeof ogColors]).toBe(token(surface, name));
+    for (const [key, name] of Object.entries(names)) {
+      expect(ogColors[key as keyof typeof ogColors]).toBe(token(name));
     }
   });
 
-  it("n'écrit aucune durée en dur dans les gestes CSS : elles viennent de motion.ts", () => {
-    const gestures = css.slice(css.indexOf("@keyframes ink-draw"));
-    expect(gestures).not.toMatch(/\d+(\.\d+)?m?s\b/);
+  it("dessine l'icône du site aux couleurs du logo", () => {
+    const icon = source("./icon.svg").toUpperCase();
+    expect(icon).toContain(token("--brand"));
+    expect(icon).toContain(token("--ink"));
+  });
+
+  it("n'écrit aucune durée en dur dans le CSS : elles viennent de motion.ts", () => {
+    // Sans le miroir de durations.micro ni les images en data URI (« %23s » n'est pas une durée).
+    const withoutMirror = css.replace(/--duration-micro:\s*\d+ms;/, "").replace(/url\("data:[^"]*"\)/g, "");
+    expect(withoutMirror).not.toMatch(/\b\d+(\.\d+)?m?s\b/);
   });
 
   it("reprend en CSS la durée des micro-interactions de motion.ts", () => {
@@ -119,86 +124,51 @@ describe("identité", () => {
     expect(Number(match?.[1])).toBe(durations.micro * 1000);
   });
 
-  it("garde un grain à 4 % d'opacité au plus, sur le bureau comme sur la feuille", () => {
-    const opacities = [...css.matchAll(/ opacity='([\d.]+)'/g)].map((match) => Number(match[1]));
-    expect(opacities.length).toBeGreaterThanOrEqual(2);
-    expect(Math.max(...opacities)).toBeLessThanOrEqual(0.04);
+  it("n'écrit jamais de texte en vert vif (illisible sur blanc) : le texte vert est `brand-strong`", () => {
+    for (const { path, text } of interfaceSources()) {
+      expect(text, path).not.toMatch(/\btext-brand(?![-\w])/);
+    }
   });
 });
 
-describe("contrastes sur le bureau", () => {
-  const ground = token(desk, "--paper");
+describe("contrastes", () => {
+  const page = token("--paper");
+  const mist = token("--mist");
 
-  it("--ink se lit très confortablement (≥ 7:1)", () => {
-    expect(contrastRatio(token(desk, "--ink"), ground)).toBeGreaterThanOrEqual(7);
-  });
-
-  it.each(["--ink-muted", "--pen-red", "--pen-red-strong", "--stamp-orange-strong", "--annotation-blue"])(
-    "%s tient 4,5:1 pour du texte (AA)",
-    (name) => {
-      expect(contrastRatio(token(desk, name), ground)).toBeGreaterThanOrEqual(4.5);
-    },
-  );
-
-  it.each(["--verdict-ok", "--verdict-negotiate", "--verdict-alert"])("%s tient 3:1 (gros texte)", (name) => {
-    expect(contrastRatio(token(desk, name), ground)).toBeGreaterThanOrEqual(3);
-  });
-
-  it("garde lisible une étape estompée de « Comment ça marche »", () => {
-    const opacities = [...css.matchAll(/opacity:\s*(0\.\d+);/g)].map((match) => Number(match[1]));
-    const dimmest = Math.min(...opacities);
-    const blend = (top: string, bottom: string, alpha: number) => {
-      const a = parseHex(top);
-      const b = parseHex(bottom);
-      return `#${a.map((channel, index) => Math.round(channel * alpha + (b[index] ?? 0) * (1 - alpha)).toString(16).padStart(2, "0")).join("")}`;
-    };
-    expect(dimmest).toBeGreaterThan(0);
-    expect(contrastRatio(blend(token(desk, "--ink-muted"), ground, dimmest), ground)).toBeGreaterThanOrEqual(4.5);
-  });
-
-  it("garde lisible le texte d'un bouton principal (fond encre, texte bureau)", () => {
-    expect(contrastRatio(token(desk, "--paper"), token(desk, "--ink"))).toBeGreaterThanOrEqual(7);
-  });
-
-  it("garde lisible un texte sélectionné (surligné, encre imprimée)", () => {
-    expect(contrastRatio(token(desk, "--sheet-ink"), token(desk, "--highlighter"))).toBeGreaterThanOrEqual(7);
-  });
-});
-
-describe("contrastes sur la feuille", () => {
-  // La feuille, et son creux (champs, encadrés).
-  const grounds = [token(sheet, "--paper-raised"), token(sheet, "--paper")];
-
-  it("--ink se lit très confortablement (≥ 7:1)", () => {
-    for (const ground of grounds) {
-      expect(contrastRatio(token(sheet, "--ink"), ground)).toBeGreaterThanOrEqual(7);
+  it("--ink se lit très confortablement sur tous les fonds (≥ 7:1)", () => {
+    for (const ground of [page, mist, token("--brand-soft"), token("--error-soft"), token("--warning-soft")]) {
+      expect(contrastRatio(token("--ink"), ground)).toBeGreaterThanOrEqual(7);
     }
   });
 
-  it.each(["--ink-muted", "--pen-red-strong", "--stamp-orange-strong", "--annotation-blue"])(
-    "%s tient 4,5:1 pour du petit texte",
-    (name) => {
-      for (const ground of grounds) {
-        expect(contrastRatio(token(sheet, name), ground)).toBeGreaterThanOrEqual(4.5);
-      }
-    },
-  );
-
-  it.each(["--pen-red", "--verdict-ok", "--verdict-negotiate", "--verdict-alert"])(
-    "%s tient 3:1 (gros texte du tampon, traits porteurs de sens)",
-    (name) => {
-      for (const ground of grounds) {
-        expect(contrastRatio(token(sheet, name), ground)).toBeGreaterThanOrEqual(3);
-      }
-    },
-  );
-
-  it("garde le texte lisible sous le surligneur", () => {
-    const marked = multiply(token(sheet, "--highlighter-mark"), token(sheet, "--paper-raised"));
-    expect(contrastRatio(token(sheet, "--ink"), marked)).toBeGreaterThanOrEqual(7);
+  it.each([
+    ["--ink-muted", []],
+    ["--brand-strong", ["--brand-soft"]],
+    ["--pen-red-strong", ["--error-soft"]],
+    ["--stamp-orange-strong", ["--warning-soft"]],
+    ["--annotation-blue", []],
+  ] as const)("%s tient 4,5:1 pour du petit texte, sur la page, le gris-vert et sa pastille", (name, tints) => {
+    for (const ground of [page, mist, ...tints.map(token)]) {
+      expect(contrastRatio(token(name), ground)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
-  it("garde lisible le texte d'un bouton posé sur la feuille", () => {
-    expect(contrastRatio(token(sheet, "--paper"), token(sheet, "--ink"))).toBeGreaterThanOrEqual(7);
+  it.each(["--pen-red", "--stamp-orange", "--verdict-ok", "--verdict-negotiate", "--verdict-alert"])(
+    "%s tient 3:1 (pictogrammes, traits, gros texte)",
+    (name) => {
+      for (const ground of [page, mist]) {
+        expect(contrastRatio(token(name), ground)).toBeGreaterThanOrEqual(3);
+      }
+    },
+  );
+
+  it("garde lisible le texte d'un bouton principal (encre sur vert vif, au repos et au survol)", () => {
+    expect(contrastRatio(token("--ink"), token("--brand"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(token("--ink"), token("--brand-hover"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("garde lisible un texte sélectionné ou surligné", () => {
+    expect(contrastRatio(token("--sheet-ink"), token("--highlighter-mark"))).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(token("--sheet-ink"), token("--highlighter"))).toBeGreaterThanOrEqual(7);
   });
 });

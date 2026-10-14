@@ -72,3 +72,58 @@ export function CheckGlyph({ className }: { readonly className?: string }) {
     </svg>
   );
 }
+
+export function ArrowRightGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className={cn("size-5 fill-none stroke-current", className)}
+      strokeWidth={1.8}
+    >
+      <path d="M4 10h11.5M11 5.5 15.5 10 11 14.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ShieldGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className={cn("size-6 fill-none stroke-current", className)}
+      strokeWidth={1.7}
+    >
+      <path d="M12 3 5 5.8v5.5c0 4.4 2.9 8.2 7 9.7 4.1-1.5 7-5.3 7-9.7V5.8L12 3Z" strokeLinejoin="round" />
+      <path d="m8.8 12 2.3 2.3 4.3-4.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function LockGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className={cn("size-6 fill-none stroke-current", className)}
+      strokeWidth={1.7}
+    >
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+      <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7M12 14.5v2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function EraseGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className={cn("size-6 fill-none stroke-current", className)}
+      strokeWidth={1.7}
+    >
+      <path d="M6 3.5h8.5L19 8v12a.5.5 0 0 1-.5.5h-12A.5.5 0 0 1 6 20V4a.5.5 0 0 1 .5-.5Z" strokeLinejoin="round" />
+      <path d="M14.5 3.5V8H19M9.8 12.2l4.4 4.4M14.2 12.2l-4.4 4.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

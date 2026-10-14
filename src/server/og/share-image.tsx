@@ -7,12 +7,13 @@ import { site } from "@/config/site";
 import { CATEGORY_LABELS, type Category } from "@/config/taxonomy";
 import type { SavingsRange } from "@/lib/analysis/result";
 import { savingsText } from "@/lib/analysis/result-view";
+import { LOGO_VIEWBOX, logoMark } from "@/lib/logo";
 import type { Verdict } from "@/lib/scene-quote";
 
 /**
- * Image de partage (Open Graph) : un titre éditorial, le tampon du verdict et
- * ce qui a été relevé. Rien de personnel : la catégorie, le verdict, des
- * nombres. Polices embarquées (`assets/fonts`, licence OFL).
+ * Image de partage (Open Graph) : le logo, un titre éditorial, l'économie
+ * possible en grand et le verdict. Rien de personnel : la catégorie, le
+ * verdict, des nombres. Polices embarquées (`assets/fonts`, licence OFL).
  */
 
 const FONT_DIR = join(process.cwd(), "assets", "fonts");
@@ -30,10 +31,10 @@ async function fonts() {
   ];
 }
 
-const STAMP: Record<Verdict, { readonly lines: readonly string[]; readonly color: string }> = {
-  ok: { lines: ["CORRECT"], color: ogColors.verdictOk },
-  negotiate: { lines: ["À NÉGOCIER"], color: ogColors.verdictNegotiate },
-  alert: { lines: ["À VÉRIFIER", "SÉRIEUSEMENT"], color: ogColors.verdictAlert },
+const VERDICT: Record<Verdict, { readonly label: string; readonly color: string; readonly background: string }> = {
+  ok: { label: "Correct", color: ogColors.verdictOk, background: ogColors.brandSoft },
+  negotiate: { label: "À négocier", color: ogColors.verdictNegotiate, background: ogColors.warningSoft },
+  alert: { label: "À vérifier sérieusement", color: ogColors.verdictAlert, background: ogColors.errorSoft },
 };
 
 export interface ShareImageInput {
@@ -52,16 +53,33 @@ function summary(input: ShareImageInput): string {
   const parts = [
     input.errors > 0 ? plural(input.errors, "erreur vérifiée", "erreurs vérifiées") : "Aucune erreur vérifiée",
     input.warnings > 0 ? plural(input.warnings, "point d'attention", "points d'attention") : null,
-    input.savings ? `économie possible : ${savingsText(input.savings)}` : null,
   ];
   return parts.filter(Boolean).join(" · ");
 }
 
+/** Le logo : la tuile verte et la loupe cochée (géométrie partagée, `src/lib/logo.ts`). */
+function LogoMark({ size }: { readonly size: number }) {
+  const { tile, lens, handle, tick } = logoMark;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${LOGO_VIEWBOX} ${LOGO_VIEWBOX}`}>
+      <rect width={tile.size} height={tile.size} rx={tile.radius} fill={ogColors.brand} />
+      <circle cx={lens.cx} cy={lens.cy} r={lens.r} fill="none" stroke={ogColors.ink} strokeWidth={lens.strokeWidth} />
+      <path d={handle.d} stroke={ogColors.ink} strokeWidth={handle.strokeWidth} strokeLinecap="round" />
+      <path
+        d={tick.d}
+        fill="none"
+        stroke={ogColors.ink}
+        strokeWidth={tick.strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** L'image d'une correction partagée, ou celle du site (`input` absent). */
 export async function renderShareImage(input: ShareImageInput | null): Promise<ImageResponse> {
-  const title = input ? `Devis de ${CATEGORY_LABELS[input.category].toLowerCase()}` : "Ton devis,";
-  const subtitle = "corrigé au stylo rouge.";
-  const stamp = input ? STAMP[input.verdict] : { lines: ["LOUPE"], color: ogColors.penRed };
+  const verdict = input ? VERDICT[input.verdict] : null;
 
   return new ImageResponse(
     (
@@ -70,7 +88,7 @@ export async function renderShareImage(input: ShareImageInput | null): Promise<I
           width: "100%",
           height: "100%",
           display: "flex",
-          background: ogColors.desk,
+          background: ogColors.page,
           padding: 48,
           fontFamily: "Geist",
         }}
@@ -81,77 +99,65 @@ export async function renderShareImage(input: ShareImageInput | null): Promise<I
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            background: ogColors.paperRaised,
-            borderRadius: 6,
+            background: ogColors.card,
+            borderRadius: 20,
             padding: "52px 60px",
             boxShadow: ogShadow,
-            transform: "rotate(-0.6deg)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div
-              style={{
-                display: "flex",
-                fontFamily: "Instrument Serif",
-                fontSize: 44,
-                color: ogColors.ink,
-                border: `3px solid ${ogColors.penRed}`,
-                borderRadius: 999,
-                padding: "2px 26px 6px",
-              }}
-            >
-              {site.name}
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <LogoMark size={56} />
+              <div style={{ display: "flex", fontSize: 40, color: ogColors.ink, letterSpacing: -1 }}>{site.name}</div>
             </div>
             <div style={{ display: "flex", fontSize: 24, color: ogColors.inkMuted }}>
-              {input ? "Avis indicatif · sans nom ni adresse" : "Avis indicatif · aucun artisan ne nous paie"}
+              {input ? "Avis indicatif · sans nom ni adresse" : "Indépendant · aucun artisan ne nous paie"}
             </div>
           </div>
 
-          {/* Le titre et le tampon ne se touchent jamais : le titre passe à la ligne s'il le faut. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
-            <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", fontFamily: "Instrument Serif", fontSize: 76, lineHeight: 1, color: ogColors.ink }}>
-                {title}
+          {input && verdict ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                <div style={{ display: "flex", fontFamily: "Instrument Serif", fontSize: 64, lineHeight: 1, color: ogColors.ink }}>
+                  {`Devis de ${CATEGORY_LABELS[input.category].toLowerCase()}`}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 28,
+                    color: verdict.color,
+                    background: verdict.background,
+                    borderRadius: 10,
+                    padding: "8px 18px",
+                  }}
+                >
+                  {verdict.label}
+                </div>
               </div>
-              <div style={{ display: "flex", fontFamily: "Instrument Serif", fontSize: 76, lineHeight: 1.05, color: ogColors.inkMuted }}>
-                {subtitle}
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexShrink: 0,
-                transform: "rotate(-10deg)",
-                border: `6px solid ${stamp.color}`,
-                borderRadius: 14,
-                padding: 6,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  border: `3px solid ${stamp.color}`,
-                  borderRadius: 8,
-                  padding: "18px 28px",
-                  color: stamp.color,
-                  fontFamily: "Geist Mono",
-                  fontSize: stamp.lines.length > 1 ? 40 : 48,
-                  letterSpacing: 3,
-                }}
-              >
-                {stamp.lines.map((line) => (
-                  <div key={line} style={{ display: "flex" }}>
-                    {line}
+              {input.savings ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ display: "flex", fontSize: 28, color: ogColors.inkMuted }}>Économie possible</div>
+                  <div style={{ display: "flex", fontSize: 88, letterSpacing: -3, color: ogColors.brandStrong }}>
+                    {savingsText(input.savings)}
                   </div>
-                ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", fontFamily: "Instrument Serif", fontSize: 96, lineHeight: 1, color: ogColors.ink }}>
+                Ne payez plus
+              </div>
+              <div style={{ display: "flex", fontFamily: "Instrument Serif", fontSize: 96, lineHeight: 1.05, color: ogColors.brandStrong }}>
+                un devis trop cher.
               </div>
             </div>
-          </div>
+          )}
 
           <div style={{ display: "flex", fontSize: 30, color: ogColors.ink }}>
-            {input ? summary(input) : "Une photo du devis, et une demi-minute plus tard, tu sais quoi négocier."}
+            {input
+              ? summary(input)
+              : "Calculs, mentions obligatoires et prix vérifiés en 30\u00a0secondes."}
           </div>
         </div>
       </div>

@@ -3,10 +3,10 @@
 import { useActionState, useEffect, useId, useState } from "react";
 import { subscribeToNews } from "@/app/actions/signup";
 import { Button } from "@/components/ui/Button";
+import { CheckGlyph } from "@/components/ui/icons";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup-form";
-import { PenTick } from "./PenTick";
 
 const INITIAL_STATE: SignupState = { status: "idle" };
 
@@ -32,7 +32,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
   if (state.status === "success") {
     return (
       <p role="status" className={cn("flex items-start gap-2.5 text-[1.0625rem]", className)}>
-        <PenTick seed="inscription" className="mt-1" />
+        <CheckGlyph className="mt-0.5 text-brand-strong" />
         {state.message}
       </p>
     );
@@ -50,7 +50,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
       </div>
 
       <label htmlFor={inputId} className="block text-sm font-medium text-ink">
-        Ton email
+        Votre email
       </label>
       <div className="mt-2 flex flex-col gap-3 sm:flex-row">
         <input
@@ -66,7 +66,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
           aria-describedby={hasError ? messageId : undefined}
           placeholder="prenom@exemple.fr"
           className={cn(
-            "h-12 min-w-0 flex-1 surface-paper rounded-[6px] border px-4 text-base text-ink placeholder:text-ink-muted",
+            "h-12 w-full min-w-0 rounded-md border bg-paper-raised px-4 text-base text-ink placeholder:text-ink-muted sm:flex-1",
             state.status === "invalid" ? "border-pen-red-strong" : "border-rule-strong",
           )}
         />
@@ -84,7 +84,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
       >
         {hasError
           ? state.message
-          : "Ton adresse ne sert qu'à ça. Tu peux demander à être retiré de la liste quand tu veux."}
+          : "Votre adresse ne sert qu'à cela. Vous pouvez vous désinscrire à tout moment."}
       </p>
     </form>
   );

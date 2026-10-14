@@ -5,13 +5,7 @@ import {
   highlighterShape,
   inkSplatter,
   inkStroke,
-  pencilBox,
-  penRing,
-  RING_VARIANTS,
-  ringVariant,
   penLoop,
-  penTick,
-  penUnderline,
   smoothPath,
   stampTilt,
 } from "@/lib/hand-drawn";
@@ -159,34 +153,5 @@ describe("inkStroke", () => {
     const xs = numbersIn(stroke.outline).filter((_, index) => index % 2 === 0);
     expect(Math.min(...xs)).toBeGreaterThan(-6);
     expect(Math.max(...xs)).toBeLessThan(106);
-  });
-});
-
-describe("penUnderline, penTick et pencilBox", () => {
-  it("restent dans leur boîte, à quelques pixels près", () => {
-    for (const points of [penUnderline("l1", 80, 12), penTick("l5", 18, 16), pencilBox("l2", 80, 16)]) {
-      for (const point of points) {
-        expect(point.x).toBeGreaterThan(-2);
-        expect(point.x).toBeLessThan(82);
-        expect(point.y).toBeGreaterThan(-2);
-        expect(point.y).toBeLessThan(18);
-      }
-    }
-  });
-
-  it("sont déterministes", () => {
-    expect(pencilBox("l2", 80, 16)).toEqual(pencilBox("l2", 80, 16));
-    expect(penTick("l5", 18, 16)).toEqual(penTick("l5", 18, 16));
-    expect(penUnderline("l1", 80, 12)).toEqual(penUnderline("l1", 80, 12));
-  });
-});
-
-describe("penRing", () => {
-  it("offre quatre variantes différentes, et toujours la même pour une même cible", () => {
-    const outlines = new Set(Array.from({ length: RING_VARIANTS }, (_, variant) => penRing(variant).outline));
-    expect(outlines.size).toBe(RING_VARIANTS);
-    expect(ringVariant("Questions")).toBe(ringVariant("Questions"));
-    expect(ringVariant("Questions")).toBeGreaterThanOrEqual(0);
-    expect(ringVariant("Questions")).toBeLessThan(RING_VARIANTS);
   });
 });

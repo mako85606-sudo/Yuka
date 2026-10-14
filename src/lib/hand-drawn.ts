@@ -1,5 +1,5 @@
 import { angles } from "@/lib/motion";
-import { between, createRandom, hashString } from "@/lib/seeded-random";
+import { between, createRandom } from "@/lib/seeded-random";
 
 /**
  * Géométrie « tracée à la main » : boucle au stylo rouge, coup de surligneur,
@@ -282,99 +282,4 @@ export function inkStroke(seed: string, points: readonly Point[], width: InkWidt
     centerline: smoothPath(points),
     maskWidth: round1(width.max * 1.6 + 2),
   };
-}
-
-/**
- * Soulignement au stylo sous une boîte `width × height` : un trait qui ondule
- * à peine, monte un peu, et se termine par un petit crochet.
- */
-export function penUnderline(seed: string, width: number, height: number): Point[] {
-  const random = createRandom(`underline:${seed}`);
-  const climb = between(random, -0.12, 0.06) * height;
-  const phase = between(random, 0, TAU);
-  const steps = 9;
-  const points: Point[] = [];
-  for (let i = 0; i <= steps; i += 1) {
-    const t = i / steps;
-    points.push({
-      x: width * (0.03 + 0.94 * t),
-      y: height * 0.55 + climb * t + Math.sin(TAU * t + phase) * height * 0.08,
-    });
-  }
-  const last = points[points.length - 1] ?? { x: width, y: height / 2 };
-  points.push({ x: last.x + width * 0.012, y: last.y - height * between(random, 0.18, 0.3) });
-  return points;
-}
-
-/** Coche au stylo dans une boîte `width × height` : petite descente, longue remontée. */
-export function penTick(seed: string, width: number, height: number): Point[] {
-  const random = createRandom(`tick:${seed}`);
-  const jitter = () => between(random, -0.03, 0.03);
-  return [
-    { x: width * (0.06 + jitter()), y: height * (0.5 + jitter()) },
-    { x: width * (0.2 + jitter()), y: height * (0.66 + jitter()) },
-    { x: width * 0.36, y: height * (0.9 + jitter()) },
-    { x: width * (0.52 + jitter()), y: height * (0.6 + jitter()) },
-    { x: width * (0.74 + jitter()), y: height * (0.3 + jitter()) },
-    { x: width * (0.96 + jitter()), y: height * (0.05 + jitter()) },
-  ];
-}
-
-/**
- * Cadre au crayon autour d'une boîte `width × height` : quatre côtés tirés
- * d'un trait, coins un peu arrondis, et le trait qui dépasse son point de
- * départ en refermant le cadre.
- */
-export function pencilBox(seed: string, width: number, height: number): Point[] {
-  const random = createRandom(`pencil:${seed}`);
-  const wobble = () => between(random, -0.9, 0.9);
-  const corner = Math.min(4, height * 0.18);
-  const left = between(random, 0, 2);
-  const right = width - between(random, 0, 2);
-  const top = between(random, 0, 1.5);
-  const bottom = height - between(random, 0, 1.5);
-  return [
-    { x: left + corner * 1.5, y: top + wobble() },
-    { x: (left + right) / 2, y: top + wobble() },
-    { x: right - corner, y: top + wobble() },
-    { x: right + wobble() * 0.5, y: top + corner },
-    { x: right + wobble(), y: (top + bottom) / 2 },
-    { x: right + wobble() * 0.5, y: bottom - corner },
-    { x: right - corner, y: bottom + wobble() },
-    { x: (left + right) / 2, y: bottom + wobble() },
-    { x: left + corner, y: bottom + wobble() },
-    { x: left + wobble() * 0.5, y: bottom - corner },
-    { x: left + wobble(), y: (top + bottom) / 2 },
-    { x: left + wobble() * 0.5, y: top + corner },
-    { x: left + corner * 2.5, y: top + between(random, -1.5, -0.4) },
-    { x: left + corner * 5, y: top + between(random, -2.4, -0.8) },
-  ];
-}
-
-/** Le cercle du logo, devenu motif : quatre coups de stylo différents, utilisés à tour de rôle. */
-export const RING_VARIANTS = 4;
-
-/**
- * Repères d'un anneau : il s'étire sur sa cible. Deux proportions, pour que
- * l'étirement reste faible et le trait fin : un mot (`word`), ou une cible
- * large, comme un bouton ou une expression (`wide`).
- */
-export const RING_BOXES = {
-  word: { width: 120, height: 44 },
-  wide: { width: 210, height: 48 },
-} as const;
-
-export type RingShape = keyof typeof RING_BOXES;
-
-/** Variante d'anneau d'une cible donnée : toujours la même pour la même graine. */
-export function ringVariant(seed: string): number {
-  return hashString(`anneau:${seed}`) % RING_VARIANTS;
-}
-
-/** L'anneau au stylo, variante `variant` : boucle imparfaite, largeur variable, petit dépassement. */
-export function penRing(variant: number, shape: RingShape = "word"): InkStroke {
-  const seed = `anneau-${((variant % RING_VARIANTS) + RING_VARIANTS) % RING_VARIANTS}`;
-  const box = RING_BOXES[shape];
-  const loop = penLoop(seed, box.width, box.height);
-  return inkStroke(seed, loop.points, { min: 0.6, max: 2 });
 }

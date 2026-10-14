@@ -11,7 +11,7 @@ import { fr } from "@/lib/typography";
 export { HONEYPOT_FIELD, SIGNUP_SOURCES, type SignupSource, type SignupState } from "@/lib/signup-form";
 
 const INVALID_EMAIL = fr(
-  "Cette adresse ne ressemble pas à un email. Vérifie qu'il y a bien un @ et un domaine.",
+  "Cette adresse ne ressemble pas à un email. Vérifiez qu'il y a bien un @ et un domaine.",
 );
 
 export const signupSchema = z.object({

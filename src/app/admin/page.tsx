@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminLogin } from "@/components/admin/AdminLogin";
-import { Wordmark } from "@/components/landing/Wordmark";
+import { Logo } from "@/components/landing/Logo";
 import { fr } from "@/lib/typography";
 import { adminPassword, isAdmin } from "@/server/admin/auth";
 import { adminStats } from "@/server/admin/stats";
@@ -50,7 +50,7 @@ export default async function AdminPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 pt-8 sm:px-8">
       <div className="mb-8">
-        <Wordmark />
+        <Logo />
       </div>
       {content}
     </main>
