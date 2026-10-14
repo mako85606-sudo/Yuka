@@ -62,7 +62,7 @@ export default function LegalNoticePage() {
       <LegalSection title="Polices et crédits">
         <p>
           {fr(
-            "Polices Instrument Serif, Geist, Geist Mono et Caveat, sous licence SIL Open Font License 1.1.",
+            "Polices Instrument Serif, Geist, Geist Mono et La Belle Aurore, sous licence SIL Open Font License 1.1.",
           )}
         </p>
       </LegalSection>

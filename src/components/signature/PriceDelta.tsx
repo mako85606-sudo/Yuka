@@ -40,7 +40,8 @@ export function PriceDelta({
   className,
 }: PriceDeltaProps) {
   const { reduced, skip } = useMotionPrefs();
-  const counter = useMotionValue(0);
+  // La vraie valeur dès le rendu serveur : le compteur ne repart de zéro que pour s'animer.
+  const counter = useMotionValue(amount);
   const shown = useTransform(counter, (latest) => formatSignedEuros(latest));
   const finalText = formatSignedEuros(amount);
   const phrase = describeDelta(amount, source);
@@ -56,10 +57,7 @@ export function PriceDelta({
         : "text-ink";
 
   useEffect(() => {
-    if (!active) {
-      counter.jump(0);
-      return;
-    }
+    if (!active) return;
     if (reduced || skip) {
       // Même chemin que l'animation, sans durée : un saut direct n'était pas toujours affiché
       // quand l'avis apparaissait déjà actif (carte montée à l'approche, mouvement réduit).

@@ -109,6 +109,11 @@ describe("identité", () => {
     }
   });
 
+  it("n'écrit aucune durée en dur dans les gestes CSS : elles viennent de motion.ts", () => {
+    const gestures = css.slice(css.indexOf("@keyframes ink-draw"));
+    expect(gestures).not.toMatch(/\d+(\.\d+)?m?s\b/);
+  });
+
   it("reprend en CSS la durée des micro-interactions de motion.ts", () => {
     const match = /--duration-micro:\s*(\d+)ms;/.exec(css);
     expect(Number(match?.[1])).toBe(durations.micro * 1000);
@@ -145,10 +150,6 @@ describe("contrastes sur le bureau", () => {
 
   it("garde lisible un texte sélectionné (surligné, encre imprimée)", () => {
     expect(contrastRatio(token(desk, "--sheet-ink"), token(desk, "--highlighter"))).toBeGreaterThanOrEqual(7);
-  });
-
-  it("garde le « € » lisible sur les pièces de la démo", () => {
-    expect(contrastRatio(token(desk, "--coin-ink"), token(desk, "--coin"))).toBeGreaterThanOrEqual(4.5);
   });
 });
 

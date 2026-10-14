@@ -76,7 +76,7 @@ export default function DesignPage() {
                 <dd className="pt-1 text-right font-semibold">{formatEuros(1631.3)}</dd>
               </dl>
             </Specimen>
-            <Specimen name="Caveat" role="Annotations manuscrites, avec parcimonie">
+            <Specimen name="La Belle Aurore" role="Annotations manuscrites, avec parcimonie">
               <p className="font-hand text-[1.7rem] leading-tight text-annotation-blue">
                 Un forfait pour quoi ? Demande le détail.
               </p>

@@ -230,3 +230,92 @@ export function inkSplatter(seed: string, count: number): InkDroplet[] {
 export function stampTilt(seed: string): number {
   return roundTo(between(createRandom(`stamp:${seed}`), angles.stampMin, angles.stampMax), 2);
 }
+
+/** Épaisseur d'un trait de stylo, en px. */
+export interface InkWidth {
+  readonly min: number;
+  readonly max: number;
+}
+
+/** Un trait de stylo à largeur variable, et de quoi le dévoiler dans l'ordre du geste. */
+export interface InkStroke {
+  /** Contour rempli du trait. */
+  readonly outline: string;
+  /** Ligne médiane : le masque qui dévoile le trait la parcourt (pathLength = 1). */
+  readonly centerline: string;
+  /** Largeur du masque : de quoi couvrir le trait le plus épais. */
+  readonly maskWidth: number;
+}
+
+/**
+ * Trait de stylo à largeur variable le long des points donnés : fin quand le
+ * stylo se pose, plein au milieu, effilé quand il se lève, avec une légère
+ * ondulation de la pression. Le trait est un contour rempli (un `stroke` SVG
+ * a une épaisseur constante).
+ */
+export function inkStroke(seed: string, points: readonly Point[], width: InkWidth): InkStroke {
+  const random = createRandom(`ink-width:${seed}`);
+  const phase = between(random, 0, TAU);
+  const wobble = between(random, 0.08, 0.18);
+  const count = points.length;
+  const left: Point[] = [];
+  const right: Point[] = [];
+  points.forEach((point, index) => {
+    const previous = points[Math.max(0, index - 1)] ?? point;
+    const next = points[Math.min(count - 1, index + 1)] ?? point;
+    const tx = next.x - previous.x;
+    const ty = next.y - previous.y;
+    const length = Math.hypot(tx, ty) || 1;
+    const t = count > 1 ? index / (count - 1) : 0;
+    // Pression : monte vite quand le stylo se pose, retombe quand il se lève.
+    const pressure = Math.min(1, t / 0.12) ** 0.7 * Math.min(1, (1 - t) / 0.22) ** 0.8;
+    const ripple = 1 + wobble * Math.sin(TAU * 2.5 * t + phase);
+    const half = Math.max(width.min * 0.3, (width.min + (width.max - width.min) * pressure) * ripple) / 2;
+    const nx = (-ty / length) * half;
+    const ny = (tx / length) * half;
+    left.push({ x: point.x + nx, y: point.y + ny });
+    right.push({ x: point.x - nx, y: point.y - ny });
+  });
+  const back = smoothPath(right.reverse()).replace(/^M/, "L");
+  return {
+    outline: `${smoothPath(left)} ${back} Z`,
+    centerline: smoothPath(points),
+    maskWidth: round1(width.max * 1.6 + 2),
+  };
+}
+
+/**
+ * Soulignement au stylo sous une boîte `width × height` : un trait qui ondule
+ * à peine, monte un peu, et se termine par un petit crochet.
+ */
+export function penUnderline(seed: string, width: number, height: number): Point[] {
+  const random = createRandom(`underline:${seed}`);
+  const climb = between(random, -0.12, 0.06) * height;
+  const phase = between(random, 0, TAU);
+  const steps = 9;
+  const points: Point[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    points.push({
+      x: width * (0.03 + 0.94 * t),
+      y: height * 0.55 + climb * t + Math.sin(TAU * t + phase) * height * 0.08,
+    });
+  }
+  const last = points[points.length - 1] ?? { x: width, y: height / 2 };
+  points.push({ x: last.x + width * 0.012, y: last.y - height * between(random, 0.18, 0.3) });
+  return points;
+}
+
+/** Coche au stylo dans une boîte `width × height` : petite descente, longue remontée. */
+export function penTick(seed: string, width: number, height: number): Point[] {
+  const random = createRandom(`tick:${seed}`);
+  const jitter = () => between(random, -0.03, 0.03);
+  return [
+    { x: width * (0.06 + jitter()), y: height * (0.5 + jitter()) },
+    { x: width * (0.2 + jitter()), y: height * (0.66 + jitter()) },
+    { x: width * 0.36, y: height * (0.9 + jitter()) },
+    { x: width * (0.52 + jitter()), y: height * (0.6 + jitter()) },
+    { x: width * (0.74 + jitter()), y: height * (0.3 + jitter()) },
+    { x: width * (0.96 + jitter()), y: height * (0.05 + jitter()) },
+  ];
+}
