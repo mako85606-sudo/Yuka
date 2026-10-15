@@ -107,10 +107,11 @@ describe("identité", () => {
     }
   });
 
-  it("dessine l'icône du site aux couleurs du logo", () => {
+  it("dessine l'icône du site aux couleurs du logo : tuile à l'encre, loupe blanche, coche verte", () => {
     const icon = source("./icon.svg").toUpperCase();
-    expect(icon).toContain(token("--brand"));
-    expect(icon).toContain(token("--ink"));
+    expect(icon).toContain(`FILL="${token("--ink")}"`);
+    expect(icon).toContain(`STROKE="${token("--paper")}"`);
+    expect(icon).toContain(`STROKE="${token("--brand")}"`);
   });
 
   it("n'écrit aucune durée en dur dans le CSS : elles viennent de motion.ts", () => {

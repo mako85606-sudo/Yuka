@@ -1,6 +1,7 @@
 /**
- * Le logo de Loupe : une tuile verte, une loupe à l'encre et une coche dans
- * le verre (« vérifié »). Une seule géométrie, dans un carré de 32 : le logo
+ * Le logo de Loupe (version B, choisie par l'utilisateur) : une tuile à
+ * l'encre, une loupe blanche et une coche verte dans le verre (« vérifié »).
+ * Une seule géométrie, dans un carré de 32 : le logo
  * de l'interface (`Logo`), l'image de partage et l'icône du site
  * (`src/app/icon.svg`, recopiée à la main ; tokens.test.ts vérifie ses
  * couleurs) la reprennent telle quelle.
