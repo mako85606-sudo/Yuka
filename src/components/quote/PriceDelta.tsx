@@ -26,7 +26,7 @@ interface PriceDeltaProps {
  * Avis de prix : « +340 € au-dessus de la médiane », avec un compteur animé
  * (600 ms au plus) et, toujours, sa source et son niveau de confiance.
  *
- * Volontairement distinct des erreurs vérifiées : pas d'encre rouge ici.
+ * Volontairement distinct des erreurs vérifiées : jamais de rouge ici.
  * Orange au-dessus de la référence (il y a matière à négocier), encre
  * neutre en dessous ; une estimation IA reste à l'encre neutre, soulignée en
  * pointillé.
@@ -84,8 +84,8 @@ export function PriceDelta({
         {inRange ? null : (
           <motion.span
             className={cn(
-              "inline-block text-right font-mono font-semibold tabular-nums",
-              size === "sm" ? "text-[1rem]" : "text-[1.15rem]",
+              "inline-block text-right font-semibold tabular-nums",
+              size === "sm" ? "text-[0.9375rem]" : "text-base",
               tone,
               source.kind === "ai" && "underline decoration-dotted decoration-1 underline-offset-4",
             )}
@@ -96,7 +96,7 @@ export function PriceDelta({
         )}
         <span className="text-ink">{inRange ? `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}` : phrase}</span>
       </p>
-      <p aria-hidden className="mt-1 font-mono text-label uppercase text-ink-muted">
+      <p aria-hidden className="mt-0.5 text-xs text-ink-muted">
         {caption}
       </p>
     </motion.div>

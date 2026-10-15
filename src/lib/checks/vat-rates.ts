@@ -34,7 +34,7 @@ export function checkUnknownVatRates(extraction: Extraction): Finding[] {
       lineIndex: indexes.length === 1 ? indexes[0] : undefined,
       note: fr(`TVA à ${formatRate(rate / 100)} ?`),
       detail: fr(
-        `TVA à ${formatRate(rate / 100)} sur ${lineList(indexes)} : ce n'est pas un taux en vigueur en France (20 %, 10 %, 5,5 % ou 2,1 %). Demande une correction.`,
+        `TVA à ${formatRate(rate / 100)} sur ${lineList(indexes)} : ce n'est pas un taux en vigueur en France (20 %, 10 %, 5,5 % ou 2,1 %). Demandez une correction.`,
       ),
       ruleVerified: true,
     });
@@ -56,7 +56,7 @@ export function checkVatRatesForCategory(extraction: Extraction): Finding[] {
       lineIndex: indexes.length === 1 ? indexes[0] : undefined,
       note: fr(`TVA à ${formatRate(rate / 100)} : inhabituel`),
       detail: fr(
-        `TVA à ${formatRate(rate / 100)} sur ${lineList(indexes)} : un taux inhabituel pour ce type de devis (${CATEGORY_LABELS[extraction.category].toLowerCase()}). Demande sur quoi il repose.`,
+        `TVA à ${formatRate(rate / 100)} sur ${lineList(indexes)} : un taux inhabituel pour ce type de devis (${CATEGORY_LABELS[extraction.category].toLowerCase()}). Demandez à l'artisan sur quoi il repose.`,
       ),
       ruleVerified: false,
     });

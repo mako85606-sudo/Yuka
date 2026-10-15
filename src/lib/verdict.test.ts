@@ -53,7 +53,7 @@ describe("decideVerdict", () => {
     const misread = extractionWith({ issuer: { hasSiret: false }, confidence: { issuer: "low" } });
     const result = verdictFor(misread);
     expect(result.verdict).toBe("negotiate");
-    expect(result.keyPoints[0]).toMatch(/^À confirmer sur ton devis/);
+    expect(result.keyPoints[0]).toMatch(/^À confirmer sur votre devis/);
   });
 
   it("n'annonce pas d'économie sur un devis « Correct », même un peu au-dessus de la médiane", () => {
@@ -61,7 +61,7 @@ describe("decideVerdict", () => {
     if (!opinion) throw new Error("avis attendu");
     const result = verdictFor(cleanExtraction, [opinion]);
     expect(result).toMatchObject({ verdict: "ok", savings: null });
-    expect(result.keyPoints).toContain("Les prix comparés sont dans la norme de ta région.");
+    expect(result.keyPoints).toContain("Les prix comparés sont dans la norme de votre région.");
   });
 
   it("rappelle le délai de rétractation d'un contrat signé à domicile", () => {
@@ -102,7 +102,7 @@ describe("verdicts du jeu de test", () => {
     expect(result.verdict).toBe(verdict);
     if (id.startsWith("02")) {
       expect(result.savings).toEqual({ low: 21, high: 21 });
-      expect(result.keyPoints[0]).toBe("Les erreurs de calcul te font payer 20,80 € de trop.");
+      expect(result.keyPoints[0]).toBe("Les erreurs de calcul vous font payer 20,80 € de trop.");
     }
   });
 });

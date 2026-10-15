@@ -65,17 +65,24 @@ describe("sheetFromAnalysis", () => {
     expect(sheet.remarks?.[1]?.note).toContain("14");
   });
 
-  it("n'entoure jamais un constat sur des chiffres mal lus", () => {
+  it("ne présente jamais comme sûr un constat sur des chiffres mal lus", () => {
     const misread = withLine(1, { totalHT: 184, confidence: "low" });
     const sheet = sheetFromAnalysis(completed(misread));
     expect(sheet.issues).toHaveLength(1);
+    // La pastille « À vérifier » vient de la sévérité ; la note ne le répète pas.
     expect(sheet.issues[0]).toMatchObject({ severity: "unconfirmed" });
-    expect(sheet.issues[0]?.note).toMatch(/^À vérifier/);
+    expect(sheet.issues[0]?.note).not.toMatch(/^À vérifier/);
 
     const total = sheetFromAnalysis(
       completed(extractionWith({ totals: { totalTTC: 990 }, confidence: { totals: "low" } })),
     );
     expect(total.totalIssues?.[0]).toMatchObject({ row: "totalTTC", severity: "unconfirmed" });
+  });
+
+  it("classe à part un point d'attention sur une ligne qui n'est ni un calcul ni une ligne vague", () => {
+    const oddVat = withLine(0, { vatRate: 7 });
+    const sheet = sheetFromAnalysis(completed(oddVat));
+    expect(sheet.issues).toContainEqual(expect.objectContaining({ lineId: "ligne-1", kind: "other", severity: "warning" }));
   });
 
   it("réunit deux constats sur la même ligne en un seul geste, le plus grave d'abord", () => {

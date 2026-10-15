@@ -1,16 +1,16 @@
 import { cn } from "@/lib/cn";
 import { LOGO_VIEWBOX, logoMark } from "@/lib/logo";
 
-/** L'icône seule : la tuile verte et la loupe cochée. Décorative (le nom l'accompagne). */
+/** L'icône seule : la tuile à l'encre, la loupe blanche, la coche verte. Décorative (le nom l'accompagne). */
 export function LogoMark({ className }: { readonly className?: string }) {
   const { tile, lens, handle, tick } = logoMark;
   return (
     <svg aria-hidden viewBox={`0 0 ${LOGO_VIEWBOX} ${LOGO_VIEWBOX}`} className={cn("size-8 shrink-0", className)}>
-      <rect width={tile.size} height={tile.size} rx={tile.radius} className="fill-brand" />
-      <g fill="none" className="stroke-ink" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx={lens.cx} cy={lens.cy} r={lens.r} strokeWidth={lens.strokeWidth} />
-        <path d={handle.d} strokeWidth={handle.strokeWidth} />
-        <path d={tick.d} strokeWidth={tick.strokeWidth} />
+      <rect width={tile.size} height={tile.size} rx={tile.radius} className="fill-ink" />
+      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx={lens.cx} cy={lens.cy} r={lens.r} strokeWidth={lens.strokeWidth} className="stroke-paper" />
+        <path d={handle.d} strokeWidth={handle.strokeWidth} className="stroke-paper" />
+        <path d={tick.d} strokeWidth={tick.strokeWidth} className="stroke-brand" />
       </g>
     </svg>
   );

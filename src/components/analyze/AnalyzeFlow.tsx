@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useReducer, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
+import { CheckGlyph, LockGlyph } from "@/components/ui/icons";
 import { limits } from "@/config/limits";
 import { site } from "@/config/site";
 import { track } from "@/lib/analytics";
@@ -23,9 +24,9 @@ import { usePages } from "./use-pages";
 const STEP_TEXT: Partial<Record<ScenePhase, { readonly title: string; readonly status: string }>> = {
   received: { title: "Envoi du devis…", status: "Envoi du devis." },
   reading: { title: "Lecture ligne par ligne…", status: "Lecture du devis en cours." },
-  checking: { title: "On refait les calculs…", status: "Vérification des calculs et des mentions." },
-  pricing: { title: "On compare les prix…", status: "Comparaison des prix." },
-  verdict: { title: "Coup de tampon…", status: "Verdict en cours." },
+  checking: { title: "Vérification des calculs…", status: "Vérification des calculs et des mentions." },
+  pricing: { title: "Comparaison des prix…", status: "Comparaison des prix." },
+  verdict: { title: "Verdict…", status: "Verdict en cours." },
 };
 
 /** Refus « de formulaire » renvoyés par le serveur : on revient au formulaire pour corriger. */
@@ -40,11 +41,11 @@ const FORM_ERRORS: readonly AnalysisErrorCode[] = [
 
 type FormError = { readonly field: "pages" | "consent"; readonly message: string };
 
-const STILL_PREPARING = fr("Deux secondes, on prépare tes photos.");
+const STILL_PREPARING = fr("Un instant : vos photos sont en cours de préparation.");
 const BLURRY_CONFIRM = fr(
-  "Cette photo a l'air floue. Si tu peux, reprends-la à plat, avec plus de lumière. Sinon, appuie une deuxième fois sur « Corriger mon devis » et on fera avec.",
+  "Cette photo semble floue. Si possible, reprenez-la à plat, avec plus de lumière. Sinon, appuyez une deuxième fois sur « Analyser mon devis » : nous ferons au mieux.",
 );
-const REMOVE_BROKEN = fr("Retire la page marquée en rouge avant d'envoyer.");
+const REMOVE_BROKEN = fr("Retirez la page signalée en rouge avant d'envoyer.");
 
 /**
  * Mesure du parcours : envoi, réception, fin ou échec (avec l'étape atteinte).
@@ -172,99 +173,127 @@ export function AnalyzeFlow() {
 
   if (state.status === "idle") {
     return (
-      <form onSubmit={submit} noValidate>
-        <h1 className="font-display text-title text-ink sm:text-[3rem] sm:leading-[1.05]">
-          Montre-nous ce devis.
-        </h1>
-        <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
-          {fr(
-            "Pose chaque page à plat, près d'une fenêtre si possible, et prends-la en photo. Si tu as reçu le devis par mail, le PDF marche aussi.",
-          )}
-        </p>
-
-        <fieldset className="mt-8">
-          <legend className="sr-only">Pages du devis</legend>
-          <PagePicker
-            pages={pages}
-            notice={formError?.field === "pages" ? formError.message : notice}
-            onAdd={(files) => {
-              setFormError(null);
-              add(files);
-            }}
-            onRemove={remove}
-            noticeId={pagesNoticeId}
-          />
-        </fieldset>
-
-        <div className="mt-6 border-t border-rule pt-6">
-          <div className="flex items-start gap-3">
-            <input
-              id={consentId}
-              type="checkbox"
-              checked={consent}
-              onChange={(event) => {
-                setConsent(event.target.checked);
-                if (formError?.field === "consent") setFormError(null);
-              }}
-              aria-invalid={formError?.field === "consent" ? true : undefined}
-              aria-describedby={consentErrorId}
-              className="mt-1 size-5 shrink-0 accent-ink"
-            />
-            <label htmlFor={consentId} className="text-[0.95rem] leading-relaxed text-ink">
-              {fr(
-                "J'accepte que mon devis soit lu par l'intelligence artificielle d'Anthropic, le prestataire de Loupe. L'original est effacé juste après ; seules les lignes de prix rendues anonymes, la catégorie et le département sont conservés.",
-              )}
-            </label>
-          </div>
-          <details className="ml-8 mt-3 text-sm text-ink-muted">
-            <summary className="w-fit cursor-pointer text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink">
-              {fr("Ce qu'on garde, et ce qu'on efface")}
-            </summary>
-            <ul className="mt-3 max-w-prose list-disc space-y-2 pl-5 leading-relaxed">
-              <li>
-                {fr(
-                  "Effacé dès la lecture terminée : la photo ou le PDF. Les noms, adresses et numéros de téléphone ne sont jamais recopiés.",
-                )}
-              </li>
-              <li>
-                {fr(
-                  "Conservé pour affiner les comparaisons : des lignes du type « chauffe-eau 200 L, 890 € HT », avec la catégorie et le département.",
-                )}
-              </li>
-              <li>
-                {fr(
-                  `Ton adresse IP n'est jamais enregistrée en clair. On en garde une empreinte chiffrée, différente chaque jour, juste pour compter tes ${limits.analysesPerDay} analyses quotidiennes. Elle disparaît au bout de quelques jours.`,
-                )}
-              </li>
-              <li>
-                {fr("Pour tout savoir : ")}
-                <Link
-                  href="/confidentialite"
-                  className="text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
-                >
-                  politique de confidentialité
-                </Link>
-                .
-              </li>
-            </ul>
-          </details>
-          <p
-            id={consentErrorId}
-            aria-live="polite"
-            className={cn("ml-8 mt-2 min-h-5 text-sm", formError?.field === "consent" && "text-pen-red-strong")}
-          >
-            {formError?.field === "consent" ? formError.message : null}
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
+        <form onSubmit={submit} noValidate className="min-w-0">
+          <p className="text-sm font-semibold text-brand-strong">Analyse gratuite · environ 30&nbsp;secondes</p>
+          <h1 className="mt-3 font-display text-section text-ink">Scannez votre devis.</h1>
+          <p className="mt-4 max-w-prose text-lg leading-relaxed text-ink-muted">
+            {fr(
+              "Prenez chaque page en photo, ou envoyez le PDF reçu par email. Loupe vérifie les calculs, les mentions obligatoires et les prix.",
+            )}
           </p>
-        </div>
 
-        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Button type="submit" size="xl" className="w-full sm:w-auto">
-            Corriger mon devis
-          </Button>
-          <p className="text-sm text-ink-muted">{fr("Compte une trentaine de secondes.")}</p>
-        </div>
-        <p className="mt-8 text-xs leading-relaxed text-ink-muted">{fr(site.disclaimer)}</p>
-      </form>
+          <fieldset className="mt-8">
+            <legend className="sr-only">Pages du devis</legend>
+            <PagePicker
+              pages={pages}
+              notice={formError?.field === "pages" ? formError.message : notice}
+              onAdd={(files) => {
+                setFormError(null);
+                add(files);
+              }}
+              onRemove={remove}
+              noticeId={pagesNoticeId}
+            />
+          </fieldset>
+
+          <div className="mt-6 rounded-lg border border-rule bg-paper-raised p-5">
+            <div className="flex items-start gap-3">
+              <input
+                id={consentId}
+                type="checkbox"
+                checked={consent}
+                onChange={(event) => {
+                  setConsent(event.target.checked);
+                  if (formError?.field === "consent") setFormError(null);
+                }}
+                aria-invalid={formError?.field === "consent" ? true : undefined}
+                aria-describedby={consentErrorId}
+                className="mt-1 size-5 shrink-0 accent-brand-strong"
+              />
+              <label htmlFor={consentId} className="text-[0.95rem] leading-relaxed text-ink">
+                {fr(
+                  "J'accepte que mon devis soit lu par l'intelligence artificielle d'Anthropic, le prestataire de Loupe. L'original est effacé juste après ; seules les lignes de prix rendues anonymes, la catégorie et le département sont conservés.",
+                )}
+              </label>
+            </div>
+            <details className="ml-8 mt-3 text-sm text-ink-muted">
+              <summary className="w-fit cursor-pointer font-medium text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink">
+                {fr("Ce que nous conservons, et ce que nous effaçons")}
+              </summary>
+              <ul className="mt-3 max-w-prose list-disc space-y-2 pl-5 leading-relaxed">
+                <li>
+                  {fr(
+                    "Effacé dès la lecture terminée : la photo ou le PDF. Les noms, adresses et numéros de téléphone ne sont jamais recopiés.",
+                  )}
+                </li>
+                <li>
+                  {fr(
+                    "Conservé pour affiner les comparaisons : des lignes du type « chauffe-eau 200 L, 890 € HT », avec la catégorie et le département.",
+                  )}
+                </li>
+                <li>
+                  {fr(
+                    `Votre adresse IP n'est jamais enregistrée en clair. Nous en gardons une empreinte chiffrée, différente chaque jour, uniquement pour compter vos ${limits.analysesPerDay} analyses quotidiennes. Elle disparaît au bout de quelques jours.`,
+                  )}
+                </li>
+                <li>
+                  {fr("Pour tout savoir : ")}
+                  <Link
+                    href="/confidentialite"
+                    className="text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
+                  >
+                    politique de confidentialité
+                  </Link>
+                  .
+                </li>
+              </ul>
+            </details>
+            <p
+              id={consentErrorId}
+              aria-live="polite"
+              className={cn("ml-8 mt-2 min-h-5 text-sm", formError?.field === "consent" && "text-pen-red-strong")}
+            >
+              {formError?.field === "consent" ? formError.message : null}
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <Button type="submit" size="xl" className="w-full sm:w-auto">
+              Analyser mon devis
+            </Button>
+            <p className="text-sm text-ink-muted">{fr("Comptez une trentaine de secondes.")}</p>
+          </div>
+          <p className="mt-8 text-xs leading-relaxed text-ink-muted">{fr(site.disclaimer)}</p>
+        </form>
+
+        <aside className="space-y-4 lg:pt-14">
+          <section aria-labelledby="conseils-photo" className="rounded-lg bg-mist p-5">
+            <h2 id="conseils-photo" className="text-sm font-semibold text-ink">
+              Pour une lecture fiable
+            </h2>
+            <ul className="mt-3 space-y-3 text-sm leading-relaxed text-ink">
+              {TIPS.map((tip) => (
+                <li key={tip} className="flex gap-2.5">
+                  <CheckGlyph className="mt-px size-[1.1rem] shrink-0 text-brand-strong" />
+                  {fr(tip)}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section aria-labelledby="vie-privee" className="rounded-lg border border-rule p-5">
+            <h2 id="vie-privee" className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <LockGlyph className="size-5 text-brand-strong" />
+              Votre devis n&apos;est pas conservé
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              {fr(
+                "Il est lu en mémoire puis effacé. Aucun compte, aucune revente : votre analyse s'ouvre par un lien privé.",
+              )}
+            </p>
+          </section>
+        </aside>
+      </div>
     );
   }
 
@@ -274,42 +303,39 @@ export function AnalyzeFlow() {
   return (
     <section aria-labelledby="titre-analyse">
       <div className="flex items-start justify-between gap-4">
-        <h1
-          id="titre-analyse"
-          ref={viewHeading}
-          tabIndex={-1}
-          className="font-display text-title text-ink outline-none"
-        >
-          {stepText ? stepText.title : state.status === "done" ? "Ton devis corrigé" : "Ton devis"}
-        </h1>
+        <div>
+          <p className="text-sm font-semibold text-brand-strong">
+            {running ? "Analyse en cours" : state.status === "done" ? "Analyse terminée" : "Analyse"}
+          </p>
+          <h1
+            id="titre-analyse"
+            ref={viewHeading}
+            tabIndex={-1}
+            className="mt-2 font-display text-title text-ink outline-none"
+          >
+            {stepText ? stepText.title : state.status === "done" ? "Votre devis, vérifié" : "Votre devis"}
+          </h1>
+        </div>
         {running ? (
-          <Button variant="quiet" onClick={cancel} className="mt-2 shrink-0">
+          <Button variant="secondary" onClick={cancel} className="mt-2 shrink-0">
             Annuler
           </Button>
         ) : null}
       </div>
-      {/* Refus avant toute étape (limite du jour, service fermé) : rien à suivre. */}
-      {running || state.step !== "idle" ? (
-        <StepTracker
-          step={state.step}
-          running={running}
-          failed={state.status === "error"}
-          className="mt-5"
-        />
-      ) : null}
-      {/* Une annonce par étape, pas par ligne : les lignes se lisent sur la feuille. */}
+      {/* Une annonce par étape, pas par ligne : les lignes se lisent sur le devis. */}
       <p role="status" className="sr-only">
         {stepText?.status ?? null}
       </p>
 
-      <div className="mt-6 space-y-8">
+      <div className="mt-6">
         {state.status === "refused" || state.status === "error" ? (
-          <AnalysisOutcome
-            state={state}
-            headingRef={outcomeHeading}
-            onRestart={restart}
-            onRetry={retry}
-          />
+          <div className="max-w-2xl space-y-6">
+            {/* Refus avant toute étape (limite du jour, service fermé) : rien à suivre. */}
+            {state.step !== "idle" ? (
+              <StepTracker step={state.step} running={false} failed={state.status === "error"} layout="bar" />
+            ) : null}
+            <AnalysisOutcome state={state} headingRef={outcomeHeading} onRestart={restart} onRetry={retry} />
+          </div>
         ) : null}
         {showView ? (
           <AnalysisView
@@ -320,7 +346,7 @@ export function AnalyzeFlow() {
             sheetId={`analyse-${runId}`}
             headingRef={outcomeHeading}
             onRestart={restart}
-            // Sans défilement : la feuille tamponnée reste sous les yeux, le lecteur d'écran suit le focus.
+            // Sans défilement : le devis reste sous les yeux, le lecteur d'écran suit le focus.
             onShown={() => outcomeHeading.current?.focus({ preventScroll: true })}
           />
         ) : null}
@@ -329,3 +355,10 @@ export function AnalyzeFlow() {
     </section>
   );
 }
+
+/** Conseils de prise de vue, à côté du dépôt. */
+const TIPS = [
+  "Posez chaque page à plat, près d'une fenêtre ou sous une bonne lumière.",
+  "Cadrez la page entière, sans couper les montants.",
+  "Un devis reçu par email ? Envoyez directement le PDF.",
+] as const;

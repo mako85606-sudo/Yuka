@@ -19,7 +19,7 @@ export function Plate({ title, description, actions, children }: PlateProps) {
     <section className="border-t border-rule pt-6">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0 max-w-prose">
-          <h3 className="font-display text-[1.85rem] leading-tight text-ink">{title}</h3>
+          <h3 className="text-xl font-semibold text-ink">{title}</h3>
           {description ? <p className="mt-1 text-sm text-ink-muted">{description}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">

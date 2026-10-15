@@ -57,18 +57,18 @@ function summary(input: ShareImageInput): string {
   return parts.filter(Boolean).join(" · ");
 }
 
-/** Le logo : la tuile verte et la loupe cochée (géométrie partagée, `src/lib/logo.ts`). */
+/** Le logo : la tuile à l'encre, la loupe blanche, la coche verte (géométrie partagée, `src/lib/logo.ts`). */
 function LogoMark({ size }: { readonly size: number }) {
   const { tile, lens, handle, tick } = logoMark;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${LOGO_VIEWBOX} ${LOGO_VIEWBOX}`}>
-      <rect width={tile.size} height={tile.size} rx={tile.radius} fill={ogColors.brand} />
-      <circle cx={lens.cx} cy={lens.cy} r={lens.r} fill="none" stroke={ogColors.ink} strokeWidth={lens.strokeWidth} />
-      <path d={handle.d} stroke={ogColors.ink} strokeWidth={handle.strokeWidth} strokeLinecap="round" />
+      <rect width={tile.size} height={tile.size} rx={tile.radius} fill={ogColors.ink} />
+      <circle cx={lens.cx} cy={lens.cy} r={lens.r} fill="none" stroke={ogColors.card} strokeWidth={lens.strokeWidth} />
+      <path d={handle.d} stroke={ogColors.card} strokeWidth={handle.strokeWidth} strokeLinecap="round" />
       <path
         d={tick.d}
         fill="none"
-        stroke={ogColors.ink}
+        stroke={ogColors.brand}
         strokeWidth={tick.strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"

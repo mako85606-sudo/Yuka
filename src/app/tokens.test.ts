@@ -73,7 +73,7 @@ describe("identité", () => {
 
   it("n'a ni dégradé ni grain", () => {
     expect(css).not.toMatch(/gradient\(/i);
-    expect(css).toMatch(/--grain:\s*none;/);
+    expect(css).not.toMatch(/grain/i);
   });
 
   it("reste légèrement arrondie : 10 px au plus", () => {
@@ -107,10 +107,11 @@ describe("identité", () => {
     }
   });
 
-  it("dessine l'icône du site aux couleurs du logo", () => {
+  it("dessine l'icône du site aux couleurs du logo : tuile à l'encre, loupe blanche, coche verte", () => {
     const icon = source("./icon.svg").toUpperCase();
-    expect(icon).toContain(token("--brand"));
-    expect(icon).toContain(token("--ink"));
+    expect(icon).toContain(`FILL="${token("--ink")}"`);
+    expect(icon).toContain(`STROKE="${token("--paper")}"`);
+    expect(icon).toContain(`STROKE="${token("--brand")}"`);
   });
 
   it("n'écrit aucune durée en dur dans le CSS : elles viennent de motion.ts", () => {
@@ -167,8 +168,24 @@ describe("contrastes", () => {
     expect(contrastRatio(token("--ink"), token("--brand-hover"))).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("garde lisible un texte sélectionné ou surligné", () => {
-    expect(contrastRatio(token("--sheet-ink"), token("--highlighter-mark"))).toBeGreaterThanOrEqual(7);
-    expect(contrastRatio(token("--sheet-ink"), token("--highlighter"))).toBeGreaterThanOrEqual(7);
+  it("garde lisible un texte sélectionné ou une ligne surlignée", () => {
+    for (const name of ["--ink", "--ink-muted"]) {
+      expect(contrastRatio(token(name), token("--highlighter-mark"))).toBeGreaterThanOrEqual(name === "--ink" ? 7 : 4.5);
+    }
+  });
+
+  it("garde lisibles les pastilles posées sur une ligne surlignée", () => {
+    const pairs = [
+      ["--pen-red-strong", "--error-soft"],
+      ["--stamp-orange-strong", "--warning-soft"],
+      ["--brand-strong", "--brand-soft"],
+    ] as const;
+    for (const [ink, ground] of pairs) {
+      expect(contrastRatio(token(ink), token(ground))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("n'écrit plus à la main : ni police manuscrite, ni tampon", () => {
+    expect(css).not.toMatch(/font-hand|belle-aurore|stamp-texture/i);
   });
 });

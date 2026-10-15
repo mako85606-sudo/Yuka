@@ -39,7 +39,7 @@ export function DeleteAnalysis({
   if (step === "done") {
     return (
       <p role="status" className="text-sm text-ink">
-        {fr("Supprimé. L'analyse et son lien de partage n'existent plus ; ce que tu vois encore disparaîtra quand tu quitteras la page.")}
+        {fr("Supprimée. L'analyse et son lien de partage n'existent plus ; ce qui reste affiché disparaîtra quand vous quitterez la page.")}
       </p>
     );
   }
@@ -52,7 +52,7 @@ export function DeleteAnalysis({
         </Button>
       ) : (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <p className="text-sm text-ink">{fr("Supprimer pour de bon ? Le lien et le partage ne marcheront plus.")}</p>
+          <p className="text-sm text-ink">{fr("Supprimer définitivement ? Le lien et le partage ne fonctionneront plus.")}</p>
           <div className="flex gap-3">
             <Button variant="secondary" onClick={confirm} disabled={pending}>
               {pending ? "Suppression…" : "Oui, supprimer"}

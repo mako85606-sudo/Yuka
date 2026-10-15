@@ -29,6 +29,6 @@ describe("fr", () => {
   });
 
   it("ne touche pas au reste", () => {
-    expect(fr("Ton devis, corrigé.")).toBe("Ton devis, corrigé.");
+    expect(fr("Votre devis, corrigé.")).toBe("Votre devis, corrigé.");
   });
 });

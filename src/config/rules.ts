@@ -65,7 +65,7 @@ export const MENTION_RULES: readonly MentionRule[] = [
     severity: "error",
     note: "Pas de SIRET",
     message:
-      "Aucun numéro SIRET ou SIREN sur le devis. Une entreprise immatriculée l'indique en principe sur ses documents commerciaux : demande-le, et vérifie-le sur l'annuaire des entreprises.",
+      "Aucun numéro SIRET ou SIREN sur le devis. Une entreprise immatriculée l'indique en principe sur ses documents commerciaux : demandez-le, puis vérifiez-le sur l'annuaire des entreprises.",
     // TODO: vérifier
     legalRef: "Code de commerce, art. R123-237",
     verified: false,
@@ -88,7 +88,7 @@ export const MENTION_RULES: readonly MentionRule[] = [
     severity: "warning",
     note: "Valable jusqu'à quand ?",
     message:
-      "Le devis n'indique pas sa durée de validité. Demande jusqu'à quand les prix sont garantis.",
+      "Le devis n'indique pas sa durée de validité. Demandez jusqu'à quand les prix sont garantis.",
     // TODO: vérifier
     legalRef: "Arrêté du 24 janvier 2017 (dépannage, réparation et entretien au domicile)",
     verified: false,
@@ -100,7 +100,7 @@ export const MENTION_RULES: readonly MentionRule[] = [
     severity: "warning",
     note: "Pour qui, et où ?",
     message:
-      "Le devis ne dit ni à qui il s'adresse ni où ont lieu les travaux. Demande qu'il soit complété.",
+      "Le devis ne dit ni à qui il s'adresse ni où ont lieu les travaux. Demandez qu'il soit complété.",
     // TODO: vérifier
     legalRef: "Arrêté du 24 janvier 2017 (dépannage, réparation et entretien au domicile)",
     verified: false,
@@ -112,7 +112,7 @@ export const MENTION_RULES: readonly MentionRule[] = [
     severity: "warning",
     note: "Assurance décennale ?",
     message:
-      "Le devis ne mentionne pas d'assurance professionnelle. Pour des travaux de bâtiment, l'assurance décennale est en principe indiquée sur le devis : demande l'attestation.",
+      "Le devis ne mentionne pas d'assurance professionnelle. Pour des travaux de bâtiment, l'assurance décennale est en principe indiquée sur le devis : demandez l'attestation.",
     // TODO: vérifier
     legalRef: "Code des assurances, art. L243-2",
     verified: false,

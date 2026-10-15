@@ -44,7 +44,7 @@ export interface Finding {
   readonly kind: FindingKind;
   /**
    * Faux quand les chiffres en cause ont été lus avec une confiance faible :
-   * le constat est alors présenté « à confirmer sur ton devis », jamais
+   * le constat est alors présenté « à confirmer sur votre devis », jamais
    * comme une erreur sûre.
    */
   readonly confirmed: boolean;

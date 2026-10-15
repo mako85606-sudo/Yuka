@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Tag, type TagTone } from "@/components/ui/Tag";
 import { cn } from "@/lib/cn";
 import type { DemoQuote } from "@/lib/demo-outcome";
 import { formatAmount } from "@/lib/format";
@@ -88,19 +89,19 @@ export function FrameCorners({ className }: { readonly className?: string }) {
   );
 }
 
-const TAG_STYLES = {
-  calculation: "bg-error-soft text-pen-red-strong",
-  "vague-line": "bg-warning-soft text-stamp-orange-strong",
-  price: "bg-warning-soft text-stamp-orange-strong",
-  estimate: "bg-mist text-ink-muted",
-} as const;
+const TAG_TONES = {
+  calculation: "error",
+  "vague-line": "warning",
+  price: "warning",
+  estimate: "estimate",
+} as const satisfies Record<keyof typeof FINDING_TAGS, TagTone>;
 
-/** Une pastille : le type du constat. */
-export function FindingTag({ kind }: { readonly kind: keyof typeof TAG_STYLES }) {
+/** Une pastille : le type du constat (en em, à l'échelle du téléphone). */
+export function FindingTag({ kind }: { readonly kind: keyof typeof TAG_TONES }) {
   return (
-    <span className={cn("whitespace-nowrap rounded-sm px-[0.5em] py-[0.2em] text-[0.72em] font-semibold leading-none", TAG_STYLES[kind])}>
+    <Tag tone={TAG_TONES[kind]} size="em">
       {FINDING_TAGS[kind]}
-    </span>
+    </Tag>
   );
 }
 

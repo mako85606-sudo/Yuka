@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { CheckGlyph, CopyGlyph } from "@/components/ui/icons";
 import { track } from "@/lib/analytics";
+import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { holds, reducedFade, transitions } from "@/lib/motion";
 import type { NegotiationMessage as Message } from "@/lib/negotiation";
@@ -61,14 +62,14 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
         ? what === "subject"
           ? "Objet copié."
           : `${version === "sms" ? "SMS" : "Message"} copié.`
-        : fr("Copie impossible ici : le texte est sélectionné, copie-le à la main."),
+        : fr("Copie impossible ici : le texte est sélectionné, copiez-le à la main."),
     );
   };
 
   return (
     <div id={id}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span role="group" aria-label="Version du message" className="flex rounded-[6px] border border-rule-strong p-0.5">
+        <span role="group" aria-label="Version du message" className="flex rounded-md bg-mist p-1">
           {(Object.keys(VERSIONS) as Version[]).map((key) => (
             <button
               key={key}
@@ -80,8 +81,8 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
                 setStatus("");
               }}
               className={cn(
-                "h-8 rounded-[4px] px-3 text-sm",
-                version === key ? "bg-ink text-paper" : "text-ink hover:bg-ink/8",
+                "h-8 rounded-sm px-3.5 text-sm font-medium motion-safe:transition-colors motion-safe:duration-(--duration-micro)",
+                version === key ? "bg-paper-raised text-ink elevation-1" : "text-ink-muted hover:text-ink",
               )}
             >
               {VERSIONS[key]}
@@ -101,8 +102,7 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
 
       {version === "email" ? (
         <p className="mt-4 text-sm text-ink-muted">
-          <span className="font-mono text-label uppercase">Objet</span>{" "}
-          <span className="text-ink">{message.email.subject}</span>
+          <span className="font-medium">Objet :</span> <span className="text-ink">{message.email.subject}</span>
         </p>
       ) : null}
 
@@ -116,17 +116,14 @@ export function NegotiationMessage({ message, id }: NegotiationMessageProps) {
         onChange={(event) => setTexts((current) => ({ ...current, [version]: event.target.value }))}
         rows={version === "email" ? 12 : 5}
         aria-describedby={statusId}
-        className="mt-3 block w-full resize-y surface-paper rounded-[4px] border border-rule-strong px-4 py-3 text-[0.95rem] leading-relaxed text-ink [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="mt-3 block w-full resize-y rounded-md border border-rule-strong bg-paper-raised px-4 py-3 text-[0.95rem] leading-relaxed text-ink [field-sizing:content]"
       />
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={() => void copy("text")}
-          className={cn(
-            "inline-flex h-11 items-center gap-2 rounded-[6px] px-5 font-medium motion-safe:active:translate-y-px",
-            copied === "text" ? "bg-ink text-paper" : "bg-ink text-paper hover:bg-ink/88",
-          )}
+          className={buttonClasses("primary", "lg")}
         >
           <span className="relative inline-flex size-5">
             <AnimatePresence initial={false} mode="popLayout">

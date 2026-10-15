@@ -12,7 +12,7 @@ import { loadAnalysis, type LoadedAnalysis } from "@/server/analysis/store";
 import { getDb } from "@/server/db/client";
 
 export const metadata: Metadata = {
-  title: "Ton devis corrigé",
+  title: "Votre devis vérifié",
   // Un verdict est privé : jamais indexé, et l'adresse ne fuit pas vers les liens sortants.
   robots: { index: false, follow: false },
   referrer: "no-referrer",
@@ -37,7 +37,7 @@ function viewData(analysis: LoadedAnalysis): AnalysisData {
 
 /**
  * Une analyse rouverte par son lien (identifiant aléatoire, 30 jours) : la
- * correction se rejoue en entier, puis la conclusion et le message.
+ * vérification se rejoue en entier, puis le résumé, le détail et le message.
  */
 export default async function AnalysisPage({ params }: PageProps<"/analyse/[id]">) {
   // Rendu à chaque visite : une analyse expire, elle ne doit jamais rester en cache.
@@ -50,14 +50,15 @@ export default async function AnalysisPage({ params }: PageProps<"/analyse/[id]"
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-8 sm:pt-14">
-        <h1 className="font-display text-title text-ink">Ton devis corrigé</h1>
-        <p className="mt-2 text-sm text-ink-muted">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
+        <p className="text-sm font-semibold text-brand-strong">Votre analyse</p>
+        <h1 className="mt-3 font-display text-title text-ink">Votre devis, vérifié</h1>
+        <p className="mt-3 text-ink-muted">
           {fr(
             `Analyse du ${formatShortDate(analysis.createdAt)}, consultable jusqu'au ${formatShortDate(analysis.expiresAt)}.`,
           )}
         </p>
-        <div className="mt-4">
+        <div className="mt-6">
           <AnalysisView data={viewData(analysis)} target="done" live={false} sheetId={analysis.id} />
         </div>
         <p className="mt-8 text-xs leading-relaxed text-ink-muted">{fr(site.disclaimer)}</p>

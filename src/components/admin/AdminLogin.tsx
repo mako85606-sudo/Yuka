@@ -13,7 +13,7 @@ export function AdminLogin() {
   const messageId = useId();
 
   return (
-    <form action={action} className="max-w-sm">
+    <form action={action}>
       <label htmlFor={fieldId} className="block text-sm font-medium text-ink">
         Mot de passe
       </label>
@@ -25,13 +25,13 @@ export function AdminLogin() {
         required
         aria-invalid={state.message ? true : undefined}
         aria-describedby={messageId}
-        className="mt-2 h-12 w-full rounded-[6px] surface-paper border border-rule-strong px-4 text-base text-ink"
+        className="mt-2 h-12 w-full rounded-md border border-rule-strong bg-paper-raised px-4 text-base text-ink aria-[invalid=true]:border-pen-red"
       />
       <p id={messageId} aria-live="polite" className="mt-2 min-h-5 text-sm text-pen-red-strong">
         {state.message}
       </p>
-      <Button type="submit" size="lg" disabled={pending} className="mt-2">
-        {pending ? "Vérification…" : "Entrer"}
+      <Button type="submit" size="lg" disabled={pending} className="mt-3 w-full">
+        {pending ? "Vérification…" : "Se connecter"}
       </Button>
     </form>
   );

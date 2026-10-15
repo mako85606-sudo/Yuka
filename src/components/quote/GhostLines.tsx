@@ -11,14 +11,11 @@ export function GhostLines({
   readonly className?: string;
 }) {
   return (
-    <ul
-      aria-hidden
-      className={cn("space-y-5 py-5 sm:mr-[calc(var(--margin-col)+1.75rem)]", className)}
-    >
+    <ul aria-hidden className={cn("space-y-5 px-5 py-5 sm:px-7", className)}>
       {WIDTHS.slice(0, count).map((width) => (
         <li key={width} className="flex items-center gap-4">
-          <span className="h-2 flex-1 rounded-[1px] bg-rule" style={{ maxWidth: `${width}%` }} />
-          <span className="ml-auto h-2 w-12 rounded-[1px] bg-rule" />
+          <span className="h-2.5 flex-1 rounded-sm bg-mist" style={{ maxWidth: `${width}%` }} />
+          <span className="ml-auto h-2.5 w-14 rounded-sm bg-mist" />
         </li>
       ))}
     </ul>

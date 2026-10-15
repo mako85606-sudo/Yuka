@@ -1,15 +1,16 @@
 "use client";
 
 import { animate, motion, useInView, useMotionValue, useTransform } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { LogoMark } from "@/components/landing/Logo";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
 import { CheckGlyph, LockGlyph } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { DemoQuote } from "@/lib/demo-outcome";
 import { formatEuros } from "@/lib/format";
-import { easings, phoneDemo } from "@/lib/motion";
+import { cssEase, durations, easings, phoneDemo, springs } from "@/lib/motion";
 import { describePhoneResult, phoneResult, type PhoneResult } from "@/lib/phone-demo";
+import { useHydrated } from "@/lib/use-hydrated";
 import { usePageVisible } from "@/lib/use-page-visible";
 import { FindingCard, FrameCorners, PhoneFrame, QuotePaper, StatusBar } from "./PhoneParts";
 
@@ -27,12 +28,17 @@ const HOLD: Record<Scene, number> = {
   result: phoneDemo.resultHold,
 };
 
+/** Variables de la ligne de scan, jouée en CSS (globals.css, `phone-scan`). */
+const SCAN_STYLE = { "--scan-d": `${phoneDemo.scan}s`, "--scan-e": cssEase(easings.inOut) } as CSSProperties;
+
 /**
  * Le téléphone du haut de page : une boucle photo → analyse → résultat, sur
- * un devis fictif. Le rendu serveur montre le résultat (l'économie en grand),
- * comme le mouvement réduit, qui en reste là. Ailleurs, la boucle tourne tant
- * que le téléphone est à l'écran et l'onglet affiché. Les trois écrans sont
- * empilés et ne font que se fondre : la mise en page ne bouge jamais.
+ * un devis fictif. Elle part de la photo dès l'affichage : la ligne de scan
+ * tourne en CSS avant même que JavaScript ne soit prêt, puis la boucle
+ * enchaîne tant que le téléphone est à l'écran et l'onglet affiché. En
+ * mouvement réduit, le téléphone montre le résultat, immobile (une fois
+ * l'hydratation faite : le premier rendu reste celui du serveur). Les trois
+ * écrans sont empilés et se fondent : la mise en page ne bouge jamais.
  */
 export function PhoneDemo({ quote, className }: { readonly quote: DemoQuote; readonly className?: string }) {
   const result = useMemo(() => phoneResult(quote), [quote]);
@@ -43,9 +49,10 @@ export function PhoneDemo({ quote, className }: { readonly quote: DemoQuote; rea
   // `visits` : combien de fois chaque écran est apparu. Un écran rejoue ses gestes à chaque visite
   // (il est remonté au moment où il apparaît, jamais pendant qu'il s'efface).
   const [state, setState] = useState<{ readonly scene: Scene; readonly visits: Readonly<Record<Scene, number>> }>({
-    scene: "result",
-    visits: { photo: 0, analysis: 0, result: 0 },
+    scene: "photo",
+    visits: { photo: 1, analysis: 0, result: 0 },
   });
+  const hydrated = useHydrated();
   const playing = !reduced && pageVisible && inView;
 
   useEffect(() => {
@@ -60,10 +67,10 @@ export function PhoneDemo({ quote, className }: { readonly quote: DemoQuote; rea
   }, [playing, state]);
 
   // En mouvement réduit, seul le résultat reste (même si la boucle avait commencé).
-  const scene = reduced ? "result" : state.scene;
+  const scene = hydrated && reduced ? "result" : state.scene;
   const layer = (name: Scene) => ({
     initial: false as const,
-    animate: { opacity: scene === name ? 1 : 0 },
+    animate: { opacity: scene === name ? 1 : 0, scale: scene === name ? 1 : phoneDemo.sceneScale },
     transition: { duration: phoneDemo.sceneFade, ease: easings.out },
     className: "absolute inset-0 flex flex-col",
   });
@@ -74,7 +81,7 @@ export function PhoneDemo({ quote, className }: { readonly quote: DemoQuote; rea
       <div aria-hidden className="select-none">
         <PhoneFrame>
           <motion.div {...layer("photo")}>
-            <PhotoScreen quote={quote} scanning={playing} />
+            <PhotoScreen key={state.visits.photo} quote={quote} shooting={playing && scene === "photo"} />
           </motion.div>
           <motion.div {...layer("analysis")}>
             <AnalysisScreen key={state.visits.analysis} quote={quote} active={scene === "analysis"} />
@@ -88,35 +95,49 @@ export function PhoneDemo({ quote, className }: { readonly quote: DemoQuote; rea
   );
 }
 
+/** Le déclencheur s'enfonce juste avant le passage à l'analyse, et l'écran blanchit un instant. */
+function shutter(shooting: boolean, from: number, to: number) {
+  return shooting
+    ? {
+        animate: { scale: [from, from, to, from] },
+        transition: { duration: phoneDemo.photo, times: [0, phoneDemo.shutterAt, phoneDemo.shutterAt + 0.05, 1], ease: easings.out },
+      }
+    : { animate: { scale: from } };
+}
+
 /**
  * Le viseur : la feuille cadrée par les coins verts, la ligne de scan qui la
- * parcourt tant que la boucle tourne (`scanning`).
+ * parcourt (en CSS, dès l'affichage), puis la photo qui se prend (`shooting`).
  */
-function PhotoScreen({ quote, scanning }: { readonly quote: DemoQuote; readonly scanning: boolean }) {
+function PhotoScreen({ quote, shooting }: { readonly quote: DemoQuote; readonly shooting: boolean }) {
   return (
-    <div className="flex h-full flex-col bg-ink">
+    <div className="relative flex h-full flex-col bg-ink">
       <StatusBar inverted />
       <p className="mt-[0.6em] text-center text-[0.85em] font-medium text-paper">Cadrez le devis entier</p>
       <div className="relative mx-[1.6em] mb-[1.2em] mt-[1em] flex flex-1 items-center justify-center">
         <QuotePaper quote={quote} className="w-[88%] -rotate-2" />
         <FrameCorners className="inset-0" />
         {/* La ligne de scan : un calque de la hauteur du cadre, qui descend (transform seulement). */}
-        {scanning ? (
-          <span className="absolute inset-x-[0.3em] inset-y-0 overflow-hidden">
-            <motion.span
-              className="absolute inset-0 border-b-[0.16em] border-brand"
-              initial={{ y: "-100%" }}
-              animate={{ y: "0%" }}
-              transition={{ duration: phoneDemo.scan, ease: easings.inOut, repeat: Infinity, repeatDelay: phoneDemo.afterChecks }}
-            />
-          </span>
-        ) : null}
+        <span className="absolute inset-x-[0.3em] inset-y-0 overflow-hidden motion-reduce:hidden">
+          <span className="phone-scan absolute inset-0 border-b-[0.16em] border-brand" style={SCAN_STYLE} />
+        </span>
       </div>
       <div className="flex h-[6.5em] shrink-0 items-center justify-center">
         <span className="grid size-[4em] place-items-center rounded-[2em] border-[0.25em] border-paper">
-          <span className="size-[3em] rounded-[1.5em] bg-paper" />
+          <motion.span className="size-[3em] rounded-[1.5em] bg-paper" initial={false} {...shutter(shooting, 1, phoneDemo.shutterScale)} />
         </span>
       </div>
+      {/* L'éclair de la prise de vue. */}
+      <motion.span
+        className="pointer-events-none absolute inset-0 bg-paper"
+        initial={false}
+        animate={shooting ? { opacity: [0, 0, 0.5, 0] } : { opacity: 0 }}
+        transition={
+          shooting
+            ? { duration: phoneDemo.photo, times: [0, phoneDemo.shutterAt, phoneDemo.shutterAt + 0.05, 1], ease: easings.out }
+            : { duration: 0 }
+        }
+      />
     </div>
   );
 }
@@ -135,12 +156,13 @@ function AnalysisScreen({ quote, active }: { readonly quote: DemoQuote; readonly
     <div className="flex h-full flex-col">
       <StatusBar />
       <AppBar title="Analyse en cours" />
+      {/* La barre avance d'un seul mouvement continu pendant les vérifications. */}
       <div className="mx-[1.4em] mt-[0.4em] h-[0.3em] overflow-hidden rounded-[0.15em] bg-mist">
         <motion.span
           className="block h-full origin-left bg-brand"
-          initial={false}
-          animate={{ scaleX: done / CHECKS.length }}
-          transition={{ duration: phoneDemo.check, ease: easings.out }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: active ? 1 : 0 }}
+          transition={active ? { duration: CHECKS.length * phoneDemo.check, ease: easings.inOut } : { duration: 0 }}
         />
       </div>
       <div className="mx-[1.4em] mt-[1.4em] flex items-center gap-[0.8em] rounded-lg bg-mist p-[0.8em]">
@@ -172,9 +194,14 @@ function AnalysisScreen({ quote, active }: { readonly quote: DemoQuote; readonly
 function CheckStatus({ status }: { readonly status: "done" | "current" | "pending" }) {
   if (status === "done") {
     return (
-      <span className="grid size-[1.6em] place-items-center rounded-[0.8em] bg-brand text-ink">
+      <motion.span
+        className="grid size-[1.6em] place-items-center rounded-[0.8em] bg-brand text-ink"
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={springs.snappy}
+      >
         <CheckGlyph className="size-[1.05em]" />
-      </span>
+      </motion.span>
     );
   }
   if (status === "current") {
@@ -182,7 +209,7 @@ function CheckStatus({ status }: { readonly status: "done" | "current" | "pendin
       <motion.span
         className="size-[1.6em] rounded-[0.8em] border-[0.18em] border-mist border-t-brand"
         animate={{ rotate: 360 }}
-        transition={{ duration: phoneDemo.spinner, ease: easings.linear, repeat: Infinity }}
+        transition={{ duration: durations.spinner, ease: easings.linear, repeat: Infinity }}
       />
     );
   }

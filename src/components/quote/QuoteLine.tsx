@@ -2,26 +2,27 @@
 
 import { motion, type Transition } from "motion/react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
-import { HighlighterMark } from "@/components/signature/HighlighterMark";
-import { MarginNote } from "@/components/signature/MarginNote";
-import { PriceDelta } from "@/components/signature/PriceDelta";
-import { RedCircle } from "@/components/signature/RedCircle";
+import { Tag, type TagTone } from "@/components/ui/Tag";
 import type { IssueBeats } from "@/lib/choreography";
 import { cn } from "@/lib/cn";
 import { formatAmount, formatQuantity } from "@/lib/format";
 import { offsets, reducedFade, transitions } from "@/lib/motion";
 import type { PriceSource } from "@/lib/price-wording";
-import type { PrintedLine } from "@/lib/scene-quote";
+import { correctedLineTotal, type PrintedLine } from "@/lib/scene-quote";
+import { PriceDelta } from "./PriceDelta";
 
 export interface QuoteLineIssue {
   readonly id: string;
+  /** Libellé de la pastille (« Erreur de calcul », « À préciser », « À vérifier »). */
+  readonly tag: string;
+  readonly tone: TagTone;
+  /** Vrai pour une erreur de calcul sûre : le montant imprimé est barré, le bon montant écrit à côté. */
+  readonly strike: boolean;
   readonly note: string;
   readonly detail: string;
   readonly beats: IssueBeats;
   /** Vrai quand l'étape de vérification est atteinte. */
   readonly active: boolean;
-  /** Faux pour un constat à confirmer : surligné et annoté, jamais entouré. */
-  readonly circled?: boolean;
 }
 
 export interface QuoteLinePrice {
@@ -38,11 +39,11 @@ interface QuoteLineProps {
   readonly revealed?: boolean;
   /** Délai d'apparition de la ligne, en secondes, compté depuis la révélation. */
   readonly delay?: number;
-  /** Problème vérifié : surligneur, cercle rouge, note de marge. */
+  /** Constat sur la ligne : fond surligné, pastille, note (et correction d'un calcul faux). */
   readonly issue?: QuoteLineIssue;
-  /** Avis de prix, affiché dans la marge, sans encre rouge. */
+  /** Avis de prix, sous la ligne : jamais en rouge. */
   readonly price?: QuoteLinePrice;
-  /** Version resserrée, pour la démo de la landing. */
+  /** Version resserrée, pour une petite carte. */
   readonly compact?: boolean;
 }
 
@@ -58,91 +59,105 @@ function lineDetail(line: PrintedLine): string | null {
 }
 
 /**
- * Une ligne du devis reconstruit : désignation et montant HT sur la ligne
- * principale, quantité × prix unitaire dessous. Les annotations vont dans la
- * marge à partir de 640 px (largeur `--margin-col`, définie par la feuille),
- * sous la ligne sur mobile. Si une annotation s'insère au-dessus, la ligne
- * glisse à sa nouvelle place au lieu de sauter.
+ * Une ligne du devis lu : désignation et montant HT, quantité × prix unitaire
+ * dessous. Un constat surligne la ligne en jaune (de gauche à droite), pose
+ * sa pastille, dont la couleur dit la nature du constat, et sa note ; une erreur de calcul sûre barre le montant imprimé et
+ * écrit le bon à côté. Si une annotation s'insère au-dessus, la ligne glisse
+ * à sa nouvelle place au lieu de sauter.
  */
-export function QuoteLine({
-  line,
-  revealed = true,
-  delay = 0,
-  issue,
-  price,
-  compact = false,
-}: QuoteLineProps) {
+export function QuoteLine({ line, revealed = true, delay = 0, issue, price, compact = false }: QuoteLineProps) {
   const { reduced } = useMotionPrefs();
   const transition: Transition = reduced
     ? { ...reducedFade(delay), layout: { duration: 0 } }
     : { ...transitions.lineReveal(delay), layout: transitions.reflow };
-  const textSize = compact ? "text-[0.875rem]" : "text-[0.95rem]";
   const detail = lineDetail(line);
+  const corrected = issue?.strike ? correctedLineTotal(line) : null;
+  const appear = (start: number): Transition => (reduced ? reducedFade(start) : transitions.note(start));
 
   return (
     <motion.li
       layout="position"
       data-line={line.id}
-      className={cn(
-        "grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_var(--margin-col)] sm:gap-x-7",
-        compact ? "gap-y-1.5 py-2.5" : "gap-y-2 py-3",
-      )}
+      className={cn("relative", compact ? "px-5 py-3" : "px-5 py-3.5 sm:px-7")}
       initial={{ opacity: 0, y: offsets.lineRiseY }}
       animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: offsets.lineRiseY }}
       transition={transition}
     >
-      <div className="relative">
-        {issue && issue.circled !== false ? (
-          <RedCircle id={issue.id} active={issue.active} delay={issue.beats.circle.start} />
-        ) : null}
-        <div className="relative flex items-baseline gap-3">
-          {issue ? (
-            <HighlighterMark
-              id={issue.id}
-              active={issue.active}
-              delay={issue.beats.highlight.start}
-            />
-          ) : null}
-          <span className={cn("min-w-0 flex-1 leading-snug", textSize)}>{line.label}</span>
-          <span data-amount className={cn("shrink-0 font-mono tabular-nums", textSize)}>
-            {line.totalHT === null ? (
-              <>
-                <span aria-hidden>—</span>
-                <span className="sr-only">montant non indiqué</span>
-              </>
-            ) : (
-              formatAmount(line.totalHT)
-            )}
-          </span>
+      {issue ? (
+        <motion.span
+          aria-hidden
+          className="absolute inset-0 origin-left bg-highlighter-mark"
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={issue.active ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0 }}
+          transition={reduced ? reducedFade(issue.beats.highlight.start) : transitions.highlight(issue.beats.highlight.start)}
+        />
+      ) : null}
+
+      <div className="relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-4">
+        <div className="min-w-0">
+          <p className={cn("leading-snug text-ink", compact ? "text-[0.875rem]" : "text-[0.95rem]")}>{line.label}</p>
+          {detail ? <p className="mt-0.5 font-mono text-xs tabular-nums text-ink-muted">{detail}</p> : null}
         </div>
-        {detail ? (
-          <p className="mt-0.5 font-mono text-xs tabular-nums text-ink-muted">{detail}</p>
-        ) : null}
+        <p data-amount className={cn("flex items-baseline justify-end gap-2 font-mono tabular-nums", compact ? "text-[0.875rem]" : "text-[0.95rem]")}>
+          {line.totalHT === null ? (
+            <>
+              <span aria-hidden>—</span>
+              <span className="sr-only">montant non indiqué</span>
+            </>
+          ) : (
+            <span className={cn("relative", corrected !== null && "text-ink-muted")}>
+              {formatAmount(line.totalHT)}
+              {corrected !== null && issue ? (
+                <motion.span
+                  aria-hidden
+                  className="absolute inset-x-[-0.15em] top-1/2 h-[0.12em] origin-left -translate-y-1/2 bg-pen-red"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: issue.active ? 1 : 0 }}
+                  transition={reduced ? reducedFade(issue.beats.circle.start) : transitions.highlight(issue.beats.circle.start)}
+                />
+              ) : null}
+            </span>
+          )}
+          {corrected !== null && issue ? (
+            <motion.span
+              aria-hidden={issue.active ? undefined : true}
+              className="font-semibold text-ink"
+              initial={{ opacity: 0, x: offsets.noteShiftX }}
+              animate={issue.active ? { opacity: 1, x: 0 } : { opacity: 0, x: offsets.noteShiftX }}
+              transition={appear(issue.beats.note.start)}
+            >
+              <span className="sr-only">montant correct : </span>
+              {formatAmount(corrected)}
+            </motion.span>
+          ) : null}
+        </p>
       </div>
 
-      {issue || price ? (
-        <div className="min-w-0 space-y-3">
-          {issue ? (
-            <MarginNote
-              id={issue.id}
-              active={issue.active}
-              delay={issue.beats.note.start}
-              srText={issue.detail}
-            >
-              {issue.note}
-            </MarginNote>
-          ) : null}
-          {price ? (
-            <PriceDelta
-              amount={price.delta}
-              source={price.source}
-              active={price.active}
-              delay={price.delay}
-              size={compact ? "sm" : "md"}
-              className="pl-6 sm:pl-0"
-            />
-          ) : null}
-        </div>
+      {issue ? (
+        <motion.p
+          aria-hidden={issue.active ? undefined : true}
+          className="relative mt-2 flex flex-wrap items-center gap-x-2 gap-y-1"
+          initial={{ opacity: 0, x: offsets.noteShiftX }}
+          animate={issue.active ? { opacity: 1, x: 0 } : { opacity: 0, x: offsets.noteShiftX }}
+          transition={appear(issue.beats.circle.start)}
+        >
+          <Tag tone={issue.tone}>{issue.tag}</Tag>
+          <span aria-hidden className="text-sm text-ink">
+            {issue.note}
+          </span>
+          <span className="sr-only">{`${issue.tag} : ${issue.detail}`}</span>
+        </motion.p>
+      ) : null}
+
+      {price ? (
+        <PriceDelta
+          amount={price.delta}
+          source={price.source}
+          active={price.active}
+          delay={price.delay}
+          size={compact ? "sm" : "md"}
+          className="relative mt-2"
+        />
       ) : null}
     </motion.li>
   );

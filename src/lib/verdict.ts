@@ -90,7 +90,7 @@ function reassurances(input: VerdictInput): string[] {
   if (computable && extraction.totals.totalTTC !== undefined) points.push("Les calculs sont justes.");
   points.push("Les mentions attendues sont là.");
   if (prices.some((opinion) => opinion.source.kind === "loupe")) {
-    points.push("Les prix comparés sont dans la norme de ta région.");
+    points.push("Les prix comparés sont dans la norme de votre région.");
   }
   return points;
 }
@@ -106,7 +106,7 @@ function keyPoints(input: VerdictInput, verdict: Verdict, loss: number): string[
   const confirmed = input.findings.filter((finding) => finding.confirmed && finding.kind !== "reminder");
 
   if (loss >= 1) {
-    points.push(fr(`Les erreurs de calcul te font payer ${formatEuros(loss)} de trop.`));
+    points.push(fr(`Les erreurs de calcul vous font payer ${formatEuros(loss)} de trop.`));
   } else {
     const calculation = confirmed.find((finding) => CALCULATION_RULES.has(finding.ruleId));
     if (calculation) points.push(calculation.detail);
@@ -143,7 +143,7 @@ function keyPoints(input: VerdictInput, verdict: Verdict, loss: number): string[
   }
   for (const finding of input.findings) {
     if (!finding.confirmed && finding.kind !== "reminder") {
-      points.push(fr(`À confirmer sur ton devis : ${finding.detail.charAt(0).toLowerCase()}${finding.detail.slice(1)}`));
+      points.push(fr(`À confirmer sur votre devis : ${finding.detail.charAt(0).toLowerCase()}${finding.detail.slice(1)}`));
     }
   }
   points.push(...reminders);

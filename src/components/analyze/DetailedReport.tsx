@@ -34,14 +34,14 @@ export function DetailedReport() {
       <div id={panelId}>
         {open ? (
           <motion.div
-            className="mt-4 rounded-[4px] border border-rule bg-paper p-4"
+            className="mt-4 rounded-lg border border-rule bg-paper-raised p-5"
             initial={{ opacity: 0, y: offsets.lineRiseY }}
             animate={{ opacity: 1, y: 0 }}
             transition={reduced ? reducedFade() : transitions.message()}
           >
-            <p className="font-medium text-ink">{fr("Bientôt disponible, laisse ton email pour l'avoir en premier.")}</p>
+            <p className="font-medium text-ink">{fr("Bientôt disponible : laissez votre email pour l'avoir en premier.")}</p>
             <p className="mt-1 text-sm text-ink-muted">
-              {fr("Tu ne paies rien aujourd'hui. On t'écrit simplement le jour où il sort.")}
+              {fr("Vous ne payez rien aujourd'hui. Nous vous écrirons simplement le jour de sa sortie.")}
             </p>
             <EmailSignup source="detailed_report" className="mt-4" />
           </motion.div>

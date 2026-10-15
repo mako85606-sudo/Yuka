@@ -10,7 +10,6 @@
  *
  * Les anciens noms (paper, ink, pen-red, stamp-orange…) restent : `paper` est
  * le fond de page, `paper-raised` une carte, `pen-red` le rouge des erreurs.
- * `.surface-paper` désigne désormais une carte blanche, aux mêmes encres.
  * Contrastes vérifiés par tokens.test.ts.
  */
 
@@ -25,7 +24,6 @@
   /* Encres */
   --ink: #0E1B16;
   --ink-muted: #56645E;
-  --sheet-ink: #0E1B16;
 
   /*
    * Marque : vert vif pour les aplats (texte en encre dessus), vert foncé pour
@@ -44,22 +42,19 @@
   --stamp-orange-strong: #9A3412;
   --warning-soft: #FFF4E5;
   --annotation-blue: #2454D6;
-  --highlighter: #FFE45C;
   --highlighter-mark: #FFF2B3;
   --verdict-ok: #0A7A45;
   --verdict-negotiate: #C2410C;
   --verdict-alert: #D92D20;
 
-  /* Matière : ombres douces, pas de grain */
+  /* Matière : ombres douces, sans texture ni dégradé */
   --shadow-color: rgb(14 27 22 / 0.1);
-  --grain: none;
 
   /* Durée des micro-interactions en CSS : miroir de durations.micro (motion.ts), vérifié par les tests */
   --duration-micro: 180ms;
 
   --rule: color-mix(in srgb, var(--ink) 10%, transparent);
   --rule-strong: color-mix(in srgb, var(--ink) 28%, transparent);
-  --margin-rule: color-mix(in srgb, var(--pen-red) 35%, transparent);
 
   /* Une carte posée sur la page, puis un objet qui flotte (le téléphone) */
   --elevation-1:
@@ -68,17 +63,6 @@
   --elevation-2:
     0 2px 6px color-mix(in srgb, var(--shadow-color) 70%, transparent),
     0 32px 64px -24px color-mix(in srgb, var(--shadow-color) 220%, transparent);
-  --sheet-shadow-rest: var(--elevation-1);
-  --sheet-shadow-lifted: var(--elevation-2);
-  --stamp-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -11 0 0 0 7.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
-}
-
-/* Une carte : fond blanc, mêmes encres que la page (couche « components » : un utilitaire l'emporte). */
-@layer components {
-  .surface-paper {
-    background-color: var(--paper-raised);
-    color: var(--ink);
-  }
 }
 
 /* Seuls nos tokens existent : pas de palette Tailwind par défaut. */
@@ -99,8 +83,6 @@
   --text-title: clamp(1.9rem, 1.45rem + 2vw, 2.75rem);
   --text-title--line-height: 1.04;
   --text-title--letter-spacing: -0.008em;
-  --text-hand: 1.05rem;
-  --text-hand--line-height: 1.2;
   --text-label: 0.6875rem;
   --text-label--line-height: 1.2;
   --text-label--letter-spacing: 0.14em;
@@ -120,7 +102,6 @@
   --color-ink-muted: var(--ink-muted);
   --color-pen-red: var(--pen-red);
   --color-pen-red-strong: var(--pen-red-strong);
-  --color-highlighter: var(--highlighter);
   --color-highlighter-mark: var(--highlighter-mark);
   --color-stamp-orange: var(--stamp-orange);
   --color-stamp-orange-strong: var(--stamp-orange-strong);
@@ -130,12 +111,10 @@
   --color-verdict-alert: var(--verdict-alert);
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
-  --color-margin-rule: var(--margin-rule);
 
   --font-display: var(--font-instrument-serif), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
-  --font-hand: var(--font-belle-aurore), "Segoe Print", "Bradley Hand", cursive;
 }
 
 @layer base {
@@ -159,7 +138,7 @@
 
   ::selection {
     background-color: var(--highlighter-mark);
-    color: var(--sheet-ink);
+    color: var(--ink);
   }
 
   :focus-visible {
@@ -176,40 +155,27 @@
   box-shadow: var(--elevation-2);
 }
 
-/* Grain papier (désactivé dans l'identité claire : `--grain` vaut `none`). */
-@utility paper-grain {
-  background-image: var(--grain);
-}
-
-@utility sheet-shadow-rest {
-  box-shadow: var(--sheet-shadow-rest);
-}
-
-@utility sheet-shadow-lifted {
-  box-shadow: var(--sheet-shadow-lifted);
-}
-
-/* Encre de tampon : quelques manques, comme un vrai coup de tampon. */
-@utility stamp-ink {
-  -webkit-mask-image: var(--stamp-texture);
-  mask-image: var(--stamp-texture);
-  -webkit-mask-size: 160px 160px;
-  mask-size: 160px 160px;
-}
-
 /*
- * Faisceau de scan : le calque fait toute la hauteur de la feuille, le
- * faisceau en occupe le bas. Une bande à plat et un bord d'attaque net :
- * pas de dégradé.
+ * Ligne de scan du téléphone de l'accueil : jouée en CSS dès le premier
+ * affichage, avant même JavaScript. Durée et courbe arrivent en variables
+ * depuis motion.ts (`--scan-d`, `--scan-e`) ; elle descend, puis s'efface.
+ * En mouvement réduit, elle est masquée (`motion-reduce:hidden`).
  */
-@utility scan-beam {
-  &::after {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    bottom: 0;
-    height: 18%;
-    background-color: color-mix(in srgb, var(--annotation-blue) 7%, transparent);
-    border-bottom: 2px solid color-mix(in srgb, var(--annotation-blue) 65%, transparent);
+@keyframes phone-scan {
+  from {
+    transform: translateY(-100%);
+    opacity: 1;
   }
+  80% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+
+@utility phone-scan {
+  animation: phone-scan var(--scan-d) var(--scan-e) infinite;
 }

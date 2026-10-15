@@ -41,6 +41,8 @@ export const durations = {
   message: 0.3,
   /** Une demi-respiration de l'étape en cours (aller ou retour). */
   pulse: 0.9,
+  /** Un tour de l'indicateur d'attente (étape en cours). */
+  spinner: 0.8,
   /** Plafond d'une séquence, par bloc. */
   blockMax: 1.2,
 } as const;
@@ -93,13 +95,13 @@ export const beats = {
 } as const;
 
 /**
- * Le téléphone du haut de page : une boucle photo → analyse → résultat. Le
- * résultat s'affiche d'abord (rendu serveur, mouvement réduit), puis la
- * boucle repart de la photo tant que le téléphone est à l'écran.
+ * Le téléphone du haut de page : une boucle photo → analyse → résultat, qui
+ * part de la photo dès l'affichage (la ligne de scan tourne en CSS avant même
+ * JavaScript). En mouvement réduit : le résultat, immobile.
  */
 export const phoneDemo = {
   /** Le résultat reste affiché : c'est l'écran qu'on lit. */
-  resultHold: 6,
+  resultHold: 5,
   /** La photo du devis, cadrée puis scannée. */
   photo: 2.4,
   /** Un passage de la ligne de scan sur la photo. */
@@ -116,8 +118,11 @@ export const phoneDemo = {
   cardsStart: 0.25,
   /** Le montant de l'économie compte jusqu'à sa valeur. */
   counter: 0.8,
-  /** Un tour de l'indicateur d'attente. */
-  spinner: 0.8,
+  /** Fraction de la photo où le déclencheur s'enfonce, avant le passage à l'analyse. */
+  shutterAt: 0.86,
+  /** Échelle du déclencheur enfoncé, et de l'écran qui arrive. */
+  shutterScale: 0.84,
+  sceneScale: 0.985,
 } as const;
 
 /** Retours qui restent affichés un moment, en secondes. */
@@ -246,3 +251,8 @@ export const transitions = {
     delay,
   }),
 } as const;
+
+/** Une courbe de motion.ts écrite pour le CSS (variables d'une animation CSS). */
+export function cssEase(ease: CubicBezier): string {
+  return `cubic-bezier(${ease.join(", ")})`;
+}

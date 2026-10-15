@@ -40,7 +40,8 @@ export interface SceneLine extends PrintedLine {
   readonly totalHT: number;
 }
 
-export type IssueKind = "calculation" | "vague-line";
+/** Calcul faux, ligne vague, ou autre point d'attention sur la ligne (TVA inhabituelle). */
+export type IssueKind = "calculation" | "vague-line" | "other";
 
 /**
  * `error` : erreur vérifiée. `warning` : point d'attention (ligne vague).
@@ -159,6 +160,17 @@ export function annotationCount(quote: CorrectionQuote): number {
 /** Arrondi au centime. */
 export function roundCents(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+/**
+ * Le bon montant d'une ligne au calcul faux : quantité × prix unitaire, au
+ * centime. `null` si l'un des deux n'a pas été lu, ou si le montant imprimé
+ * est déjà juste.
+ */
+export function correctedLineTotal(line: PrintedLine): number | null {
+  if (line.quantity === null || line.unitPriceHT === null) return null;
+  const expected = roundCents(line.quantity * line.unitPriceHT);
+  return expected === line.totalHT ? null : expected;
 }
 
 /** Totaux cohérents à partir des lignes écrites (pour fabriquer des données fictives). */

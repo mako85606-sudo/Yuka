@@ -51,7 +51,7 @@ export function checkVagueLines(extraction: Extraction): Finding[] {
       lineIndex: index,
       note: fr("Un forfait pour quoi ?"),
       detail: fr(
-        `Ligne vague : « ${line.label} » ne précise pas ce qui est facturé. Demande le détail avant de signer.`,
+        `Ligne vague : « ${line.label} » ne précise pas ce qui est facturé. Demandez le détail avant de signer.`,
       ),
       amount: lineAmount(line),
       ruleVerified: true,

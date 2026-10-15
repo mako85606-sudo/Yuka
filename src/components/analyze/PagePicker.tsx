@@ -61,19 +61,21 @@ export function PagePicker({ pages, notice, onAdd, onRemove, noticeId }: PagePic
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className={cn(
-          "rounded-[4px] border border-dashed p-3 sm:p-4",
-          dragging ? "border-ink bg-ink/5" : "border-rule-strong",
+          "rounded-lg border-2 border-dashed p-3 motion-safe:transition-colors motion-safe:duration-(--duration-micro) sm:p-4",
+          dragging ? "border-brand-strong bg-brand-soft" : "border-rule-strong bg-mist",
         )}
       >
         {pages.length === 0 ? (
-          <div className="flex min-h-36 flex-col items-center justify-center gap-2 px-4 py-6 text-center">
-            <DocumentGlyph className="size-7 text-ink-muted" />
+          <div className="flex min-h-44 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+            <span className="grid size-12 place-items-center rounded-lg bg-paper-raised text-brand-strong elevation-1">
+              <DocumentGlyph className="size-6" />
+            </span>
             <p className="text-[0.95rem] text-ink">
               <span className="hidden sm:inline">
-                Glisse ton devis ici, ou choisis-le{" "}
+                Glissez votre devis ici, ou choisissez-le{" "}
                 <span className="whitespace-nowrap">ci-dessous</span>.
               </span>
-              <span className="sm:hidden">Prends la première page en photo, bien à plat.</span>
+              <span className="sm:hidden">Prenez la première page en photo, bien à plat.</span>
             </p>
           </div>
         ) : (
@@ -134,7 +136,7 @@ function PageThumb({
 }) {
   const label = page.kind === "pdf" ? "le PDF" : `la page ${number}`;
   return (
-    <li className="surface-paper relative aspect-[3/4] overflow-hidden rounded-[3px] border border-rule">
+    <li className="relative aspect-[3/4] overflow-hidden rounded-md border border-rule bg-paper-raised">
       {page.kind === "image" && page.previewUrl ? (
         // Aperçu local (adresse blob:) : next/image n'a rien à optimiser ici.
         // eslint-disable-next-line @next/next/no-img-element
@@ -150,14 +152,14 @@ function PageThumb({
           <p className="font-mono text-xs text-ink-muted">{formatSize(page.file.size)}</p>
         </div>
       )}
-      <span className="absolute left-1.5 top-1.5 rounded-[2px] bg-paper-raised px-1.5 py-0.5 font-mono text-label uppercase text-ink">
+      <span className="absolute left-1.5 top-1.5 rounded-sm bg-paper-raised px-1.5 py-0.5 text-xs font-semibold text-ink elevation-1">
         {page.kind === "pdf" ? "PDF" : `p. ${number}`}
       </span>
       <button
         type="button"
         onClick={() => onRemove(page.id)}
         aria-label={`Retirer ${label}`}
-        className="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-[3px] border border-rule bg-paper-raised text-ink hover:bg-paper"
+        className="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-md border border-rule bg-paper-raised text-ink hover:bg-mist"
       >
         <CloseGlyph />
       </button>

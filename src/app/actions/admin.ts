@@ -26,7 +26,7 @@ export async function signInAdmin(_previous: AdminSignInState, formData: FormDat
   if (!password) return { message: fr("L'administration est fermée : ADMIN_PASSWORD n'est pas défini.") };
 
   if (!(await consumeAdminAttempt(clientIp(await headers())))) {
-    return { message: fr("Trop d'essais aujourd'hui. Réessaie demain.") };
+    return { message: fr("Trop d'essais aujourd'hui. Réessayez demain.") };
   }
   const candidate = formData.get("password");
   if (typeof candidate !== "string" || !passwordMatches(candidate, password)) {
