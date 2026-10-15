@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Instrument_Serif, La_Belle_Aurore } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { MotionPreferences } from "@/components/motion/MotionPreferences";
 import { site } from "@/config/site";
 import { serverEnv } from "@/server/env";
@@ -37,19 +37,6 @@ const mono = Geist_Mono({
   preload: false,
 });
 
-/**
- * Annotations manuscrites, avec parcimonie : un stylo bille rapide et penché.
- * Le sous-ensemble « latin » contient bien é è ê à ç œ € (vérifié dans le
- * fichier de la police). Pas préchargée, pour la même raison.
- */
-const hand = La_Belle_Aurore({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-belle-aurore",
-  display: "swap",
-  preload: false,
-});
-
 const siteUrl = serverEnv().SITE_URL;
 
 export const metadata: Metadata = {
@@ -74,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${display.variable} ${sans.variable} ${mono.variable} ${hand.variable}`}
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh font-sans text-ink antialiased">
         <MotionPreferences>{children}</MotionPreferences>

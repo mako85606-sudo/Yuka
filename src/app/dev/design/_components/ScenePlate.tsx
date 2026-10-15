@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { plumbingQuote } from "@/fixtures/demo-quotes";
 
 /**
- * La scène complète sur le devis fictif. Un tap sur la feuille (ou le bouton
- * « Tout afficher ») passe l'animation et affiche tout.
+ * La vérification complète sur le devis fictif. Un tap sur le devis (ou le
+ * bouton « Tout afficher ») passe l'animation et affiche tout.
  */
 export function ScenePlate() {
   const [run, setRun] = useState(0);
@@ -26,11 +26,11 @@ export function ScenePlate() {
     <section className="pt-2">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0 max-w-prose">
-          <h2 className="font-display text-title text-ink">La scène complète</h2>
+          <h2 className="font-display text-title text-ink">Le devis vérifié</h2>
           <p className="mt-2 text-sm text-ink-muted">
-            Dépôt, lecture, vérifications, prix, verdict : l&apos;ordre où un humain corrigerait.
-            Ici les étapes sont simulées ; dans l&apos;app, elles suivront le vrai flux du
-            serveur. Touche la feuille pour tout afficher d&apos;un coup.
+            Lecture, vérifications, prix, verdict : dans l&apos;ordre où un expert relirait. Ici les
+            étapes sont simulées ; dans l&apos;application, elles suivent le vrai flux du serveur.
+            Touchez le devis pour tout afficher d&apos;un coup.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -49,7 +49,7 @@ export function ScenePlate() {
       </div>
 
       <div
-        className="mt-10 min-h-[46rem] sm:min-h-[40rem]"
+        className="mt-8 min-h-[46rem] sm:min-h-[40rem]"
         onPointerDown={running ? () => setSkipped(true) : undefined}
       >
         <MotionPreferences skip={skipped}>

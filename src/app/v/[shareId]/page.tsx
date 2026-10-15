@@ -5,7 +5,7 @@ import { TrackView } from "@/components/analytics/TrackView";
 import { AnalysisView } from "@/components/analyze/AnalysisView";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
-import { SharedConclusion } from "@/components/share/SharedConclusion";
+import { SharedInvite, SharedSummary } from "@/components/share/SharedConclusion";
 import { CATEGORY_LABELS } from "@/config/taxonomy";
 import { site } from "@/config/site";
 import { shareCounts } from "@/lib/analysis/share";
@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: PageProps<"/v/[shareId]">): P
   const { shareId } = await params;
   const shared = await getSharedPage(shareId);
   const title = shared?.data.extraction
-    ? `Un devis de ${categoryName(shared.data.extraction.category)} corrigé`
-    : "Un devis corrigé";
+    ? `Un devis de ${categoryName(shared.data.extraction.category)} vérifié`
+    : "Un devis vérifié";
   return {
     title,
     description: site.description,
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/v/[shareId]">): P
 }
 
 /**
- * Page de partage public : la feuille corrigée et le verdict, sans rien de
+ * Page de partage public : le devis vérifié et le verdict, sans rien de
  * personnel (région au lieu du département, aucune date, aucun rappel privé,
  * aucun message), puis une invitation à corriger son propre devis.
  */
@@ -51,31 +51,32 @@ export default async function SharedAnalysisPage({ params }: PageProps<"/v/[shar
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-8 sm:pt-14">
-        <p className="font-mono text-label uppercase text-ink-muted">Partagé avec Loupe</p>
-        <h1 className="mt-2 font-display text-title text-ink">
-          {fr(`Un devis de ${categoryName(extraction.category)}, corrigé au stylo rouge`)}
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
+        <p className="text-sm font-semibold text-brand-strong">Partagé avec Loupe</p>
+        <h1 className="mt-3 font-display text-title text-ink">
+          {fr(`Un devis de ${categoryName(extraction.category)}, vérifié par Loupe`)}
         </h1>
-        <p className="mt-2 max-w-prose text-sm text-ink-muted">
+        <p className="mt-3 max-w-prose text-ink-muted">
           {fr(
-            `${place ? `${place}. ` : ""}Tu ne verras ici ni nom ni adresse : Loupe ne les relève même pas.`,
+            `${place ? `${place}. ` : ""}Vous ne verrez ici ni nom ni adresse : Loupe ne les relève même pas.`,
           )}
         </p>
-        <div className="mt-4">
+        <div className="mt-6">
           <AnalysisView
             data={data}
             target="done"
             live={false}
             sheetId={shareId}
             place={place}
-            conclusion={
-              <SharedConclusion
+            summary={
+              <SharedSummary
                 verdict={verdict.verdict}
                 errors={counts.errors}
                 warnings={counts.warnings}
                 savings={verdict.savings}
               />
             }
+            details={<SharedInvite />}
           />
         </div>
         <p className="mt-8 text-xs leading-relaxed text-ink-muted">{fr(site.disclaimer)}</p>

@@ -14,8 +14,8 @@ const MOTIONS: { value: MotionChoice; label: string }[] = [
 
 /**
  * Cadre de la planche de style : choix du mouvement, et « Tout rejouer » qui
- * remonte toutes les planches. Une seule identité, le bureau sombre : pas de
- * choix de thème.
+ * remonte toutes les planches. Une seule identité, claire : pas de choix de
+ * thème.
  */
 export function DesignBoard({ children }: { readonly children: ReactNode }) {
   const [motionChoice, setMotionChoice] = useState<MotionChoice>("system");
@@ -24,7 +24,7 @@ export function DesignBoard({ children }: { readonly children: ReactNode }) {
   return (
     <MotionPreferences forceReduced={motionChoice === "reduced"}>
       <div className="relative z-30 border-b border-rule bg-paper sm:sticky sm:top-0">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-8">
           <Segmented
             label="Mouvement"
             options={MOTIONS}
@@ -51,8 +51,8 @@ interface SegmentedProps<T extends string> {
 function Segmented<T extends string>({ label, options, value, onChange }: SegmentedProps<T>) {
   return (
     <div role="group" aria-label={label} className="flex items-center gap-2">
-      <span className="font-mono text-label uppercase text-ink-muted">{label}</span>
-      <div className="flex rounded-[6px] border border-rule-strong p-0.5">
+      <span className="text-sm font-medium text-ink-muted">{label}</span>
+      <div className="flex rounded-md bg-mist p-1">
         {options.map((option) => (
           <button
             key={option.value}
@@ -60,8 +60,8 @@ function Segmented<T extends string>({ label, options, value, onChange }: Segmen
             aria-pressed={option.value === value}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-7 rounded-[4px] px-2.5 text-sm",
-              option.value === value ? "bg-ink text-paper" : "text-ink hover:bg-ink/10",
+              "h-7 rounded-sm px-2.5 text-sm",
+              option.value === value ? "bg-paper-raised text-ink elevation-1" : "text-ink-muted hover:text-ink",
             )}
           >
             {option.label}

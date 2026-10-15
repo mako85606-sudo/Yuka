@@ -13,8 +13,8 @@ interface ShareLinkProps {
 }
 
 /**
- * « Partager la correction » : un lien public vers une page anonyme (feuille
- * corrigée et verdict, sans date, sans département, sans le message). Sur
+ * « Partager l'analyse » : un lien public vers une page anonyme (devis
+ * vérifié et verdict, sans date, sans département, sans le message). Sur
  * téléphone, la feuille de partage du système ; ailleurs, le lien copié.
  */
 export function ShareLink({ analysisId, expiresAt }: ShareLinkProps) {
@@ -35,7 +35,7 @@ export function ShareLink({ analysisId, expiresAt }: ShareLinkProps) {
       setUrl(link);
       if (typeof navigator.share === "function") {
         try {
-          await navigator.share({ title: "Mon devis corrigé par Loupe", url: link });
+          await navigator.share({ title: "Mon devis vérifié par Loupe", url: link });
           track("share_clicked", { method: "native" });
           setStatus("");
           return;
@@ -49,7 +49,7 @@ export function ShareLink({ analysisId, expiresAt }: ShareLinkProps) {
         track("share_clicked", { method: "copy" });
         setStatus("Lien copié.");
       } catch {
-        setStatus(fr("Copie impossible ici : sélectionne le lien ci-dessous."));
+        setStatus(fr("Copie impossible ici : sélectionnez le lien ci-dessous."));
       }
     });
   };
@@ -58,7 +58,7 @@ export function ShareLink({ analysisId, expiresAt }: ShareLinkProps) {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button variant="secondary" onClick={share} disabled={pending} aria-describedby={statusId}>
-          {pending ? "Création du lien…" : "Partager la correction"}
+          {pending ? "Création du lien…" : "Partager l'analyse"}
         </Button>
         <p id={statusId} aria-live="polite" className="text-sm text-ink-muted">
           {status}
@@ -74,13 +74,13 @@ export function ShareLink({ analysisId, expiresAt }: ShareLinkProps) {
             readOnly
             value={url}
             onFocus={(event) => event.currentTarget.select()}
-            className="h-10 w-full rounded-[4px] border border-rule-strong bg-paper px-3 font-mono text-sm text-ink"
+            className="h-10 w-full rounded-md border border-rule-strong bg-paper-raised px-3 font-mono text-sm text-ink"
           />
         </div>
       ) : null}
       <p className="mt-2 text-sm text-ink-muted">
         {fr(
-          `Le lien montre la feuille corrigée et le verdict. La date, le département et ton message restent privés.${
+          `Le lien montre le devis vérifié et le verdict. La date, le département et votre message restent privés.${
             expiresAt ? ` Il cessera de fonctionner le ${formatShortDate(new Date(expiresAt))}, en même temps que l'analyse.` : ""
           }`,
         )}

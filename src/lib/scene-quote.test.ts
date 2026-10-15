@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { electricQuote, plumbingQuote } from "@/fixtures/demo-quotes";
-import { describeCorrection, roundCents, totalsFromLines } from "@/lib/scene-quote";
+import { correctedLineTotal, describeCorrection, roundCents, totalsFromLines } from "@/lib/scene-quote";
+
+describe("correctedLineTotal", () => {
+  const line = { id: "l2", label: "Main-d'œuvre", quantity: 4, unit: "h", unitPriceHT: 65, totalHT: 275 };
+
+  it("donne quantité × prix unitaire quand le montant imprimé est faux", () => {
+    expect(correctedLineTotal(line)).toBe(260);
+    expect(correctedLineTotal({ ...line, quantity: 1.5, unitPriceHT: 72.33, totalHT: 110 })).toBe(108.5);
+  });
+
+  it("ne corrige rien si le montant est juste, ou si un chiffre manque", () => {
+    expect(correctedLineTotal({ ...line, totalHT: 260 })).toBeNull();
+    expect(correctedLineTotal({ ...line, quantity: null })).toBeNull();
+    expect(correctedLineTotal({ ...line, unitPriceHT: null })).toBeNull();
+  });
+});
 
 describe("totalsFromLines", () => {
   it("additionne les lignes et calcule TVA et TTC au centime", () => {

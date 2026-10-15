@@ -22,16 +22,16 @@ interface ScriptedSceneProps {
   readonly quote: SceneQuote;
   /** Démarre directement à la fin (animation passée). */
   readonly startDone?: boolean;
-  /** Joue le dépôt de la feuille. Faux : déjà posée. */
+  /** Joue l'arrivée du devis. Faux : déjà posé. */
   readonly entrance?: boolean;
   readonly compact?: boolean;
-  /** Affiche l'étape simulée au-dessus de la feuille (planche de style). */
+  /** Affiche l'étape simulée au-dessus du devis (planche de style). */
   readonly showPhase?: boolean;
   readonly onDone?: () => void;
 }
 
 /**
- * Une correction de démonstration : les étapes « serveur » sont simulées par
+ * Une vérification de démonstration : les étapes « serveur » sont simulées par
  * `demoScript`. Réservé aux démos ; l'écran de résultat suit le vrai flux.
  * Pour rejouer, remonter le composant (changer sa `key`).
  */
@@ -62,7 +62,7 @@ export function ScriptedScene({
   return (
     <>
       {showPhase ? (
-        <p className="mb-4 font-mono text-label uppercase text-ink-muted" aria-live="polite">
+        <p className="mb-4 text-sm font-medium text-ink-muted" aria-live="polite">
           Étape simulée : {PHASE_LABELS[phase]}
         </p>
       ) : null}

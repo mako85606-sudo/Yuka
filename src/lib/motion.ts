@@ -41,6 +41,8 @@ export const durations = {
   message: 0.3,
   /** Une demi-respiration de l'étape en cours (aller ou retour). */
   pulse: 0.9,
+  /** Un tour de l'indicateur d'attente (étape en cours). */
+  spinner: 0.8,
   /** Plafond d'une séquence, par bloc. */
   blockMax: 1.2,
 } as const;
@@ -116,8 +118,6 @@ export const phoneDemo = {
   cardsStart: 0.25,
   /** Le montant de l'économie compte jusqu'à sa valeur. */
   counter: 0.8,
-  /** Un tour de l'indicateur d'attente. */
-  spinner: 0.8,
   /** Fraction de la photo où le déclencheur s'enfonce, avant le passage à l'analyse. */
   shutterAt: 0.86,
   /** Échelle du déclencheur enfoncé, et de l'écran qui arrive. */

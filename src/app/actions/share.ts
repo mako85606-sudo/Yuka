@@ -24,6 +24,6 @@ export async function createShareLink(analysisId: string): Promise<ShareLinkResu
     return { ok: true, path: `/v/${shareId}` };
   } catch (error) {
     console.error("[partage] création du lien impossible", error);
-    return { ok: false, message: fr("Le lien n'a pas pu être créé, ça vient de chez nous. Réessaie dans un instant.") };
+    return { ok: false, message: fr("Le lien n'a pas pu être créé ; le problème vient de chez nous. Réessayez dans un instant.") };
   }
 }

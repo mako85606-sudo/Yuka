@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import type { ReactNode } from "react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminLogin } from "@/components/admin/AdminLogin";
 import { Logo } from "@/components/landing/Logo";
@@ -14,6 +15,20 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
+/** Une carte centrée : la connexion, ou la raison pour laquelle il n'y a rien à montrer. */
+function AdminCard({ children }: { readonly children: ReactNode }) {
+  return (
+    <div className="mx-auto mt-6 max-w-md rounded-lg bg-paper-raised p-7 elevation-1 sm:mt-12 sm:p-9">
+      <h1 className="font-display text-title text-ink">Administration</h1>
+      {children}
+    </div>
+  );
+}
+
+function Code({ children }: { readonly children: ReactNode }) {
+  return <code className="rounded-sm bg-mist px-1.5 py-0.5 font-mono text-[0.875em] text-ink">{children}</code>;
+}
+
 /** Tableau de bord interne : analyses, conversion, catégories, coût. Protégé par `ADMIN_PASSWORD`. */
 export default async function AdminPage() {
   await connection();
@@ -24,35 +39,45 @@ export default async function AdminPage() {
   let content;
   if (!password) {
     content = (
-      <p className="max-w-prose text-ink-muted">
-        {fr(
-          "L'administration est fermée : définis ADMIN_PASSWORD (16 caractères au moins) dans les variables d'environnement.",
-        )}
-      </p>
+      <AdminCard>
+        <p className="mt-4 leading-relaxed text-ink-muted">
+          {fr("L'administration est fermée : définissez ")}
+          <Code>ADMIN_PASSWORD</Code>
+          {fr(" (16 caractères au moins) dans les variables d'environnement.")}
+        </p>
+      </AdminCard>
     );
   } else if (!signedIn) {
     content = (
-      <>
-        <h1 className="mb-6 font-display text-title text-ink">Administration</h1>
-        <AdminLogin />
-      </>
+      <AdminCard>
+        <p className="mt-3 leading-relaxed text-ink-muted">{fr("Accès réservé à l'éditeur de Loupe.")}</p>
+        <div className="mt-7">
+          <AdminLogin />
+        </div>
+      </AdminCard>
     );
   } else if (!db) {
     content = (
-      <p className="max-w-prose text-ink-muted">
-        {fr("Pas de base configurée (DATABASE_URL) : rien à afficher.")}
-      </p>
+      <AdminCard>
+        <p className="mt-4 leading-relaxed text-ink-muted">
+          {fr("Aucune base de données n'est configurée (")}
+          <Code>DATABASE_URL</Code>
+          {fr(") : il n'y a rien à afficher.")}
+        </p>
+      </AdminCard>
     );
   } else {
     content = <AdminDashboard stats={await adminStats(db)} />;
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 pb-24 pt-8 sm:px-8">
-      <div className="mb-8">
-        <Logo />
-      </div>
-      {content}
-    </main>
+    <div className="min-h-dvh bg-mist">
+      <header className="border-b border-rule bg-paper">
+        <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-8">
+          <Logo />
+        </div>
+      </header>
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-8 lg:pt-12">{content}</main>
+    </div>
   );
 }

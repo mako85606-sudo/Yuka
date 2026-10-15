@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { StatusPage } from "@/components/errors/StatusPage";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { fr } from "@/lib/typography";
 
@@ -12,19 +13,22 @@ export default function PageError({ error, retry }: { error: Error & { digest?: 
   }, [error]);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-24 pt-16 sm:px-8">
-      <h1 className="font-display text-title text-ink">{fr("Quelque chose a coincé.")}</h1>
-      <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
-        {fr("Le problème vient de chez nous. Réessaie, ça passe souvent au deuxième essai.")}
-      </p>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Button size="lg" onClick={() => retry()}>
-          Réessayer
-        </Button>
-        <ButtonLink href="/" size="lg" variant="secondary">
-          Revenir à l&apos;accueil
-        </ButtonLink>
-      </div>
-    </main>
+    <StatusPage
+      eyebrow="Erreur inattendue"
+      title="Cette page n'a pas pu s'afficher."
+      badge="Incident"
+      actions={
+        <>
+          <Button size="lg" onClick={() => retry()}>
+            Réessayer
+          </Button>
+          <ButtonLink href="/" size="lg" variant="secondary">
+            Revenir à l&apos;accueil
+          </ButtonLink>
+        </>
+      }
+    >
+      {fr("Le problème vient de notre côté. Réessayez dans un instant : le plus souvent, cela fonctionne dès le deuxième essai.")}
+    </StatusPage>
   );
 }

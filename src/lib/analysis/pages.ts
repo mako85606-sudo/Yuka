@@ -37,7 +37,7 @@ export function mergePages<T extends { readonly kind: PageKind }>(
   if (pdf) {
     const notice =
       accepted.length > 1
-        ? fr("Un PDF voyage seul : on a gardé le premier choisi.")
+        ? fr("Un PDF doit être envoyé seul : nous avons gardé le premier choisi.")
         : current.length > 0
           ? fr("Le PDF remplace les pages ajoutées avant lui.")
           : unsupported;

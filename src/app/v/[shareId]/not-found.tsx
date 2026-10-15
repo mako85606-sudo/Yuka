@@ -1,26 +1,31 @@
-import { SiteFooter } from "@/components/landing/SiteFooter";
-import { SiteHeader } from "@/components/landing/SiteHeader";
+import { StatusPage } from "@/components/errors/StatusPage";
 import { ButtonLink } from "@/components/ui/Button";
+import { CameraGlyph } from "@/components/ui/icons";
 import { limits } from "@/config/limits";
 import { fr } from "@/lib/typography";
 
 /** Lien de partage inconnu ou expiré. */
 export default function SharedNotFound() {
   return (
-    <>
-      <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-8 sm:pt-14">
-        <h1 className="font-display text-title text-ink">{fr("Ce lien a fait son temps.")}</h1>
-        <p className="mt-4 max-w-prose text-[1.0625rem] leading-relaxed text-ink-muted">
-          {fr(
-            `Une correction partagée reste en ligne ${limits.analysisRetentionDays} jours, puis elle disparaît. Et toi, tu as un devis à faire relire ?`,
-          )}
-        </p>
-        <ButtonLink href="/analyse" size="lg" className="mt-8">
-          Corriger mon devis
-        </ButtonLink>
-      </main>
-      <SiteFooter />
-    </>
+    <StatusPage
+      eyebrow="Lien de partage"
+      title="Ce lien n'est plus actif."
+      badge="Lien inactif"
+      actions={
+        <>
+          <ButtonLink href="/analyse" size="lg">
+            <CameraGlyph />
+            Scanner un devis
+          </ButtonLink>
+          <ButtonLink href="/" size="lg" variant="secondary">
+            Découvrir Loupe
+          </ButtonLink>
+        </>
+      }
+    >
+      {fr(
+        `Une analyse partagée reste en ligne ${limits.analysisRetentionDays} jours, puis elle disparaît. Vous avez vous-même un devis à faire vérifier ? Loupe le relit pour vous, gratuitement.`,
+      )}
+    </StatusPage>
   );
 }

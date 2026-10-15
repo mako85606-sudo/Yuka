@@ -30,7 +30,7 @@ interface AnalysisOutcomeProps {
 
 /**
  * Ce qu'on dit quand l'analyse ne va pas au bout : document refusé, ou échec.
- * Le résultat complet, lui, s'affiche sous la feuille corrigée (`AnalysisView`).
+ * Le résultat complet, lui, s'affiche avec le devis vérifié (`AnalysisView`).
  */
 export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: AnalysisOutcomeProps) {
   const { reduced } = useMotionPrefs();
@@ -51,10 +51,10 @@ export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: Analy
     const retryable = RETRYABLE.includes(code);
     // Rien à refaire aujourd'hui : on raccompagne vers l'accueil.
     const closed = code === "rate-limited" || code === "not-configured";
-    title = code === "rate-limited" ? "C'est tout pour aujourd'hui." : "Ça n'a pas marché.";
+    title = code === "rate-limited" ? "C'est tout pour aujourd'hui." : "L'analyse n'a pas abouti.";
     body = <p className="text-[1.0625rem] leading-relaxed text-ink">{state.error.message}</p>;
     actions = closed ? (
-      <ButtonLink href="/">Revenir à l&apos;accueil</ButtonLink>
+      <ButtonLink href="/">Retour à l&apos;accueil</ButtonLink>
     ) : (
       <>
         {retryable ? <Button onClick={onRetry}>Réessayer</Button> : null}
@@ -70,7 +70,7 @@ export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: Analy
   return (
     <motion.section
       aria-labelledby="issue-analyse"
-      className="surface-paper rounded-[4px] border border-rule p-5 sm:p-6"
+      className="rounded-lg border border-rule bg-paper-raised p-5 elevation-1 sm:p-6"
       initial={{ opacity: 0, y: offsets.lineRiseY }}
       animate={{ opacity: 1, y: 0 }}
       transition={reduced ? reducedFade() : transitions.message()}
@@ -79,7 +79,7 @@ export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: Analy
         id="issue-analyse"
         ref={headingRef}
         tabIndex={-1}
-        className="font-display text-[1.75rem] leading-tight text-ink outline-none"
+        className="font-display text-[2rem] leading-tight text-ink outline-none"
       >
         {title}
       </h2>

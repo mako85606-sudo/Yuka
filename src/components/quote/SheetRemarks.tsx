@@ -2,16 +2,17 @@
 
 import { motion } from "motion/react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
+import { Tag, type TagTone } from "@/components/ui/Tag";
 import type { Segment } from "@/lib/choreography";
 import { cn } from "@/lib/cn";
 import { offsets, reducedFade, transitions } from "@/lib/motion";
 import type { RemarkTone, SheetRemark } from "@/lib/scene-quote";
 
-const TONES: Record<RemarkTone, { readonly label: string; readonly className: string }> = {
-  error: { label: "Manque", className: "text-pen-red-strong" },
-  warning: { label: "Attention", className: "text-stamp-orange-strong" },
-  unconfirmed: { label: "À vérifier", className: "text-ink-muted" },
-  reminder: { label: "Rappel", className: "text-annotation-blue" },
+const TONES: Record<RemarkTone, { readonly label: string; readonly tone: TagTone }> = {
+  error: { label: "Manque", tone: "error" },
+  warning: { label: "Attention", tone: "warning" },
+  unconfirmed: { label: "À vérifier", tone: "unconfirmed" },
+  reminder: { label: "Rappel", tone: "reminder" },
 };
 
 interface SheetRemarksProps {
@@ -24,19 +25,19 @@ interface SheetRemarksProps {
 }
 
 /**
- * Remarques du correcteur sur le devis entier (mention absente, acompte,
- * TVA, rétractation), au pied de la feuille : une étiquette imprimée qui dit
- * la nature de la remarque, puis la note manuscrite. L'explication complète
- * est lue par les lecteurs d'écran.
+ * Remarques sur le devis entier (mention absente, acompte, TVA,
+ * rétractation), au pied du devis : une pastille qui dit la nature de la
+ * remarque, puis la note. L'explication complète est lue par les lecteurs
+ * d'écran.
  */
 export function SheetRemarks({ remarks, schedule, active, compact = false }: SheetRemarksProps) {
   const { reduced } = useMotionPrefs();
   if (remarks.length === 0) return null;
 
   return (
-    <div className={cn("border-t border-rule", compact ? "px-5 py-3 sm:px-6" : "px-5 py-4 sm:px-8")}>
-      <p className="font-mono text-label uppercase text-ink-muted">Remarques du correcteur</p>
-      <ul className="mt-2 space-y-2">
+    <div className={cn("border-t border-rule py-4", compact ? "px-5" : "px-5 sm:px-7")}>
+      <p className="text-sm font-semibold text-ink">Remarques sur le devis</p>
+      <ul className="mt-3 space-y-2.5">
         {remarks.map((remark, index) => {
           const delay = schedule[index]?.start ?? 0;
           const tone = TONES[remark.tone];
@@ -44,15 +45,15 @@ export function SheetRemarks({ remarks, schedule, active, compact = false }: She
             <motion.li
               key={remark.id}
               aria-hidden={active ? undefined : true}
-              className="flex flex-wrap items-baseline gap-x-3"
+              className="flex items-start gap-3"
               initial={{ opacity: 0, x: offsets.noteShiftX }}
               animate={active ? { opacity: 1, x: 0 } : { opacity: 0, x: offsets.noteShiftX }}
               transition={reduced ? reducedFade(delay) : transitions.note(delay)}
             >
-              <span aria-hidden className={cn("w-[5.5rem] shrink-0 font-mono text-label uppercase", tone.className)}>
+              <Tag tone={tone.tone} className="mt-px w-[5.75rem] shrink-0 justify-center">
                 {tone.label}
-              </span>
-              <span aria-hidden className="min-w-0 flex-1 font-hand text-hand text-annotation-blue">
+              </Tag>
+              <span aria-hidden className="min-w-0 flex-1 text-sm leading-relaxed text-ink">
                 {remark.note}
               </span>
               <span className="sr-only">{`${tone.label} : ${remark.detail}`}</span>

@@ -1,27 +1,24 @@
 "use client";
 
 import { motion, type Transition } from "motion/react";
-import type { ReactNode } from "react";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
-import { HighlighterMark } from "@/components/signature/HighlighterMark";
-import { MarginNote } from "@/components/signature/MarginNote";
-import { RedCircle } from "@/components/signature/RedCircle";
+import { Tag, type TagTone } from "@/components/ui/Tag";
 import type { IssueBeats } from "@/lib/choreography";
 import { cn } from "@/lib/cn";
 import { formatAmount, formatEuros, formatRate } from "@/lib/format";
-import { reducedFade, transitions } from "@/lib/motion";
+import { offsets, reducedFade, transitions } from "@/lib/motion";
 import type { PrintedTotals, TotalRow } from "@/lib/scene-quote";
 
 /** Problème sur un total, avec son calendrier : même geste qu'une ligne fausse. */
 export interface QuoteTotalIssue {
   readonly id: string;
   readonly row: TotalRow;
+  readonly tag: string;
+  readonly tone: TagTone;
   readonly note: string;
   readonly detail: string;
   readonly beats: IssueBeats;
   readonly active: boolean;
-  /** Faux pour un constat à confirmer : surligné et annoté, jamais entouré. */
-  readonly circled: boolean;
 }
 
 interface QuoteTotalsProps {
@@ -32,112 +29,83 @@ interface QuoteTotalsProps {
   readonly revealed?: boolean;
   /** Délai d'apparition, en secondes, compté depuis la révélation. */
   readonly delay?: number;
-  /** Totaux faux : entourés, avec leur note dans la marge. */
+  /** Totaux faux : surlignés, avec leur pastille et leur note. */
   readonly issues?: readonly QuoteTotalIssue[];
-  /** Version resserrée, pour la démo de la landing. */
   readonly compact?: boolean;
 }
 
+const ROWS: readonly { readonly row: TotalRow; readonly strong?: boolean }[] = [
+  { row: "totalHT" },
+  { row: "totalVAT" },
+  { row: "totalTTC", strong: true },
+];
+
 /** Bas de devis : totaux tels qu'écrits, alignés à droite, chiffres tabulaires. */
-export function QuoteTotals({
-  totals,
-  vatRate,
-  revealed = true,
-  delay = 0,
-  issues = [],
-  compact = false,
-}: QuoteTotalsProps) {
+export function QuoteTotals({ totals, vatRate, revealed = true, delay = 0, issues = [], compact = false }: QuoteTotalsProps) {
   const { reduced } = useMotionPrefs();
   const transition: Transition = reduced
     ? { ...reducedFade(delay), layout: { duration: 0 } }
     : { ...transitions.lineReveal(delay), layout: transitions.reflow };
-  const issueFor = (row: TotalRow) => issues.find((issue) => issue.row === row);
+  const label = (row: TotalRow) =>
+    row === "totalHT" ? "Total HT" : row === "totalTTC" ? "Total TTC" : `TVA${vatRate === null ? "" : ` ${formatRate(vatRate)}`}`;
 
   return (
     <motion.div
       layout="position"
-      className={cn(
-        "border-t border-rule sm:grid sm:grid-cols-[minmax(0,1fr)_var(--margin-col)] sm:gap-x-7",
-        compact ? "px-5 py-3 sm:px-6" : "px-5 py-4 sm:px-8",
-      )}
+      className={cn("border-t border-rule py-2", compact ? "px-5" : "px-5 sm:px-7")}
       initial={{ opacity: 0 }}
       animate={{ opacity: revealed ? 1 : 0 }}
       transition={transition}
     >
-      <dl
-        className={cn(
-          "ml-auto grid max-w-72 grid-cols-[1fr_auto] gap-x-6 gap-y-1 font-mono tabular-nums",
-          compact ? "text-[0.8125rem]" : "text-sm",
-        )}
-      >
-        <dt className="text-ink-muted">Total HT</dt>
-        <dd className="text-right">
-          <Marked issue={issueFor("totalHT")}>
-            <Amount value={totals.totalHT} format={formatAmount} />
-          </Marked>
-        </dd>
-        <dt className="text-ink-muted">TVA{vatRate === null ? null : ` ${formatRate(vatRate)}`}</dt>
-        <dd className="text-right">
-          <Marked issue={issueFor("totalVAT")}>
-            <Amount value={totals.totalVAT} format={formatAmount} />
-          </Marked>
-        </dd>
-        <dt className="pt-1 font-semibold">Total TTC</dt>
-        <dd className="pt-1 text-right font-semibold">
-          <Marked issue={issueFor("totalTTC")}>
-            <Amount value={totals.totalTTC} format={formatEuros} />
-          </Marked>
-        </dd>
-      </dl>
-
-      {issues.length > 0 ? (
-        <div className="mt-4 min-w-0 space-y-3 sm:mt-0">
-          {issues.map((issue) => (
-            <MarginNote
-              key={issue.id}
-              id={issue.id}
-              active={issue.active}
-              delay={issue.beats.note.start}
-              srText={issue.detail}
-            >
-              {issue.note}
-            </MarginNote>
-          ))}
-        </div>
-      ) : null}
+      <div>
+        {ROWS.map(({ row, strong }) => {
+          const issue = issues.find((item) => item.row === row);
+          const value = totals[row];
+          return (
+            <div key={row} className={cn("relative -mx-5 px-5 py-1.5", !compact && "sm:-mx-7 sm:px-7")}>
+              {issue ? (
+                <motion.span
+                  aria-hidden
+                  className="absolute inset-0 origin-left bg-highlighter-mark"
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={issue.active ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0 }}
+                  transition={reduced ? reducedFade(issue.beats.highlight.start) : transitions.highlight(issue.beats.highlight.start)}
+                />
+              ) : null}
+              <div className={cn("relative flex items-baseline justify-end gap-6 font-mono tabular-nums", strong ? "text-[0.95rem] font-semibold text-ink" : "text-sm")}>
+                <span className={strong ? "text-ink" : "text-ink-muted"}>{label(row)}</span>
+                <span className="min-w-[7.5rem] text-right">
+                  {value === null ? (
+                    <>
+                      <span aria-hidden>—</span>
+                      <span className="sr-only">non indiqué</span>
+                    </>
+                  ) : row === "totalTTC" ? (
+                    formatEuros(value)
+                  ) : (
+                    formatAmount(value)
+                  )}
+                </span>
+              </div>
+              {issue ? (
+                <motion.p
+                  aria-hidden={issue.active ? undefined : true}
+                  className="relative mt-1.5 flex flex-wrap items-center justify-end gap-x-2 gap-y-1"
+                  initial={{ opacity: 0, x: offsets.noteShiftX }}
+                  animate={issue.active ? { opacity: 1, x: 0 } : { opacity: 0, x: offsets.noteShiftX }}
+                  transition={reduced ? reducedFade(issue.beats.circle.start) : transitions.note(issue.beats.circle.start)}
+                >
+                  <Tag tone={issue.tone}>{issue.tag}</Tag>
+                  <span aria-hidden className="text-sm text-ink">
+                    {issue.note}
+                  </span>
+                  <span className="sr-only">{`${issue.tag} : ${issue.detail}`}</span>
+                </motion.p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
     </motion.div>
-  );
-}
-
-/** Le montant d'un total faux : surligné, puis entouré s'il est vérifié. */
-function Marked({ issue, children }: { readonly issue: QuoteTotalIssue | undefined; readonly children: ReactNode }) {
-  if (!issue) return <>{children}</>;
-  return (
-    <span className="relative inline-block">
-      {issue.circled ? (
-        <RedCircle id={issue.id} active={issue.active} delay={issue.beats.circle.start} className="-inset-x-3 -inset-y-2.5" />
-      ) : null}
-      <span className="relative inline-block">
-        <HighlighterMark id={issue.id} active={issue.active} delay={issue.beats.highlight.start} />
-        {children}
-      </span>
-    </span>
-  );
-}
-
-/** Un montant imprimé, ou un tiret s'il n'y en a pas sur le devis. */
-function Amount({
-  value,
-  format,
-}: {
-  readonly value: number | null;
-  readonly format: (amount: number) => string;
-}) {
-  if (value !== null) return <>{format(value)}</>;
-  return (
-    <>
-      <span aria-hidden>—</span>
-      <span className="sr-only">non indiqué</span>
-    </>
   );
 }

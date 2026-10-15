@@ -14,9 +14,9 @@ export function checkDoorToDoor(extraction: Extraction): Finding[] {
       ruleId: "door-to-door",
       kind: "reminder",
       confirmed: isSure(extraction.confidence.doorToDoorSale),
-      note: fr(`${days} jours pour te rétracter`),
+      note: fr(`${days} jours pour vous rétracter`),
       detail: fr(
-        `Contrat signé chez toi : tu disposes en principe de ${days} jours pour changer d'avis, sans avoir à te justifier. Garde le formulaire de rétractation.`,
+        `Contrat signé à votre domicile : vous disposez en principe de ${days} jours pour changer d'avis, sans avoir à vous justifier. Conservez le formulaire de rétractation.`,
       ),
       legalRef: DOOR_TO_DOOR_RULE.legalRef,
       ruleVerified: DOOR_TO_DOOR_RULE.verified,

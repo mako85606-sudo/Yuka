@@ -19,11 +19,12 @@ import type {
 import { fr } from "@/lib/typography";
 
 /**
- * De l'analyse réelle à la feuille corrigée : chaque constat trouve sa place.
- * Sur une ligne (calcul faux, ligne vague) : surligneur, cercle, note de marge.
+ * De l'analyse réelle au devis lu : chaque constat trouve sa place. Sur une
+ * ligne (calcul faux, ligne vague, TVA) : ligne surlignée, pastille, note.
  * Sur un total : même geste, sur le total. Sur le devis entier (mention
- * absente, acompte, TVA, rétractation) : une remarque en bas de la feuille.
- * Un constat sur des chiffres mal lus n'est jamais entouré : il est « à vérifier ».
+ * absente, acompte, TVA, rétractation) : une remarque au pied du devis. Un
+ * constat sur des chiffres mal lus n'est jamais une erreur sûre : sa pastille
+ * dit « À vérifier ».
  */
 
 export interface SheetSource {
@@ -61,10 +62,6 @@ function toneOf(finding: Finding): RemarkTone {
   return finding.kind === "reminder" ? "reminder" : severityOf(finding);
 }
 
-/** Note manuscrite : celle d'un constat à confirmer le dit d'emblée. */
-function noteOf(finding: Finding): string {
-  return finding.confirmed || finding.kind === "reminder" ? finding.note : fr(`À vérifier : ${finding.note}`);
-}
 
 export function lineId(index: number): string {
   return `ligne-${index + 1}`;
@@ -82,11 +79,17 @@ function lineIssues(findings: readonly Finding[]): SceneIssue[] {
     .map(([index, group]) => {
       const sorted = [...group].sort((a, b) => SEVERITY_RANK[severityOf(a)] - SEVERITY_RANK[severityOf(b)]);
       const first = sorted[0]!;
+      const kind = sorted.some((finding) => finding.ruleId === "line-calculation")
+        ? "calculation"
+        : sorted.some((finding) => finding.ruleId === "vague-line")
+          ? "vague-line"
+          : "other";
       return {
         id: first.id,
-        kind: sorted.some((finding) => finding.ruleId === "line-calculation") ? "calculation" : "vague-line",
+        kind,
         lineId: lineId(index),
-        note: sorted.map(noteOf).join(" · "),
+        // La pastille dit déjà « À vérifier » pour un constat mal lu : la note reste nue.
+        note: sorted.map((finding) => finding.note).join(" · "),
         detail: sorted.map((finding) => finding.detail).join(" "),
         severity: severityOf(first),
       } satisfies SceneIssue;
@@ -97,7 +100,7 @@ function totalIssues(findings: readonly Finding[]): TotalIssue[] {
   return findings.flatMap((finding) => {
     const row = TOTAL_ROWS[finding.ruleId];
     return row
-      ? [{ id: finding.id, row, note: noteOf(finding), detail: finding.detail, severity: severityOf(finding) }]
+      ? [{ id: finding.id, row, note: finding.note, detail: finding.detail, severity: severityOf(finding) }]
       : [];
   });
 }

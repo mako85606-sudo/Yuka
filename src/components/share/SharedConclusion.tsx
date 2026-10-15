@@ -1,22 +1,17 @@
 "use client";
 
 import { motion } from "motion/react";
+import { SavingsFigure } from "@/components/analyze/AnalysisResult";
 import { useMotionPrefs } from "@/components/motion/MotionPreferences";
+import { VerdictBadge } from "@/components/quote/VerdictBadge";
 import { ButtonLink } from "@/components/ui/Button";
+import { CameraGlyph } from "@/components/ui/icons";
 import type { SavingsRange } from "@/lib/analysis/result";
-import { savingsText } from "@/lib/analysis/result-view";
-import { cn } from "@/lib/cn";
 import { offsets, reducedFade, transitions } from "@/lib/motion";
-import { VERDICT_LABELS, type Verdict } from "@/lib/scene-quote";
+import type { Verdict } from "@/lib/scene-quote";
 import { fr } from "@/lib/typography";
 
-const VERDICT_INK: Record<Verdict, string> = {
-  ok: "text-verdict-ok",
-  negotiate: "text-verdict-negotiate",
-  alert: "text-verdict-alert",
-};
-
-interface SharedConclusionProps {
+interface SharedSummaryProps {
   readonly verdict: Verdict;
   readonly errors: number;
   readonly warnings: number;
@@ -27,53 +22,69 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count > 1 ? many : one}`;
 }
 
-/**
- * Sous la feuille partagée : le verdict en clair, ce qui a été relevé, et une
- * invitation à faire corriger son propre devis. Rien de privé : ni message
- * de négociation, ni rappel personnel.
- */
-export function SharedConclusion({ verdict, errors, warnings, savings }: SharedConclusionProps) {
+function useAppear() {
   const { reduced } = useMotionPrefs();
+  return {
+    initial: { opacity: 0, y: offsets.lineRiseY },
+    animate: { opacity: 1, y: 0 },
+    transition: reduced ? reducedFade() : transitions.message(),
+  };
+}
+
+/**
+ * À côté du devis partagé : le verdict, l'économie possible et ce qui a été
+ * relevé. Rien de privé : ni message de négociation, ni rappel personnel.
+ */
+export function SharedSummary({ verdict, errors, warnings, savings }: SharedSummaryProps) {
+  const appear = useAppear();
   const counts = [
     errors > 0 ? plural(errors, "erreur vérifiée", "erreurs vérifiées") : "aucune erreur vérifiée",
     warnings > 0 ? plural(warnings, "point d'attention", "points d'attention") : null,
   ].filter(Boolean);
 
   return (
-    <motion.div
-      className="space-y-8"
-      initial={{ opacity: 0, y: offsets.lineRiseY }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={reduced ? reducedFade() : transitions.message()}
+    <motion.section
+      aria-labelledby="verdict-partage"
+      className="rounded-lg border border-rule bg-paper-raised p-6 elevation-1"
+      {...appear}
     >
-      <section aria-labelledby="verdict-partage" className="surface-paper rounded-[4px] border border-rule p-5 sm:p-6">
-        <h2 id="verdict-partage" className="font-mono text-label uppercase text-ink-muted">
-          Le verdict de Loupe
-        </h2>
-        <p className={cn("mt-2 font-display text-[2rem] leading-tight", VERDICT_INK[verdict])}>{VERDICT_LABELS[verdict]}</p>
-        <p className="mt-2 text-[1.0625rem] text-ink">
-          {fr(`${counts.join(" · ")}${savings ? ` · économie possible : ${savingsText(savings)}` : ""}.`)}
-        </p>
-        <p className="mt-3 text-sm text-ink-muted">
-          {fr(
-            "Ce qui est entouré en rouge a été vérifié par le calcul. Pour les prix, chaque avis précise s'il vient de la base Loupe ou d'une estimation IA, moins fiable.",
-          )}
-        </p>
-      </section>
+      <h2 id="verdict-partage" className="text-sm font-semibold text-ink-muted">
+        Le verdict de Loupe
+      </h2>
+      <VerdictBadge verdict={verdict} size="lg" className="mt-2" />
+      {savings ? (
+        <div className="mt-6">
+          <p className="text-sm text-ink-muted">Économie possible</p>
+          <SavingsFigure savings={savings} className="mt-1" />
+        </div>
+      ) : null}
+      <p className="mt-5 border-t border-rule pt-4 text-[0.95rem] text-ink">{fr(`${counts.join(" · ")}.`)}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+        {fr(
+          "Les erreurs signalées ont été vérifiées par le calcul. Pour les prix, chaque avis précise s'il vient de la base Loupe ou d'une estimation IA, moins fiable.",
+        )}
+      </p>
+    </motion.section>
+  );
+}
 
-      <section aria-labelledby="a-toi" className="rounded-[4px] border border-rule-strong bg-paper p-5 sm:p-6">
-        <h2 id="a-toi" className="font-display text-[1.75rem] leading-tight text-ink">
-          {fr("Un devis sous le coude ?")}
-        </h2>
-        <p className="mt-2 max-w-prose leading-relaxed text-ink-muted">
-          {fr(
-            "Prends-le en photo et Loupe te rend la même correction en une trentaine de secondes. C'est gratuit, et ton devis est effacé juste après.",
-          )}
-        </p>
-        <ButtonLink href="/analyse" size="lg" className="mt-5">
-          Corriger mon devis
-        </ButtonLink>
-      </section>
-    </motion.div>
+/** Sous le devis partagé : une invitation à faire vérifier son propre devis. */
+export function SharedInvite() {
+  const appear = useAppear();
+  return (
+    <motion.section aria-labelledby="votre-devis" className="rounded-lg bg-mist p-6 sm:p-8" {...appear}>
+      <h2 id="votre-devis" className="font-display text-[2rem] leading-tight text-ink">
+        {fr("Un devis à faire vérifier ?")}
+      </h2>
+      <p className="mt-2 max-w-prose leading-relaxed text-ink-muted">
+        {fr(
+          "Prenez-le en photo : Loupe vérifie les calculs, les mentions et les prix en une trentaine de secondes. C'est gratuit, et votre devis est effacé juste après.",
+        )}
+      </p>
+      <ButtonLink href="/analyse" size="lg" className="mt-5">
+        <CameraGlyph />
+        Scanner mon devis
+      </ButtonLink>
+    </motion.section>
   );
 }

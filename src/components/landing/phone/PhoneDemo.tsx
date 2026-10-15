@@ -8,7 +8,7 @@ import { CheckGlyph, LockGlyph } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { DemoQuote } from "@/lib/demo-outcome";
 import { formatEuros } from "@/lib/format";
-import { cssEase, easings, phoneDemo, springs } from "@/lib/motion";
+import { cssEase, durations, easings, phoneDemo, springs } from "@/lib/motion";
 import { describePhoneResult, phoneResult, type PhoneResult } from "@/lib/phone-demo";
 import { useHydrated } from "@/lib/use-hydrated";
 import { usePageVisible } from "@/lib/use-page-visible";
@@ -209,7 +209,7 @@ function CheckStatus({ status }: { readonly status: "done" | "current" | "pendin
       <motion.span
         className="size-[1.6em] rounded-[0.8em] border-[0.18em] border-mist border-t-brand"
         animate={{ rotate: 360 }}
-        transition={{ duration: phoneDemo.spinner, ease: easings.linear, repeat: Infinity }}
+        transition={{ duration: durations.spinner, ease: easings.linear, repeat: Infinity }}
       />
     );
   }

@@ -31,7 +31,7 @@ export function checkDeposit(extraction: Extraction): Finding[] {
       confirmed: isSure(extraction.confidence.deposit),
       note: fr(`Acompte de ${shown} %`),
       detail: fr(
-        `Acompte de ${shown} %${amount !== undefined ? ` (${formatEuros(amount)})` : ""} demandé avant les travaux. C'est plus que d'habitude : tu peux proposer ${checksConfig.depositWarningPercent} % au plus, le solde à la fin.`,
+        `Acompte de ${shown} %${amount !== undefined ? ` (${formatEuros(amount)})` : ""} demandé avant les travaux. C'est plus que l'usage : vous pouvez proposer ${checksConfig.depositWarningPercent} % au plus, le solde étant réglé à la fin des travaux.`,
       ),
       ruleVerified: true,
     },
