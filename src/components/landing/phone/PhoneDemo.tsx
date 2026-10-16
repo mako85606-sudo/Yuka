@@ -280,7 +280,7 @@ function ResultScreen({
           ))}
         </div>
         <motion.div
-          className="mt-auto flex h-[3.2em] items-center justify-center rounded-md bg-brand text-[0.95em] font-semibold text-ink"
+          className="mt-auto flex h-[3.2em] items-center justify-center rounded-md bg-ink text-[0.95em] font-semibold text-paper"
           {...appear(result.findings.length)}
         >
           Préparer mon message

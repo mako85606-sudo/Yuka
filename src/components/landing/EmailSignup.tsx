@@ -7,8 +7,24 @@ import { CheckGlyph } from "@/components/ui/icons";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup-form";
+import { fr } from "@/lib/typography";
 
 const INITIAL_STATE: SignupState = { status: "idle" };
+
+const SEND_FAILED = fr("L'envoi n'a pas abouti. Vérifiez votre connexion, puis réessayez.");
+
+/**
+ * L'inscription, sans jamais faire tomber la page : si la requête échoue
+ * (réseau coupé, serveur injoignable), un message s'affiche sous le champ au
+ * lieu de la page d'erreur.
+ */
+async function subscribeSafely(previous: SignupState, formData: FormData): Promise<SignupState> {
+  try {
+    return await subscribeToNews(previous, formData);
+  } catch {
+    return { status: "unavailable", message: SEND_FAILED };
+  }
+}
 
 interface EmailSignupProps {
   readonly source?: SignupSource;
@@ -20,7 +36,7 @@ interface EmailSignupProps {
  * message d'erreur est relié au champ et annoncé aux lecteurs d'écran.
  */
 export function EmailSignup({ source = "landing", className }: EmailSignupProps) {
-  const [state, formAction, pending] = useActionState(subscribeToNews, INITIAL_STATE);
+  const [state, formAction, pending] = useActionState(subscribeSafely, INITIAL_STATE);
   const [email, setEmail] = useState("");
   const inputId = useId();
   const messageId = useId();

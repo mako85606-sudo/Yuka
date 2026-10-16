@@ -4,15 +4,21 @@ const isDev = process.env.NODE_ENV === "development";
 
 /**
  * GitHub Codespaces : le site s'ouvre sur l'adresse publique du port
- * (« nom-3000.app.github.dev »), que le serveur ne connaît pas. Cet hôte-là,
- * et lui seul, est autorisé pour les ressources de développement et les
- * Server Actions (doc Next : allowedDevOrigins, serverActions.allowedOrigins).
- * Variables absentes hors Codespaces : rien ne change en production.
+ * (« nom-3000.app.github.dev »), que le serveur ne connaît pas. Cette adresse
+ * est autorisée pour les ressources de développement et les Server Actions
+ * (doc Next : allowedDevOrigins, serverActions.allowedOrigins). En
+ * développement, toute adresse de codespace l'est aussi (`*.` : un seul
+ * niveau) : les variables du codespace manquent parfois au serveur lancé à
+ * l'ouverture, et le port change si 3000 est pris. Rien en production.
  */
 const codespaceHost =
   process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
     ? `${process.env.CODESPACE_NAME}-${process.env.PORT ?? "3000"}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
     : null;
+const forwardedHosts = [
+  ...(codespaceHost ? [codespaceHost] : []),
+  ...(isDev ? [`*.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ?? "app.github.dev"}`] : []),
+];
 
 /**
  * Politique de contenu sans nonce (guide « Content Security Policy » de la
@@ -47,10 +53,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  ...(codespaceHost
+  ...(forwardedHosts.length > 0
     ? {
-        allowedDevOrigins: [codespaceHost],
-        experimental: { serverActions: { allowedOrigins: [codespaceHost] } },
+        allowedDevOrigins: forwardedHosts,
+        experimental: { serverActions: { allowedOrigins: forwardedHosts } },
       }
     : {}),
   async headers() {

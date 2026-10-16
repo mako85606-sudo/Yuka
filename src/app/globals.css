@@ -26,11 +26,12 @@
   --ink-muted: #56645E;
 
   /*
-   * Marque : vert vif pour les aplats (texte en encre dessus), vert foncé pour
+   * Marque : vert vif pour les coches, les barres et le pictogramme des boutons
+   * (encre dessus, ou posé sur l'encre comme la coche du logo), vert foncé pour
    * le texte, vert pâle pour les fonds. Jamais de texte blanc sur le vert vif.
+   * Les boutons principaux sont à l'encre, comme la tuile du logo.
    */
   --brand: #17C26B;
-  --brand-hover: #12AE5F;
   --brand-strong: #0A7A45;
   --brand-soft: #E6F8EE;
 
@@ -93,7 +94,6 @@
   --color-paper-raised: var(--paper-raised);
   --color-mist: var(--mist);
   --color-brand: var(--brand);
-  --color-brand-hover: var(--brand-hover);
   --color-brand-strong: var(--brand-strong);
   --color-brand-soft: var(--brand-soft);
   --color-error-soft: var(--error-soft);

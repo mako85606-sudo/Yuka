@@ -4,7 +4,7 @@ import { limits } from "@/config/limits";
 import type { AnalysisErrorCode } from "@/lib/analysis/events";
 import { sniffFileType } from "@/lib/analysis/file-type";
 import { CONSENT_FIELD, CONSENT_VALUE, FILES_FIELD } from "@/lib/analysis/form";
-import { codespaceHost } from "@/server/env";
+import { hostMatches, ownForwardedHosts } from "@/server/env";
 import type { QuoteDocument } from "@/server/extraction/prompt";
 
 /**
@@ -81,25 +81,19 @@ export function statusFor(code: AnalysisErrorCode): number {
   }
 }
 
-/** Hôtes publics qui sont aussi les nôtres : l'adresse du codespace, s'il y en a un. */
-function ownExtraHosts(): string[] {
-  const host = codespaceHost();
-  return host ? [host] : [];
-}
-
 /**
  * La demande vient-elle d'une page de Loupe ? Un navigateur envoie toujours
- * l'en-tête `Origin` avec un POST ; il doit désigner le même hôte (ou l'adresse
- * publique du codespace où tourne le serveur de développement). Cela empêche
- * un autre site de faire analyser des devis à nos frais.
+ * l'en-tête `Origin` avec un POST ; il doit désigner le même hôte (ou, en
+ * développement, l'adresse publique du codespace : `ownForwardedHosts`). Cela
+ * empêche un autre site de faire analyser des devis à nos frais.
  */
-export function isSameOrigin(headers: Headers, extraHosts: readonly string[] = ownExtraHosts()): boolean {
+export function isSameOrigin(headers: Headers, extraHosts: readonly string[] = ownForwardedHosts()): boolean {
   const origin = headers.get("origin");
   const host = headers.get("x-forwarded-host") ?? headers.get("host");
   if (!origin || !host) return false;
   try {
     const originHost = new URL(origin).host;
-    return originHost === host || extraHosts.includes(originHost);
+    return originHost === host || extraHosts.some((pattern) => hostMatches(originHost, pattern));
   } catch {
     return false;
   }

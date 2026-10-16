@@ -37,7 +37,7 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
                   <button
                     type="button"
                     onClick={() => retry()}
-                    className="inline-flex h-12 items-center justify-center rounded-md bg-brand px-5 font-medium text-ink hover:bg-brand-hover"
+                    className="inline-flex h-12 items-center justify-center rounded-md bg-ink px-5 font-medium text-paper hover:bg-ink/85"
                   >
                     Réessayer
                   </button>

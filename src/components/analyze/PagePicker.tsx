@@ -50,6 +50,9 @@ export function PagePicker({ pages, notice, onAdd, onRemove, noticeId }: PagePic
   };
 
   const photos = pages.filter((page) => page.kind === "image").length;
+  // Un PDF voyage seul ; des photos, jusqu'à la limite.
+  const canAddPage = !pages.some((page) => page.kind === "pdf") && photos < limits.maxPhotos;
+  const openFiles = () => fileInput.current?.click();
 
   return (
     <div>
@@ -66,23 +69,41 @@ export function PagePicker({ pages, notice, onAdd, onRemove, noticeId }: PagePic
         )}
       >
         {pages.length === 0 ? (
-          <div className="flex min-h-44 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
-            <span className="grid size-12 place-items-center rounded-lg bg-paper-raised text-brand-strong elevation-1">
+          // Toute la zone ouvre le choix du fichier (sur téléphone : appareil photo ou galerie).
+          <button
+            type="button"
+            onClick={openFiles}
+            className="group flex min-h-44 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-md px-4 py-8 text-center"
+          >
+            <span className="grid size-12 place-items-center rounded-lg bg-paper-raised text-brand-strong elevation-1 motion-safe:transition-transform motion-safe:duration-(--duration-micro) group-hover:-translate-y-0.5">
               <DocumentGlyph className="size-6" />
             </span>
-            <p className="text-[0.95rem] text-ink">
+            <span className="text-[0.95rem] text-ink">
               <span className="hidden sm:inline">
-                Glissez votre devis ici, ou choisissez-le{" "}
-                <span className="whitespace-nowrap">ci-dessous</span>.
+                Glissez votre devis ici, ou <span className="font-medium underline decoration-rule-strong underline-offset-4 group-hover:decoration-ink">cliquez pour le choisir</span>.
               </span>
-              <span className="sm:hidden">Prenez la première page en photo, bien à plat.</span>
-            </p>
-          </div>
+              <span className="sm:hidden">Touchez ici pour prendre la photo ou choisir le fichier.</span>
+            </span>
+          </button>
         ) : (
           <ul aria-label="Pages du devis" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {pages.map((page, index) => (
               <PageThumb key={page.id} page={page} number={index + 1} onRemove={onRemove} />
             ))}
+            {canAddPage ? (
+              <li className="aspect-[3/4]">
+                <button
+                  type="button"
+                  onClick={openFiles}
+                  className="flex size-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-rule-strong bg-paper-raised text-sm font-medium text-ink hover:border-ink"
+                >
+                  <span aria-hidden className="text-2xl leading-none text-brand-strong">
+                    +
+                  </span>
+                  Ajouter une page
+                </button>
+              </li>
+            ) : null}
           </ul>
         )}
       </div>
@@ -97,7 +118,7 @@ export function PagePicker({ pages, notice, onAdd, onRemove, noticeId }: PagePic
           <CameraGlyph />
           {pages.length === 0 ? "Prendre en photo" : "Ajouter une page"}
         </Button>
-        <Button size="lg" variant="secondary" onClick={() => fileInput.current?.click()}>
+        <Button size="lg" variant="secondary" onClick={openFiles}>
           <DocumentGlyph />
           Choisir un fichier
         </Button>
