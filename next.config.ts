@@ -1,24 +1,18 @@
 import type { NextConfig } from "next";
+import { codespaceHosts, ownForwardedHosts } from "./src/lib/forwarded-hosts";
 
 const isDev = process.env.NODE_ENV === "development";
 
 /**
  * GitHub Codespaces : le site s'ouvre sur l'adresse publique du port
- * (« nom-3000.app.github.dev »), que le serveur ne connaît pas. Cette adresse
- * est autorisée pour les ressources de développement et les Server Actions
- * (doc Next : allowedDevOrigins, serverActions.allowedOrigins). En
- * développement, toute adresse de codespace l'est aussi (`*.` : un seul
- * niveau) : les variables du codespace manquent parfois au serveur lancé à
- * l'ouverture, et le port change si 3000 est pris. Rien en production.
+ * (« nom-3000.app.github.dev »), et le relais réécrit `Origin` en
+ * « http://localhost:3000 » (src/lib/forwarded-hosts.ts). Ces adresses sont
+ * permises pour les ressources de développement (allowedDevOrigins : les
+ * adresses de codespace) et les Server Actions (serverActions.allowedOrigins :
+ * aussi l'adresse locale), en développement seulement. Rien en production.
  */
-const codespaceHost =
-  process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
-    ? `${process.env.CODESPACE_NAME}-${process.env.PORT ?? "3000"}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
-    : null;
-const forwardedHosts = [
-  ...(codespaceHost ? [codespaceHost] : []),
-  ...(isDev ? [`*.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ?? "app.github.dev"}`] : []),
-];
+const codespaceOrigins = codespaceHosts(process.env, process.env.NODE_ENV);
+const serverActionOrigins = ownForwardedHosts(process.env, process.env.NODE_ENV);
 
 /**
  * Politique de contenu sans nonce (guide « Content Security Policy » de la
@@ -53,11 +47,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  ...(forwardedHosts.length > 0
-    ? {
-        allowedDevOrigins: forwardedHosts,
-        experimental: { serverActions: { allowedOrigins: forwardedHosts } },
-      }
+  ...(codespaceOrigins.length > 0 ? { allowedDevOrigins: codespaceOrigins } : {}),
+  ...(serverActionOrigins.length > 0
+    ? { experimental: { serverActions: { allowedOrigins: serverActionOrigins } } }
     : {}),
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

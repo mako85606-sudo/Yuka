@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { CheckGlyph } from "@/components/ui/icons";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
-import { HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup-form";
+import { emailProblem, HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup-form";
 import { fr } from "@/lib/typography";
 
 const INITIAL_STATE: SignupState = { status: "idle" };
@@ -14,11 +14,15 @@ const INITIAL_STATE: SignupState = { status: "idle" };
 const SEND_FAILED = fr("L'envoi n'a pas abouti. Vérifiez votre connexion, puis réessayez.");
 
 /**
- * L'inscription, sans jamais faire tomber la page : si la requête échoue
- * (réseau coupé, serveur injoignable), un message s'affiche sous le champ au
- * lieu de la page d'erreur.
+ * L'inscription, sans jamais faire tomber la page. Un champ vide ou une
+ * adresse sans @ s'arrête dans le navigateur, avec les mots du serveur, sans
+ * rien envoyer. Si la requête échoue (réseau coupé, serveur injoignable), un
+ * message s'affiche sous le champ au lieu de la page d'erreur.
  */
 async function subscribeSafely(previous: SignupState, formData: FormData): Promise<SignupState> {
+  const email = formData.get("email");
+  const problem = emailProblem(typeof email === "string" ? email : "");
+  if (problem) return { status: "invalid", message: problem, email: typeof email === "string" ? email.trim() : "" };
   try {
     return await subscribeToNews(previous, formData);
   } catch {
@@ -33,11 +37,14 @@ interface EmailSignupProps {
 
 /**
  * Inscription aux nouvelles. La validation se fait côté serveur (Zod) ; le
- * message d'erreur est relié au champ et annoncé aux lecteurs d'écran.
+ * message d'erreur est relié au champ et annoncé aux lecteurs d'écran. Dès
+ * que l'adresse est retouchée, le message d'erreur s'efface.
  */
 export function EmailSignup({ source = "landing", className }: EmailSignupProps) {
   const [state, formAction, pending] = useActionState(subscribeSafely, INITIAL_STATE);
   const [email, setEmail] = useState("");
+  // Vrai quand l'adresse a changé depuis la dernière réponse : son message d'erreur ne vaut plus.
+  const [edited, setEdited] = useState(false);
   const inputId = useId();
   const messageId = useId();
 
@@ -54,10 +61,11 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
     );
   }
 
-  const hasError = state.status === "invalid" || state.status === "unavailable";
+  const hasError = !edited && !pending && (state.status === "invalid" || state.status === "unavailable");
+  const invalid = hasError && state.status === "invalid";
 
   return (
-    <form action={formAction} noValidate className={cn("relative", className)}>
+    <form action={formAction} onSubmit={() => setEdited(false)} noValidate className={cn("relative", className)}>
       <input type="hidden" name="source" value={source} />
       {/* Champ piège : invisible et hors du parcours clavier, seuls les robots le remplissent. */}
       <div aria-hidden className="absolute -left-[9999px] top-0 h-px w-px overflow-hidden">
@@ -77,13 +85,16 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
           autoComplete="email"
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          aria-invalid={state.status === "invalid" ? true : undefined}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setEdited(true);
+          }}
+          aria-invalid={invalid ? true : undefined}
           aria-describedby={hasError ? messageId : undefined}
           placeholder="prenom@exemple.fr"
           className={cn(
             "h-12 w-full min-w-0 rounded-md border bg-paper-raised px-4 text-base text-ink placeholder:text-ink-muted sm:flex-1",
-            state.status === "invalid" ? "border-pen-red-strong" : "border-rule-strong",
+            invalid ? "border-pen-red-strong" : "border-rule-strong",
           )}
         />
         <Button type="submit" size="lg" disabled={pending}>
@@ -95,7 +106,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
         aria-live="polite"
         className={cn(
           "mt-2 min-h-5 text-sm",
-          state.status === "invalid" ? "text-pen-red-strong" : "text-ink-muted",
+          invalid ? "text-pen-red-strong" : "text-ink-muted",
         )}
       >
         {hasError

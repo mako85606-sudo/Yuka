@@ -4,7 +4,8 @@ import { limits } from "@/config/limits";
 import type { AnalysisErrorCode } from "@/lib/analysis/events";
 import { sniffFileType } from "@/lib/analysis/file-type";
 import { CONSENT_FIELD, CONSENT_VALUE, FILES_FIELD } from "@/lib/analysis/form";
-import { hostMatches, ownForwardedHosts } from "@/server/env";
+import { hostMatches, ownForwardedHosts } from "@/lib/forwarded-hosts";
+import { serverEnv } from "@/server/env";
 import type { QuoteDocument } from "@/server/extraction/prompt";
 
 /**
@@ -82,19 +83,33 @@ export function statusFor(code: AnalysisErrorCode): number {
 }
 
 /**
- * La demande vient-elle d'une page de Loupe ? Un navigateur envoie toujours
- * l'en-tête `Origin` avec un POST ; il doit désigner le même hôte (ou, en
- * développement, l'adresse publique du codespace : `ownForwardedHosts`). Cela
- * empêche un autre site de faire analyser des devis à nos frais.
+ * La demande vient-elle d'une page de Loupe ? Cela empêche un autre site de
+ * faire analyser des devis à nos frais. Deux preuves, posées par le navigateur
+ * et qu'une page ne peut pas imiter :
+ * - `Sec-Fetch-Site: same-origin`, calculé d'après l'adresse que le navigateur
+ *   affiche : aucun relais ne le fausse ;
+ * - sinon l'en-tête `Origin`, envoyé avec tout POST : il doit désigner l'hôte
+ *   de la requête (`x-forwarded-host` ou `host`) ou l'un des nôtres derrière un
+ *   relais (`ownForwardedHosts` : en développement, le codespace et l'adresse
+ *   locale que son relais met dans `Origin`).
  */
-export function isSameOrigin(headers: Headers, extraHosts: readonly string[] = ownForwardedHosts()): boolean {
+export function isSameOrigin(
+  headers: Headers,
+  extraHosts: readonly string[] = ownForwardedHosts(serverEnv(), process.env.NODE_ENV),
+): boolean {
+  if (headers.get("sec-fetch-site") === "same-origin") return true;
   const origin = headers.get("origin");
-  const host = headers.get("x-forwarded-host") ?? headers.get("host");
-  if (!origin || !host) return false;
+  if (!origin) return false;
+  let originHost: string;
   try {
-    const originHost = new URL(origin).host;
-    return originHost === host || extraHosts.some((pattern) => hostMatches(originHost, pattern));
+    originHost = new URL(origin).host;
   } catch {
     return false;
   }
+  const forwardedHost = headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const requestHosts = [forwardedHost, headers.get("host")].filter((host): host is string => Boolean(host));
+  return (
+    requestHosts.some((host) => host.toLowerCase() === originHost) ||
+    extraHosts.some((pattern) => hostMatches(originHost, pattern))
+  );
 }
