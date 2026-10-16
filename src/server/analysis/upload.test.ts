@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { limits } from "@/config/limits";
 import { sniffFileType } from "@/lib/analysis/file-type";
 import { CONSENT_VALUE } from "@/lib/analysis/form";
+import { ownForwardedHosts } from "@/lib/forwarded-hosts";
 import { isSameOrigin, parseUpload } from "@/server/analysis/upload";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16]);
@@ -96,9 +97,37 @@ describe("isSameOrigin", () => {
     expect(isSameOrigin(new Headers({ origin: "https://ailleurs.fr", host: "localhost:3000" }), ["*.app.github.dev"])).toBe(false);
   });
 
+  it("accepte l'origine que le relais de Codespaces réécrit en localhost (adresse publique dans x-forwarded-host)", () => {
+    const relayed = { origin: "http://localhost:3000", "x-forwarded-host": "octocat-loupe-3000.app.github.dev" };
+    // Le relais garde `host: localhost:3000` : l'origine désigne l'hôte de la requête.
+    expect(isSameOrigin(new Headers({ ...relayed, host: "localhost:3000" }), [])).toBe(true);
+    // Sans lui, l'adresse locale vient des hôtes permis en développement.
+    expect(isSameOrigin(new Headers(relayed), [])).toBe(false);
+    expect(isSameOrigin(new Headers(relayed), ownForwardedHosts({}, "development"))).toBe(true);
+    expect(isSameOrigin(new Headers(relayed), ownForwardedHosts({}, "production"))).toBe(false);
+  });
+
+  it("prend la première valeur d'un x-forwarded-host multiple", () => {
+    const headers = new Headers({ origin: "https://loupe.fr", "x-forwarded-host": "loupe.fr, relais.interne" });
+    expect(isSameOrigin(headers, [])).toBe(true);
+  });
+
+  it("croit le navigateur quand il annonce une demande de la même origine, quel que soit le relais", () => {
+    const headers = new Headers({ "sec-fetch-site": "same-origin", origin: "http://localhost:3000", host: "loupe.fr" });
+    expect(isSameOrigin(headers, [])).toBe(true);
+    expect(isSameOrigin(new Headers({ "sec-fetch-site": "same-origin" }), [])).toBe(true);
+  });
+
   it("refuse une demande venue d'ailleurs, ou sans origine", () => {
     expect(isSameOrigin(new Headers({ origin: "https://ailleurs.fr", host: "loupe.fr" }))).toBe(false);
+    expect(isSameOrigin(new Headers({ "sec-fetch-site": "cross-site", origin: "https://ailleurs.fr", host: "loupe.fr" }))).toBe(false);
+    expect(isSameOrigin(new Headers({ "sec-fetch-site": "same-site", origin: "https://www.loupe.fr", host: "loupe.fr" }))).toBe(false);
     expect(isSameOrigin(new Headers({ host: "loupe.fr" }))).toBe(false);
     expect(isSameOrigin(new Headers({ origin: "pas une url", host: "loupe.fr" }))).toBe(false);
+    expect(isSameOrigin(new Headers({ origin: "null", host: "loupe.fr" }))).toBe(false);
+  });
+
+  it("n'accepte pas d'adresse locale en production", () => {
+    expect(isSameOrigin(new Headers({ origin: "http://localhost:3000", host: "loupe.fr" }))).toBe(false);
   });
 });

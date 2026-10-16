@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HONEYPOT_FIELD, maskEmail, parseSignupForm } from "@/lib/signup";
+import { EMAIL_INVALID, EMAIL_MISSING, emailProblem } from "@/lib/signup-form";
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -35,7 +36,8 @@ describe("parseSignupForm", () => {
   });
 
   it("refuse une adresse vide ou trop longue", () => {
-    expect(parseSignupForm(form({ email: "" })).kind).toBe("invalid");
+    expect(parseSignupForm(form({ email: "" }))).toEqual({ kind: "invalid", message: EMAIL_MISSING, email: "" });
+    expect(parseSignupForm(form({ email: "   " }))).toMatchObject({ kind: "invalid", message: EMAIL_MISSING });
     expect(parseSignupForm(form({ email: `${"a".repeat(250)}@b.fr` })).kind).toBe("invalid");
   });
 
@@ -43,6 +45,31 @@ describe("parseSignupForm", () => {
     expect(parseSignupForm(form({ email: "a@b.fr", [HONEYPOT_FIELD]: "https://spam" }))).toEqual({
       kind: "bot",
     });
+  });
+});
+
+describe("emailProblem", () => {
+  it("arrête dans le navigateur un champ vide, avec les mots du serveur", () => {
+    expect(emailProblem("")).toBe(EMAIL_MISSING);
+    expect(emailProblem("   ")).toBe(EMAIL_MISSING);
+  });
+
+  it("arrête une adresse sans @ ou sans domaine", () => {
+    for (const email of ["camille", "camille.exemple.fr", "camille@", "camille@exemple", "@exemple.fr", "ca mille@exemple.fr"]) {
+      expect(emailProblem(email), email).toBe(EMAIL_INVALID);
+    }
+  });
+
+  it("laisse partir une adresse plausible : le serveur tranche", () => {
+    expect(emailProblem(" camille@exemple.fr ")).toBeNull();
+    expect(emailProblem("julien.roux@viacesi.fr")).toBeNull();
+  });
+
+  it("ne laisse jamais partir ce que le serveur refuserait pour vide ou sans @", () => {
+    for (const email of ["", " ", "camille.exemple.fr"]) {
+      expect(emailProblem(email)).not.toBeNull();
+      expect(parseSignupForm(form({ email })).kind).toBe("invalid");
+    }
   });
 });
 

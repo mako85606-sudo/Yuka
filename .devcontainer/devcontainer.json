@@ -6,6 +6,13 @@
   "portsAttributes": {
     "3000": { "label": "Loupe", "onAutoForward": "openBrowser" }
   },
+  // Proposés à la création du codespace (« Codespaces secrets ») : sans clé, le site s'affiche mais n'analyse pas.
+  "secrets": {
+    "ANTHROPIC_API_KEY": {
+      "description": "Clé de l'API Claude, pour que Loupe lise les devis (rubrique API keys).",
+      "documentationUrl": "https://platform.claude.com"
+    }
+  },
   "postCreateCommand": "npm install --no-fund --no-audit",
   // À chaque ouverture : récupère les nouveautés, installe ce qui manque, lance le site.
   "postAttachCommand": "git pull --ff-only || true; npm install --no-fund --no-audit && npm run dev"

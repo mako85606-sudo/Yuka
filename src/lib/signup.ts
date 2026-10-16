@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { HONEYPOT_FIELD, SIGNUP_SOURCES, type SignupSource } from "@/lib/signup-form";
-import { fr } from "@/lib/typography";
+import { EMAIL_INVALID, EMAIL_MISSING, HONEYPOT_FIELD, SIGNUP_SOURCES, type SignupSource } from "@/lib/signup-form";
 
 /**
  * Inscription email : d'où elle vient, et la validation des données reçues.
@@ -10,17 +9,14 @@ import { fr } from "@/lib/typography";
 
 export { HONEYPOT_FIELD, SIGNUP_SOURCES, type SignupSource, type SignupState } from "@/lib/signup-form";
 
-const INVALID_EMAIL = fr(
-  "Cette adresse ne ressemble pas à un email. Vérifiez qu'il y a bien un @ et un domaine.",
-);
-
 export const signupSchema = z.object({
   email: z
     .string()
     .trim()
     .toLowerCase()
+    .min(1, { error: EMAIL_MISSING })
     .max(254, { error: "Cette adresse est trop longue." })
-    .pipe(z.email({ error: INVALID_EMAIL })),
+    .pipe(z.email({ error: EMAIL_INVALID })),
   source: z.enum(SIGNUP_SOURCES).catch("landing"),
 });
 
@@ -41,7 +37,7 @@ export function parseSignupForm(formData: FormData): ParsedSignup {
   if (!result.success) {
     return {
       kind: "invalid",
-      message: result.error.issues[0]?.message ?? INVALID_EMAIL,
+      message: result.error.issues[0]?.message ?? EMAIL_INVALID,
       email: email.trim(),
     };
   }
