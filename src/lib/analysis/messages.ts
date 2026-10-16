@@ -8,7 +8,7 @@ export const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
     "Loupe ne prend pas encore en charge les devis de santé (dentiste, opticien, audioprothésiste). Votre document n'a été ni analysé ni conservé.",
   ),
   "not-a-quote": fr(
-    "Ce document ne ressemble pas à un devis. Nous avons besoin de la page qui détaille les prestations et leurs montants.",
+    "Ce document ne ressemble pas à un devis. Loupe vérifie uniquement les devis, avant leur signature (pas les factures ni les autres documents) : envoyez la page qui détaille les prestations et leurs montants. Rien n'a été conservé.",
   ),
   unreadable: fr(
     "Impossible de lire ce devis correctement. Reprenez la photo à plat, près d'une fenêtre et sans flash pour éviter les reflets, avec la page entière dans le cadre.",

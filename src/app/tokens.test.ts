@@ -163,9 +163,13 @@ describe("contrastes", () => {
     },
   );
 
-  it("garde lisible le texte d'un bouton principal (encre sur vert vif, au repos et au survol)", () => {
+  it("garde lisible un bouton principal, comme la tuile du logo (texte blanc et pictogramme vert sur l'encre)", () => {
+    expect(contrastRatio(token("--paper"), token("--ink"))).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(token("--brand"), token("--ink"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("garde lisible l'encre posée sur le vert vif (coches, étapes terminées)", () => {
     expect(contrastRatio(token("--ink"), token("--brand"))).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(token("--ink"), token("--brand-hover"))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("garde lisible un texte sélectionné ou une ligne surlignée", () => {

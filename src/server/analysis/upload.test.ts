@@ -90,6 +90,12 @@ describe("isSameOrigin", () => {
     expect(isSameOrigin(headers("https://autre-3000.app.github.dev"), codespace)).toBe(false);
   });
 
+  it("accepte en développement une adresse de codespace inconnue du serveur (motif)", () => {
+    const headers = new Headers({ origin: "https://octocat-loupe-3000.app.github.dev", host: "localhost:3000", "x-forwarded-host": "localhost:3000" });
+    expect(isSameOrigin(headers, ["*.app.github.dev"])).toBe(true);
+    expect(isSameOrigin(new Headers({ origin: "https://ailleurs.fr", host: "localhost:3000" }), ["*.app.github.dev"])).toBe(false);
+  });
+
   it("refuse une demande venue d'ailleurs, ou sans origine", () => {
     expect(isSameOrigin(new Headers({ origin: "https://ailleurs.fr", host: "loupe.fr" }))).toBe(false);
     expect(isSameOrigin(new Headers({ host: "loupe.fr" }))).toBe(false);

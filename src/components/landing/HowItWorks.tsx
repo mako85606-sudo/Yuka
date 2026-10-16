@@ -105,7 +105,7 @@ function MessageArt({ message }: { readonly message: string }) {
         ))}
       </div>
       <p className="mt-[0.7em] line-clamp-4 text-[0.88em] leading-snug text-ink">{message}</p>
-      <span className="mt-[0.8em] flex h-[2.4em] items-center justify-center gap-[0.4em] rounded-md bg-brand text-[0.88em] font-semibold text-ink">
+      <span className="mt-[0.8em] flex h-[2.4em] items-center justify-center gap-[0.4em] rounded-md bg-ink text-[0.88em] font-semibold text-paper [&>svg]:stroke-brand">
         <CopyGlyph className="size-[1.2em]" />
         Copier le message
       </span>

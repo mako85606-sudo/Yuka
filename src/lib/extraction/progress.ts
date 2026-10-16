@@ -107,13 +107,14 @@ export type EarlyStop = "health" | "not-a-quote" | "unreadable";
 /**
  * Raison d'arrêter la lecture sans attendre la fin : un devis de santé (pas
  * pris en charge en V1, on n'en lit pas plus), un document qui n'est pas un
- * devis, ou une photo illisible.
+ * devis (une facture non plus : Loupe vérifie un devis avant de le signer),
+ * ou une photo illisible.
  */
 export function earlyStop(
   progress: Pick<ExtractionProgress, "documentKind" | "category" | "readability">,
 ): EarlyStop | undefined {
   if (progress.category && UNSUPPORTED_CATEGORIES.includes(progress.category)) return "health";
-  if (progress.documentKind === "autre") return "not-a-quote";
+  if (progress.documentKind === "autre" || progress.documentKind === "facture") return "not-a-quote";
   if (progress.readability === "poor") return "unreadable";
   return undefined;
 }

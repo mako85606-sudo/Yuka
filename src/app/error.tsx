@@ -1,12 +1,15 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { StatusPage } from "@/components/errors/StatusPage";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import { fr } from "@/lib/typography";
 
 /** Erreur inattendue dans une page : on le dit simplement, on propose de réessayer. */
 export default function PageError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  const router = useRouter();
+  const pathname = usePathname();
   useEffect(() => {
     // Seulement l'empreinte : jamais le contenu d'un devis dans les journaux.
     console.error(`[page] erreur inattendue${error.digest ? ` (${error.digest})` : ""}`);
@@ -22,9 +25,10 @@ export default function PageError({ error, retry }: { error: Error & { digest?: 
           <Button size="lg" onClick={() => retry()}>
             Réessayer
           </Button>
-          <ButtonLink href="/" size="lg" variant="secondary">
+          {/* Déjà sur l'accueil, un lien ne changerait rien : on réaffiche la page au lieu de naviguer. */}
+          <Button size="lg" variant="secondary" onClick={() => (pathname === "/" ? retry() : router.push("/"))}>
             Revenir à l&apos;accueil
-          </ButtonLink>
+          </Button>
         </>
       }
     >

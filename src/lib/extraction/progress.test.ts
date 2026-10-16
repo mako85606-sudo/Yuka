@@ -73,6 +73,8 @@ describe("earlyStop", () => {
   it("arrête un devis de santé, un document qui n'est pas un devis, une photo illisible", () => {
     expect(earlyStop({ documentKind: "devis", category: "sante" })).toBe("health");
     expect(earlyStop({ documentKind: "autre" })).toBe("not-a-quote");
+    // Seuls les devis sont analysés : une facture est refusée comme tout autre document.
+    expect(earlyStop({ documentKind: "facture", category: "plomberie" })).toBe("not-a-quote");
     expect(earlyStop({ documentKind: "devis", category: "auto", readability: "poor" })).toBe(
       "unreadable",
     );
@@ -80,7 +82,7 @@ describe("earlyStop", () => {
 
   it("laisse continuer un devis lisible, même en partie", () => {
     expect(earlyStop({ documentKind: "devis", category: "auto", readability: "partial" })).toBeUndefined();
-    expect(earlyStop({ documentKind: "facture", category: "plomberie" })).toBeUndefined();
+    expect(earlyStop({ documentKind: "devis", category: "plomberie" })).toBeUndefined();
     expect(earlyStop({})).toBeUndefined();
   });
 });

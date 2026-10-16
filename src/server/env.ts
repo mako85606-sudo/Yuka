@@ -68,3 +68,32 @@ export function codespaceHost(env: ServerEnv = serverEnv()): string | null {
   if (!name || !domain) return null;
   return `${name}-${env.PORT ?? "3000"}.${domain}`;
 }
+
+/** Domaine des adresses publiques de GitHub Codespaces, quand le codespace ne le précise pas. */
+export const CODESPACES_FORWARDING_DOMAIN = "app.github.dev";
+
+/**
+ * Hôtes publics qui sont aussi les nôtres, en motifs (« *.app.github.dev » :
+ * `*` remplace un seul niveau du nom). L'adresse exacte du codespace quand le
+ * serveur la connaît ; en développement seulement, toute adresse de codespace :
+ * le serveur ne connaît pas toujours son nom public (variables du codespace
+ * absentes du processus, port déplacé quand 3000 est pris). Jamais en
+ * production : seul l'hôte du site y est accepté.
+ */
+export function ownForwardedHosts(env: ServerEnv = serverEnv(), nodeEnv = process.env.NODE_ENV): string[] {
+  const exact = codespaceHost(env);
+  const hosts = exact ? [exact] : [];
+  if (nodeEnv === "development") {
+    hosts.push(`*.${env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ?? CODESPACES_FORWARDING_DOMAIN}`);
+  }
+  return hosts;
+}
+
+/** L'hôte correspond-il au motif ? Égalité, ou `*.` en tête pour exactement un niveau de plus. */
+export function hostMatches(host: string, pattern: string): boolean {
+  if (!pattern.startsWith("*.")) return host === pattern;
+  const suffix = pattern.slice(1);
+  if (!host.endsWith(suffix)) return false;
+  const label = host.slice(0, -suffix.length);
+  return label.length > 0 && !label.includes(".");
+}
