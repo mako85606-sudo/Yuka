@@ -36,7 +36,8 @@ export type KnownIssue =
   | { readonly kind: "missing-mention"; readonly mention: keyof ExtractionIssuer }
   | { readonly kind: "vague-line"; readonly line: number }
   | { readonly kind: "high-deposit"; readonly percent: number }
-  | { readonly kind: "door-to-door" };
+  | { readonly kind: "door-to-door" }
+  | { readonly kind: "door-to-door-payment" };
 
 export type FixtureFont = "helvetica" | "times" | "courier";
 
@@ -501,7 +502,11 @@ export const quoteFixtures: readonly QuoteFixture[] = [
     doorToDoor: true,
     conditionsPage: true,
     expectedOutcome: "extracted",
-    knownIssues: [{ kind: "high-deposit", percent: 50 }, { kind: "door-to-door" }],
+    knownIssues: [
+      { kind: "high-deposit", percent: 50 },
+      { kind: "door-to-door" },
+      { kind: "door-to-door-payment" },
+    ],
   },
   {
     id: "06-optique-sante",

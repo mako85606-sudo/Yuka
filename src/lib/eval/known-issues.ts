@@ -26,6 +26,7 @@ export function issueSignature(issue: KnownIssue): string {
     case "total-ht":
     case "total-ttc":
     case "door-to-door":
+    case "door-to-door-payment":
       return issue.kind;
     case "high-deposit":
       return "deposit-high";

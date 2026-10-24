@@ -28,6 +28,7 @@ export type RuleId =
   | "mention-insurance"
   | "deposit-high"
   | "door-to-door"
+  | "door-to-door-payment"
   | "vague-line";
 
 /**

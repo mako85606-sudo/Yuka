@@ -46,6 +46,22 @@ describe("shareableAnalysis", () => {
     expect(data.findings?.map((finding) => finding.ruleId)).toEqual(["deposit-high"]);
   });
 
+  it("retire aussi un rappel à confirmer, et le paiement interdit avant 7 jours", () => {
+    const base = fixture("05");
+    const extraction: Extraction = {
+      ...base,
+      meta: { ...base.meta, isDoorToDoorSale: true },
+      confidence: { ...base.confidence, doorToDoorSale: "low" },
+    };
+    const findings = runChecks(extraction);
+    expect(findings.map((finding) => finding.ruleId)).toEqual(
+      expect.arrayContaining(["door-to-door", "door-to-door-payment"]),
+    );
+    const { data } = share(extraction);
+    expect(data.findings?.map((finding) => finding.ruleId)).toEqual(["deposit-high"]);
+    expect(data.verdict?.keyPoints.join(" ")).not.toMatch(/rétract|hors des locaux|domicile/i);
+  });
+
   it("ne donne jamais l'identifiant de l'analyse privée", () => {
     const { data } = share(fixture("02"), null);
     expect(data.analysisId).toBeNull();
@@ -57,7 +73,7 @@ describe("shareableAnalysis", () => {
     const { data, place } = share(fixture("04"), "XYZ");
     expect(place).toBeNull();
     expect(data.lines).toHaveLength(5);
-    expect(shareCounts(data.findings ?? [])).toEqual({ errors: 3, warnings: 2 });
+    expect(shareCounts(data.findings ?? [])).toEqual({ errors: 2, warnings: 3 });
   });
 
   it("ne montre aucun texte libre lu sur le devis : ni libellé, ni objet, ni adresse web", () => {

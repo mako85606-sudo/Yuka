@@ -1,7 +1,7 @@
 import { REGIONS, type RegionCode } from "@/config/regions";
 import { CATEGORY_LABELS, isTaxonomyId, taxonomyItem } from "@/config/taxonomy";
 import { headerFromExtraction, type AnalysisData } from "@/lib/analysis/live-state";
-import type { Finding, PriceOpinion, VerdictResult } from "@/lib/analysis/result";
+import type { Finding, PriceOpinion, RuleId, VerdictResult } from "@/lib/analysis/result";
 import type { ExtractedLine, Extraction } from "@/lib/extraction/schema";
 
 /**
@@ -11,7 +11,8 @@ import type { ExtractedLine, Extraction } from "@/lib/extraction/schema";
  * - Le lieu se réduit à la région (jamais le département).
  * - Pas de date de devis, de validité ni de délai : avec le lieu, elles
  *   pourraient désigner un chantier.
- * - Pas de rappel personnel (délai de rétractation, signature à domicile).
+ * - Pas de rappel personnel (délai de rétractation, signature à domicile,
+ *   paiement interdit avant 7 jours).
  * - Pas de lien vers l'analyse privée ni de message de négociation.
  * - Pas d'heure de correction.
  * - Aucun texte libre lu sur le devis : chaque libellé devient le nom de la
@@ -38,6 +39,13 @@ export interface SharedView {
   readonly data: AnalysisData;
   /** Région lisible, ou `null` si elle n'est pas connue. */
   readonly place: string | null;
+}
+
+/** Constats propres à la situation du client : ils diraient qu'il a signé chez lui. */
+const PRIVATE_RULES: ReadonlySet<RuleId> = new Set<RuleId>(["door-to-door", "door-to-door-payment"]);
+
+function isPrivate(finding: Finding): boolean {
+  return finding.kind === "reminder" || PRIVATE_RULES.has(finding.ruleId);
 }
 
 function regionName(code: string | null): string | null {
@@ -70,14 +78,17 @@ export function shareableAnalysis(source: ShareSource): SharedView {
     meta,
     lines: source.extraction.lines.map((line, index) => ({ ...line, label: publicLineLabel(line, index) })),
   };
-  const reminders = source.findings.filter((finding) => finding.kind === "reminder");
+  const reminders = source.findings.filter(isPrivate);
   const findings = source.findings
-    .filter((finding) => finding.kind !== "reminder")
+    .filter((finding) => !isPrivate(finding))
     .map((finding) => ({ ...finding, note: scrub(finding.note), detail: scrub(finding.detail) }));
-  const privatePoints = new Set(reminders.map((finding) => finding.detail));
+  // Un point clé reprend le détail tel quel, ou après « À confirmer sur votre devis : » (première lettre en minuscule).
+  const privateTails = reminders.map((finding) => finding.detail.slice(1)).filter((tail) => tail.length > 0);
   const verdict: VerdictResult = {
     ...source.verdict,
-    keyPoints: source.verdict.keyPoints.filter((point) => !privatePoints.has(point)).map(scrub),
+    keyPoints: source.verdict.keyPoints
+      .filter((point) => !privateTails.some((tail) => point.includes(tail)))
+      .map(scrub),
   };
 
   return {

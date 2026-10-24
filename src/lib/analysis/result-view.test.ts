@@ -14,7 +14,7 @@ describe("groupFindings", () => {
   it("sépare les erreurs sûres, les points d'attention, ce qui est à confirmer et les rappels", () => {
     const findings = runChecks(
       extractionWith({
-        issuer: { hasSiret: false, hasValidityDate: false },
+        issuer: { hasCompanyName: false, hasSiret: false, hasValidityDate: false },
         meta: { isDoorToDoorSale: true, depositPercent: 50 },
         totals: { totalTTC: 990 },
         confidence: { totals: "low" },
@@ -22,8 +22,10 @@ describe("groupFindings", () => {
     );
     const groups = groupFindings(findings);
     const ids = (list: readonly Finding[]) => list.map((finding) => finding.ruleId);
-    expect(ids(groups.errors)).toEqual(["mention-siret"]);
-    expect(ids(groups.warnings)).toEqual(expect.arrayContaining(["mention-validity", "deposit-high"]));
+    expect(ids(groups.errors)).toEqual(["mention-company-name"]);
+    expect(ids(groups.warnings)).toEqual(
+      expect.arrayContaining(["mention-siret", "mention-validity", "deposit-high", "door-to-door-payment"]),
+    );
     expect(ids(groups.toConfirm)).toEqual(["total-ttc"]);
     expect(ids(groups.reminders)).toEqual(["door-to-door"]);
   });

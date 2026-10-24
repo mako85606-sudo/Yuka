@@ -1,4 +1,4 @@
-import { MENTION_RULES, type MentionRule } from "@/config/rules";
+import { legalRefFor, MENTION_RULES, type MentionRule } from "@/config/rules";
 import type { Finding } from "@/lib/analysis/result";
 import type { Extraction } from "@/lib/extraction/schema";
 import { fr } from "@/lib/typography";
@@ -17,7 +17,8 @@ function isPresent(rule: MentionRule, extraction: Extraction): boolean {
 /**
  * Mentions attendues sur un devis (`src/config/rules.ts`). Le constat est un
  * fait (la mention n'apparaît pas) ; la règle qui l'exige garde sa
- * référence, affichée seulement une fois vérifiée.
+ * référence pour ce corps de métier (aucune si aucun texte connu ne la fonde),
+ * affichée seulement une fois vérifiée.
  */
 export function checkMentions(extraction: Extraction): Finding[] {
   const { confidence } = extraction;
@@ -29,7 +30,7 @@ export function checkMentions(extraction: Extraction): Finding[] {
       confirmed: isSure(rule.field === "quoteDate" ? confidence.quoteDate : confidence.issuer),
       note: fr(rule.note),
       detail: fr(rule.message),
-      legalRef: rule.legalRef,
+      legalRef: legalRefFor(rule, extraction.category),
       ruleVerified: rule.verified,
     }),
   );

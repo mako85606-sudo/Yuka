@@ -19,6 +19,9 @@ export const verdictConfig = {
 
 /**
  * Mentions dont l'absence empêche de savoir à qui on a affaire : à elles
- * seules, elles justifient de vérifier sérieusement.
+ * seules, elles justifient de vérifier sérieusement. Le nom de l'entreprise
+ * est exigé par le Code de la consommation (R111-1) ; le SIRET, lui, n'est
+ * exigé sur un devis par aucun texte lu (voir `src/config/rules.ts`) : son
+ * absence reste un point d'attention, sans verdict « À vérifier sérieusement ».
  */
-export const CRITICAL_MENTIONS: readonly RuleId[] = ["mention-company-name", "mention-siret"];
+export const CRITICAL_MENTIONS: readonly RuleId[] = ["mention-company-name"];
