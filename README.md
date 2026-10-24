@@ -51,7 +51,7 @@ Copie `.env.example` en `.env.local` ; chaque variable y est expliquée.
 | Variable | Rôle | Obligatoire |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | lecture des devis par le modèle | pour analyser |
-| `ANTHROPIC_MODEL` | modèle de lecture (défaut `claude-sonnet-5-5`) | non |
+| `ANTHROPIC_MODEL` | modèle de lecture (défaut `claude-sonnet-5-5`). Évitez Claude Fable et Mythos : Anthropic garde 30 jours ce qu'ils lisent, ce que la politique de confidentialité ne dit pas | non |
 | `DATABASE_URL` | Postgres (Neon ou Supabase) : limite quotidienne, analyses, base de prix, inscriptions | en production |
 | `IP_HASH_SECRET` | secret du hachage des adresses IP, 32 caractères au moins | en production |
 | `POSTHOG_KEY` | clé de projet PostHog (hébergement EU) ; sans elle, les événements restent dans Postgres | non |
