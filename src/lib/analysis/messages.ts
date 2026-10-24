@@ -41,6 +41,15 @@ export const ERROR_MESSAGES: Record<AnalysisErrorCode, string> = {
   interrupted: fr("L'analyse s'est interrompue avant la fin. Relancez-la : cela ne prend qu'une trentaine de secondes."),
 };
 
+/**
+ * En développement seulement, quand `ANTHROPIC_API_KEY` manque : la marche à
+ * suivre, au lieu du message public « pas encore ouverte ». Le site en ligne
+ * garde le message public (`ERROR_MESSAGES["not-configured"]`).
+ */
+export const MISSING_API_KEY_DEV_MESSAGE = fr(
+  "Mode développement : la clé de l'API Claude est absente, Loupe ne peut donc pas lire de devis. Ajoutez ANTHROPIC_API_KEY en secret Codespaces (puis redémarrez le codespace), ou dans un fichier .env.local à la racine du projet (puis relancez npm run dev). Les visiteurs du site en ligne ne voient jamais ce message.",
+);
+
 /** Une analyse ratée de notre fait est rendue : on le dit. */
 export function failureMessage(code: "reading-failed" | "server-error", refunded: boolean): string {
   const base = ERROR_MESSAGES[code];

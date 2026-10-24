@@ -5,7 +5,7 @@ import {
   type AnalysisErrorCode,
   type AnalyzeErrorBody,
 } from "@/lib/analysis/events";
-import { ERROR_MESSAGES } from "@/lib/analysis/messages";
+import { ERROR_MESSAGES, MISSING_API_KEY_DEV_MESSAGE } from "@/lib/analysis/messages";
 import { clientIp } from "@/lib/client-ip";
 import { createAnalysisStream } from "@/server/analysis/analysis-stream";
 import { purgeExpiredAnalyses } from "@/server/analysis/store";
@@ -37,8 +37,8 @@ export const maxDuration = 120;
 /** Marge pour l'enveloppe multipart autour des fichiers. */
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
 
-function errorResponse(code: AnalysisErrorCode): Response {
-  const body: AnalyzeErrorBody = { error: { code, message: ERROR_MESSAGES[code] } };
+function errorResponse(code: AnalysisErrorCode, message: string = ERROR_MESSAGES[code]): Response {
+  const body: AnalyzeErrorBody = { error: { code, message } };
   return Response.json(body, {
     status: statusFor(code),
     headers: { "cache-control": "no-store" },
@@ -51,7 +51,10 @@ export async function POST(request: Request): Promise<Response> {
   const client = getAnthropicClient();
   if (!client) {
     console.warn("[analyse] ANTHROPIC_API_KEY n'est pas définie : l'analyse est fermée.");
-    return errorResponse("not-configured");
+    // En développement, on dit quoi faire ; le site en ligne garde le message public.
+    return process.env.NODE_ENV === "development"
+      ? errorResponse("not-configured", MISSING_API_KEY_DEV_MESSAGE)
+      : errorResponse("not-configured");
   }
 
   const declaredLength = Number(request.headers.get("content-length") ?? "0");

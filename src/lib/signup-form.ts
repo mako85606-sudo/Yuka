@@ -19,10 +19,8 @@ export type SignupState =
   | { readonly status: "invalid"; readonly message: string; readonly email: string }
   | { readonly status: "unavailable"; readonly message: string };
 
-export const EMAIL_MISSING = fr("Indiquez votre adresse email.");
-export const EMAIL_INVALID = fr(
-  "Cette adresse ne ressemble pas à un email. Vérifiez qu'il y a bien un @ et un domaine.",
-);
+export const EMAIL_MISSING = fr("Veuillez saisir votre adresse email.");
+export const EMAIL_INVALID = fr("Veuillez saisir une adresse email valide (par exemple prenom@exemple.fr).");
 
 /**
  * La faute évidente d'une adresse saisie : vide, ou sans la forme

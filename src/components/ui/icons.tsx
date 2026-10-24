@@ -60,6 +60,20 @@ export function CopyGlyph({ className }: { readonly className?: string }) {
   );
 }
 
+export function AlertGlyph({ className }: { readonly className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className={cn("size-5 fill-none stroke-current", className)}
+      strokeWidth={1.6}
+    >
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M10 6.2v4.6M10 13.7v.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function CheckGlyph({ className }: { readonly className?: string }) {
   return (
     <svg
