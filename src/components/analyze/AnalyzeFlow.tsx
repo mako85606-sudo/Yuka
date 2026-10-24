@@ -5,6 +5,7 @@ import { useEffect, useId, useReducer, useRef, useState, type FormEvent } from "
 import { Button } from "@/components/ui/Button";
 import { CheckGlyph, LockGlyph } from "@/components/ui/icons";
 import { limits } from "@/config/limits";
+import { pricingConfig } from "@/config/pricing";
 import { site } from "@/config/site";
 import { track } from "@/lib/analytics";
 import { streamAnalysis } from "@/lib/analysis/client";
@@ -195,6 +196,11 @@ export function AnalyzeFlow() {
               onRemove={remove}
               noticeId={pagesNoticeId}
             />
+            <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+              {fr(
+                "Devis dentaire, optique, auditif ou médical : pas encore pris en charge. Merci de ne pas les envoyer.",
+              )}
+            </p>
           </fieldset>
 
           <div className="mt-6 rounded-lg border border-rule bg-paper-raised p-5">
@@ -213,7 +219,7 @@ export function AnalyzeFlow() {
               />
               <label htmlFor={consentId} className="text-[0.95rem] leading-relaxed text-ink">
                 {fr(
-                  "J'accepte que mon devis soit lu par l'intelligence artificielle d'Anthropic, le prestataire de Loupe. L'original est effacé juste après ; seules les lignes de prix rendues anonymes, la catégorie et le département sont conservés.",
+                  `J'accepte que mon devis, y compris les éventuelles informations sensibles qu'il contient, soit lu par l'intelligence artificielle Claude d'Anthropic, prestataire de Loupe, notamment aux États-Unis. Loupe ne garde pas l'original ; le résultat reste accessible ${limits.analysisRetentionDays} jours par son lien.`,
                 )}
               </label>
             </div>
@@ -224,17 +230,22 @@ export function AnalyzeFlow() {
               <ul className="mt-3 max-w-prose list-disc space-y-2 pl-5 leading-relaxed">
                 <li>
                   {fr(
-                    "Effacé dès la lecture terminée : la photo ou le PDF. Les noms, adresses et numéros de téléphone ne sont jamais recopiés.",
+                    "Effacé dès la lecture terminée : la photo ou le PDF. Anthropic ne le conserve pas par défaut ; un contenu signalé par ses contrôles de sécurité peut l'être jusqu'à deux ans. Les noms, adresses et numéros ne sont jamais recopiés.",
                   )}
                 </li>
                 <li>
                   {fr(
-                    "Conservé pour affiner les comparaisons : des lignes du type « chauffe-eau 200 L, 890 € HT », avec la catégorie et le département.",
+                    `Conservé ${limits.analysisRetentionDays} jours : le résultat de l'analyse, que vous pouvez effacer avant.`,
                   )}
                 </li>
                 <li>
                   {fr(
-                    `Votre adresse IP n'est jamais enregistrée en clair. Nous en gardons une empreinte chiffrée, différente chaque jour, uniquement pour compter vos ${limits.analysesPerDay} analyses quotidiennes. Elle disparaît au bout de quelques jours.`,
+                    `Conservé ${pricingConfig.windowMonths} mois pour les comparaisons : des lignes du type « chauffe-eau 200 L, 890 € HT », avec la catégorie, le département et la région.`,
+                  )}
+                </li>
+                <li>
+                  {fr(
+                    `Votre adresse IP n'est jamais enregistrée en clair par Loupe. Une empreinte chiffrée, différente chaque jour, compte vos ${limits.analysesPerDay} analyses quotidiennes ; elle est effacée au bout de deux jours.`,
                   )}
                 </li>
                 <li>

@@ -61,7 +61,7 @@ export function SharedSummary({ verdict, errors, warnings, savings }: SharedSumm
       <p className="mt-5 border-t border-rule pt-4 text-[0.95rem] text-ink">{fr(`${counts.join(" · ")}.`)}</p>
       <p className="mt-2 text-sm leading-relaxed text-ink-muted">
         {fr(
-          "Les erreurs signalées ont été vérifiées par le calcul. Pour les prix, chaque avis précise s'il vient de la base Loupe ou d'une estimation IA, moins fiable.",
+          "Les erreurs signalées sont relevées par des règles fixes (calculs, mentions) sur la lecture automatique du devis. Pour les prix, chaque avis précise s'il vient de la base Loupe ou d'une estimation IA, moins fiable.",
         )}
       </p>
     </motion.section>

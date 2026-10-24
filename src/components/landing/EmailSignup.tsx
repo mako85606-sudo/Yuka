@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { subscribeToNews } from "@/app/actions/signup";
 import { Button } from "@/components/ui/Button";
@@ -119,9 +120,17 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
         )}
       >
         {invalid ? <AlertGlyph className="mt-px size-4 shrink-0 text-pen-red" /> : null}
-        {hasError
-          ? state.message
-          : "Votre adresse ne sert qu'à cela. Vous pouvez vous désinscrire à tout moment."}
+        {hasError ? (
+          state.message
+        ) : (
+          <span>
+            {"Votre adresse ne sert qu'à cela. Vous pouvez vous "}
+            <Link href="/desinscription" className="underline decoration-rule-strong underline-offset-4 hover:text-ink hover:decoration-ink">
+              désinscrire
+            </Link>
+            {" à tout moment."}
+          </span>
+        )}
       </p>
     </form>
   );

@@ -1,6 +1,6 @@
 import "server-only";
 import { maskEmail, type SignupSource } from "@/lib/signup";
-import { lt } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { limits } from "@/config/limits";
 import { getDb, type Database } from "@/server/db/client";
 import { signups } from "@/server/db/schema";
@@ -48,6 +48,29 @@ export async function saveSignup(
     return { ok: true };
   }
   return { ok: false, reason: "not-configured" };
+}
+
+export type RemoveSignupResult = { readonly ok: true } | { readonly ok: false; readonly reason: "error" };
+
+/**
+ * Retire une adresse de la liste (désinscription). Ne dit jamais si elle y
+ * était : la réponse est la même dans les deux cas. Sans base, aucune adresse
+ * n'a pu être gardée : il n'y a rien à retirer.
+ */
+export async function removeSignup(email: string, db: Database | null = getDb()): Promise<RemoveSignupResult> {
+  if (!db) {
+    if (developmentFallbacksAllowed()) {
+      console.info(`[désinscription simulée] ${maskEmail(email)} : aucune base configurée (DATABASE_URL), rien à retirer.`);
+    }
+    return { ok: true };
+  }
+  try {
+    await db.delete(signups).where(eq(signups.email, email));
+    return { ok: true };
+  } catch (error) {
+    console.error(`[désinscription] échec pour ${maskEmail(email)} : ${errorSummary(error)}`);
+    return { ok: false, reason: "error" };
+  }
 }
 
 /**

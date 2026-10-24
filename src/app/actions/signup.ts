@@ -5,7 +5,7 @@ import { limits } from "@/config/limits";
 import { clientIp } from "@/lib/client-ip";
 import { parseSignupForm, type SignupState } from "@/lib/signup";
 import { fr } from "@/lib/typography";
-import { consumeNamedQuota } from "@/server/rate-limit";
+import { takeNamedQuota } from "@/server/rate-limit";
 import { saveSignup } from "@/server/signups";
 
 const SUCCESS = fr("C'est noté. Nous vous écrirons seulement quand il y aura vraiment du nouveau.");
@@ -25,10 +25,11 @@ export async function subscribeToNews(
   }
   // Au-delà de `limits.signupsPerDay` inscriptions par jour depuis une même
   // adresse, même réponse, mais rien n'est enregistré : impossible d'inscrire
-  // en masse les adresses d'autres personnes.
-  if (!(await consumeNamedQuota("signup", clientIp(await headers()), limits.signupsPerDay))) {
-    return { status: "success", message: SUCCESS };
-  }
+  // en masse les adresses d'autres personnes. Sans compteur (pas de base ni
+  // de secret), rien n'est enregistré, et on le dit.
+  const quota = await takeNamedQuota("signup", clientIp(await headers()), limits.signupsPerDay);
+  if (quota === "refused") return { status: "success", message: SUCCESS };
+  if (quota === "unavailable") return { status: "unavailable", message: UNAVAILABLE };
   const saved = await saveSignup({ email: parsed.email, source: parsed.source });
   if (saved.ok) return { status: "success", message: SUCCESS };
   return {

@@ -4,6 +4,7 @@ import {
   consumeAnalysisQuota,
   consumeGlobalAdminAttempt,
   consumeNamedQuota,
+  takeNamedQuota,
   createDatabaseQuotaStore,
   createMemoryQuotaStore,
   parisDay,
@@ -155,6 +156,7 @@ describe("consumeNamedQuota", () => {
     const store = createMemoryQuotaStore();
     for (let i = 0; i < 2; i += 1) expect(await consumeNamedQuota("signup", "203.0.113.1", 2, now, store)).toBe(true);
     expect(await consumeNamedQuota("signup", "203.0.113.1", 2, now, store)).toBe(false);
+    expect(await takeNamedQuota("signup", "203.0.113.1", 2, now, store)).toBe("refused");
     expect(await consumeNamedQuota("events", "203.0.113.1", 2, now, store)).toBe(true);
     expect(await consumeNamedQuota("signup", "203.0.113.2", 2, now, store)).toBe(true);
   });
@@ -163,6 +165,7 @@ describe("consumeNamedQuota", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("DATABASE_URL", "");
     expect(await consumeNamedQuota("events", "203.0.113.3", 10, now)).toBe(false);
+    expect(await takeNamedQuota("signup", "203.0.113.3", 10, now)).toBe("unavailable");
   });
 
   it("ferme /admin pour tout le monde au-delà des essais globaux du jour", async () => {

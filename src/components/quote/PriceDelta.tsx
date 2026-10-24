@@ -72,6 +72,9 @@ export function PriceDelta({
   return (
     <motion.div
       aria-hidden={active ? undefined : true}
+      // Marquage lisible par une machine d'un contenu produit par l'IA (règlement européen sur l'IA, art. 50).
+      data-ai-generated={source.kind === "ai" ? "true" : undefined}
+      data-price-source={source.kind}
       className={cn(size === "sm" ? "text-[0.8125rem] leading-snug" : "text-sm leading-snug", className)}
       initial={{ opacity: 0 }}
       animate={{ opacity: active ? 1 : 0 }}

@@ -1,6 +1,6 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { signups } from "@/server/db/schema";
-import { purgeOldSignups, saveSignup } from "@/server/signups";
+import { purgeOldSignups, removeSignup, saveSignup } from "@/server/signups";
 import { createTestDb } from "@/test/test-db";
 
 const { db, close } = await createTestDb();
@@ -69,5 +69,31 @@ describe("saveSignup", () => {
     const logged = error.mock.calls.flat().map(String).join(" ");
     expect(logged).toContain("c***@exemple.fr");
     expect(logged).not.toContain("camille.dupont");
+  });
+});
+
+describe("removeSignup", () => {
+  it("retire l'adresse, et répond pareil pour une adresse inconnue", async () => {
+    await saveSignup({ email: "a-retirer@exemple.fr", source: "landing" }, db);
+    expect(await removeSignup("a-retirer@exemple.fr", db)).toEqual({ ok: true });
+    expect(await removeSignup("jamais-vue@exemple.fr", db)).toEqual({ ok: true });
+    const emails = (await db.select().from(signups)).map((row) => row.email);
+    expect(emails).not.toContain("a-retirer@exemple.fr");
+  });
+
+  it("n'a rien à retirer sans base", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(await removeSignup("camille@exemple.fr", null)).toEqual({ ok: true });
+  });
+
+  it("signale un échec de base sans recopier l'adresse en clair", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const broken = {
+      delete: () => {
+        throw new Error("Failed query: delete … params: camille.dupont@exemple.fr");
+      },
+    } as unknown as Parameters<typeof removeSignup>[1];
+    expect(await removeSignup("camille.dupont@exemple.fr", broken)).toEqual({ ok: false, reason: "error" });
+    expect(error.mock.calls.flat().map(String).join(" ")).not.toContain("camille.dupont");
   });
 });

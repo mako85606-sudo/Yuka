@@ -170,12 +170,29 @@ export async function consumeAdminAttempt(
   return (await store.consume(quotaKey(`admin|${ip}`, day, secret), day, limits.adminAttemptsPerDay)) !== null;
 }
 
+/** Réponse d'un compteur nommé : permis, plafond atteint, ou compteur indisponible (sans base ni secret). */
+export type NamedQuota = "allowed" | "refused" | "unavailable";
+
 /**
  * Compteur quotidien générique d'une action (« events », « signup »…), même
  * principe que la limite d'analyses : HMAC du jour, du nom et de l'adresse,
- * jamais l'adresse. Vrai si l'action est permise. Sans base ni secret (hors
- * développement), faux : on n'écrit rien plutôt que d'écrire sans limite.
+ * jamais l'adresse. Sans base ni secret (hors développement), « unavailable » :
+ * à l'appelant de dire honnêtement que l'action n'est pas possible.
  */
+export async function takeNamedQuota(
+  name: string,
+  ip: string,
+  limit: number,
+  now: Date = new Date(),
+  store: QuotaStore | null = resolveStore(),
+): Promise<NamedQuota> {
+  const secret = resolveSecret();
+  if (!store || !secret) return "unavailable";
+  const day = parisDay(now);
+  return (await store.consume(quotaKey(`${name}|${ip}`, day, secret), day, limit)) !== null ? "allowed" : "refused";
+}
+
+/** Vrai si l'action est permise. Compteur indisponible : faux, on n'écrit rien plutôt que d'écrire sans limite. */
 export async function consumeNamedQuota(
   name: string,
   ip: string,
@@ -183,10 +200,7 @@ export async function consumeNamedQuota(
   now: Date = new Date(),
   store: QuotaStore | null = resolveStore(),
 ): Promise<boolean> {
-  const secret = resolveSecret();
-  if (!store || !secret) return false;
-  const day = parisDay(now);
-  return (await store.consume(quotaKey(`${name}|${ip}`, day, secret), day, limit)) !== null;
+  return (await takeNamedQuota(name, ip, limit, now, store)) === "allowed";
 }
 
 /**

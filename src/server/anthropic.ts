@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { llmConfig } from "@/config/llm";
+import { llmConfig, modelRetainsContent } from "@/config/llm";
 import { serverEnv } from "@/server/env";
 
 let cached: { readonly apiKey: string; readonly client: Anthropic } | undefined;
@@ -15,7 +15,16 @@ export function getAnthropicClient(): Anthropic | null {
   return cached.client;
 }
 
+let warnedModel: string | undefined;
+
 /** Modèle de lecture : `ANTHROPIC_MODEL`, sinon le modèle par défaut. */
 export function getExtractionModel(): string {
-  return serverEnv().ANTHROPIC_MODEL ?? llmConfig.defaultModel;
+  const model = serverEnv().ANTHROPIC_MODEL ?? llmConfig.defaultModel;
+  if (modelRetainsContent(model) && warnedModel !== model) {
+    warnedModel = model;
+    console.warn(
+      `[analyse] ${model} impose 30 jours de conservation chez Anthropic : la politique de confidentialité dit le contraire. Choisissez un autre modèle (ANTHROPIC_MODEL) ou corrigez la page.`,
+    );
+  }
+  return model;
 }

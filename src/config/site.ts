@@ -8,6 +8,8 @@ export const site = {
   tagline: "Ne payez plus un devis trop cher.",
   description:
     "Une photo de votre devis suffit. Loupe vérifie les calculs, les mentions obligatoires et les prix, vous dit combien vous pouvez économiser et prépare votre message à l'artisan.",
-  disclaimer: "Avis indicatif, ne remplace pas un professionnel ni un conseil juridique.",
+  /** Avertissement du brief, suivi de la fiabilité de la lecture automatique (audit juridique). */
+  disclaimer:
+    "Avis indicatif, ne remplace pas un professionnel ni un conseil juridique. La lecture automatique peut comporter des erreurs : vérifiez sur votre devis original.",
   themeColor: "#FFFFFF",
 } as const;
