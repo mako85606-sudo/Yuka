@@ -33,6 +33,17 @@ export const rateLimits = pgTable(
   ],
 );
 
+/**
+ * Dépense de l'API Claude par jour (heure de Paris), toutes analyses
+ * comprises, réussies ou non. Au-delà du plafond (`limits.dailyLlmBudgetUsd`),
+ * l'analyse s'arrête jusqu'au lendemain.
+ */
+export const llmSpend = pgTable("llm_spend", {
+  day: date("day", { mode: "string" }).primaryKey(),
+  usd: doublePrecision("usd").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Inscriptions aux nouvelles de Loupe (landing, rapport détaillé). */
 export const signups = pgTable("signups", {
   email: text("email").primaryKey(),

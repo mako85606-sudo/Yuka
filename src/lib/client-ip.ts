@@ -1,10 +1,29 @@
 /**
- * Adresse du visiteur, pour la limite quotidienne uniquement (elle n'est
+ * Les en-têtes d'adresse ne sont fiables que posés par un relais de confiance :
+ * Vercel (qui écrase `x-real-ip` et `x-forwarded-for`), un relais déclaré par
+ * `TRUSTED_PROXY=true`, ou le développement. Ailleurs, n'importe quel client
+ * pourrait les inventer pour contourner la limite quotidienne.
+ */
+export function proxyHeadersTrusted(env: NodeJS.ProcessEnv = process.env): boolean {
+  return (
+    env.VERCEL === "1" ||
+    env.TRUSTED_PROXY === "true" ||
+    env.NODE_ENV === "development" ||
+    env.NODE_ENV === "test"
+  );
+}
+
+/** Clé commune quand l'adresse n'est pas fiable : tout le monde partage la même limite. */
+export const UNKNOWN_CLIENT = "inconnu";
+
+/**
+ * Adresse du visiteur, pour les limites quotidiennes uniquement (elle n'est
  * jamais stockée en clair). Derrière Vercel, `x-real-ip` et
  * `x-forwarded-for` sont posés par la plateforme. En local, sans en-tête,
  * tout le monde partage la même clé.
  */
-export function clientIp(headers: Headers): string {
+export function clientIp(headers: Headers, trusted: boolean = proxyHeadersTrusted()): string {
+  if (!trusted) return UNKNOWN_CLIENT;
   const real = headers.get("x-real-ip")?.trim();
   const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return normalizeIp(real || forwarded || "local");

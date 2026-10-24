@@ -42,8 +42,30 @@ export const limits = {
   analysisBudgetMs: 110_000,
   /** Essais de mot de passe sur `/admin`, par jour et par adresse IP. */
   adminAttemptsPerDay: 10,
+  /** Essais de mot de passe sur `/admin`, par jour, toutes adresses confondues. */
+  adminAttemptsGlobalPerDay: 50,
   /** Durée d'une session `/admin`, en heures. */
   adminSessionHours: 12,
+  /** Pages d'un PDF au plus : un devis en compte rarement plus. */
+  maxPdfPages: 8,
+  /**
+   * Plafond de dépense quotidienne de l'API Claude, en dollars, toutes
+   * analyses comprises (lectures réussies ou non, estimations de prix). Au-delà,
+   * l'analyse s'arrête jusqu'au lendemain.
+   * TODO: vérifier — plafond à fixer par l'éditeur selon son budget ; fixer
+   * aussi une limite de dépense dans la console Anthropic.
+   */
+  dailyLlmBudgetUsd: 20,
+  /** Événements de mesure acceptés par jour et par adresse IP. */
+  eventsPerDay: 300,
+  /** Inscriptions (ou désinscriptions) par jour et par adresse IP. */
+  signupsPerDay: 5,
+  /**
+   * Une adresse inscrite aux nouvelles est effacée au plus tard 3 ans après
+   * l'inscription (guide des durées de conservation de la CNIL : 3 ans après
+   * le dernier contact venant de la personne).
+   */
+  signupRetentionYears: 3,
 } as const;
 
 /** Formats d'image acceptés par le modèle (les photos sont recompressées en JPEG). */

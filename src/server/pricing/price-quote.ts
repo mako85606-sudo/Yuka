@@ -10,6 +10,7 @@ import { aiOpinion, comparablePrice, lineWeight, loupeOpinion, type ComparablePr
 import type { Database } from "@/server/db/client";
 import { comparableKey, findComparables, type ComparableKey } from "@/server/pricing/comparables";
 import { estimatePrices } from "@/server/pricing/estimate-prices";
+import { errorSummary } from "@/server/log";
 
 /**
  * Les avis de prix d'un devis. D'abord la base Loupe (médiane de devis
@@ -86,7 +87,7 @@ export async function priceQuote(options: PriceQuoteOptions): Promise<PriceQuote
         if (opinion) opinions.set(entry.index, opinion);
       }
     } catch (error) {
-      console.error("[prix] base de comparaison indisponible", error);
+      console.error(`[prix] base de comparaison indisponible : ${errorSummary(error)}`);
       complete = false;
     }
   }

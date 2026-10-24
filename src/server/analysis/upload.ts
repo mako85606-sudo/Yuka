@@ -65,6 +65,7 @@ export async function parseUpload(formData: FormData): Promise<ParsedUpload> {
 export function statusFor(code: AnalysisErrorCode): number {
   switch (code) {
     case "too-large":
+    case "too-many-pages":
       return 413;
     case "unsupported-file":
       return 415;
@@ -73,6 +74,7 @@ export function statusFor(code: AnalysisErrorCode): number {
     case "rate-limited":
       return 429;
     case "not-configured":
+    case "paused":
       return 503;
     case "reading-failed":
     case "server-error":

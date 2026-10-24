@@ -20,9 +20,11 @@ export type AnalysisErrorCode =
   | "too-many-files"
   | "unsupported-file"
   | "too-large"
+  | "too-many-pages"
   | "forbidden-origin"
   | "rate-limited"
   | "not-configured"
+  | "paused"
   | "reading-failed"
   | "server-error"
   // Côté navigateur : la connexion a lâché, ou le flux s'est arrêté avant la fin.

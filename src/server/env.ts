@@ -30,6 +30,16 @@ const envSchema = z.object({
   GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN: optionalString,
   /** Port du serveur (3000 par défaut). */
   PORT: optionalString,
+  /**
+   * « true » pour essayer un build de production en local sans base ni secret
+   * (`npm run build` puis `npm start`) : compteur en mémoire et secret de
+   * développement. Jamais sur un site en ligne.
+   */
+  ALLOW_MEMORY_QUOTA: z.enum(["true", "false"]).optional().catch(undefined),
+  /** « true » si un relais de confiance (autre que Vercel) pose `x-real-ip` / `x-forwarded-for`. */
+  TRUSTED_PROXY: z.enum(["true", "false"]).optional().catch(undefined),
+  /** Secret des tâches planifiées (`/api/purge`), envoyé par Vercel Cron ; 16 caractères au moins. */
+  CRON_SECRET: optionalString.pipe(z.string().min(16).optional()).catch(undefined),
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;
@@ -42,9 +52,18 @@ export function serverEnv(): ServerEnv {
   return envSchema.parse(process.env);
 }
 
-/** Vrai sur le déploiement de production Vercel : aucun repli de secours n'y est permis. */
-export function isProductionDeployment(env: ServerEnv = serverEnv()): boolean {
-  return env.VERCEL_ENV === "production";
+/**
+ * Vrai quand les replis de développement sont permis : compteur d'analyses en
+ * mémoire, secret de hachage public, inscription simulée. Seulement en
+ * développement et en test, ou si `ALLOW_MEMORY_QUOTA=true` est posé exprès
+ * pour un essai local. Partout ailleurs (production Vercel, préversion, tout
+ * `next start`), sans base ni secret, on ferme plutôt que d'ouvrir sans limite.
+ */
+export function developmentFallbacksAllowed(
+  env: ServerEnv = serverEnv(),
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+): boolean {
+  return nodeEnv === "development" || nodeEnv === "test" || env.ALLOW_MEMORY_QUOTA === "true";
 }
 
 /**

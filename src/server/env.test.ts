@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isProductionDeployment, siteOrigin, type ServerEnv } from "@/server/env";
+import { developmentFallbacksAllowed, siteOrigin, type ServerEnv } from "@/server/env";
 
 describe("siteOrigin", () => {
   it("prend SITE_URL en priorité, sans barre finale", () => {
@@ -16,10 +16,17 @@ describe("siteOrigin", () => {
   });
 });
 
-describe("isProductionDeployment", () => {
-  it("n'est vrai que sur le déploiement de production Vercel", () => {
-    expect(isProductionDeployment({ VERCEL_ENV: "production" })).toBe(true);
-    expect(isProductionDeployment({ VERCEL_ENV: "preview" })).toBe(false);
-    expect(isProductionDeployment({})).toBe(false);
+describe("developmentFallbacksAllowed", () => {
+  it("n'autorise les replis qu'en développement et en test", () => {
+    expect(developmentFallbacksAllowed({}, "development")).toBe(true);
+    expect(developmentFallbacksAllowed({}, "test")).toBe(true);
+    expect(developmentFallbacksAllowed({}, "production")).toBe(false);
+    // Une préversion Vercel tourne en production : pas de repli non plus.
+    expect(developmentFallbacksAllowed({ VERCEL_ENV: "preview" }, "production")).toBe(false);
+  });
+
+  it("les autorise pour un essai local explicite d'un build de production", () => {
+    expect(developmentFallbacksAllowed({ ALLOW_MEMORY_QUOTA: "true" }, "production")).toBe(true);
+    expect(developmentFallbacksAllowed({ ALLOW_MEMORY_QUOTA: "false" }, "production")).toBe(false);
   });
 });

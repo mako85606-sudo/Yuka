@@ -1,10 +1,12 @@
 import "server-only";
 import { and, count, eq, gte, isNotNull, sql } from "drizzle-orm";
+import { limits } from "@/config/limits";
 import type { Category } from "@/config/taxonomy";
 import { FUNNEL, type EventName } from "@/lib/events";
 import type { Verdict } from "@/lib/scene-quote";
+import { spentToday } from "@/server/analysis/spend";
 import type { Database } from "@/server/db/client";
-import { analyses, events, signups } from "@/server/db/schema";
+import { analyses, events, llmSpend, signups } from "@/server/db/schema";
 import { parisDay } from "@/server/rate-limit";
 
 /**
@@ -47,6 +49,11 @@ export interface AdminStats {
     readonly total: number;
     readonly averageInputTokens: number | null;
     readonly averageOutputTokens: number | null;
+    /** Dépense du jour (heure de Paris), lectures ratées comprises, et le plafond quotidien. */
+    readonly today: number;
+    readonly dailyBudget: number;
+    /** Dépense de la période, lectures ratées comprises (pas seulement les analyses enregistrées). */
+    readonly periodSpend: number;
   };
   readonly funnel: readonly FunnelStep[];
   readonly failures: readonly Failure[];
@@ -74,7 +81,7 @@ export async function adminStats(db: Database, now = new Date()): Promise<AdminS
   const recent = gte(analyses.createdAt, since);
   const parisDate = sql<string>`to_char(${analyses.createdAt} at time zone 'Europe/Paris', 'YYYY-MM-DD')`;
 
-  const [perDay, perCategory, [cost], perEvent, failures, perSource, [shared]] = await Promise.all([
+  const [perDay, perCategory, [cost], perEvent, failures, perSource, [shared], [spend], today] = await Promise.all([
     db.select({ day: parisDate, count: count() }).from(analyses).where(recent).groupBy(parisDate),
     db
       .select({ category: analyses.category, verdict: analyses.verdict, count: count() })
@@ -106,6 +113,11 @@ export async function adminStats(db: Database, now = new Date()): Promise<AdminS
       .groupBy(sql`1`, sql`2`),
     db.select({ source: signups.source, count: count() }).from(signups).groupBy(signups.source),
     db.select({ count: count() }).from(analyses).where(and(recent, isNotNull(analyses.shareId))),
+    db
+      .select({ total: sql<number>`coalesce(sum(${llmSpend.usd}), 0)::float8` })
+      .from(llmSpend)
+      .where(gte(llmSpend.day, parisDay(since))),
+    spentToday(db, now),
   ]);
 
   const byDay = new Map(perDay.map((row) => [row.day, row.count]));
@@ -138,6 +150,9 @@ export async function adminStats(db: Database, now = new Date()): Promise<AdminS
       total: cost?.total ?? 0,
       averageInputTokens: cost?.input ?? null,
       averageOutputTokens: cost?.output ?? null,
+      today,
+      dailyBudget: limits.dailyLlmBudgetUsd,
+      periodSpend: spend?.total ?? 0,
     },
     funnel: FUNNEL.map((name) => ({ name, visits: visits.get(name) ?? 0 })),
     failures: failures.sort((a, b) => b.count - a.count),

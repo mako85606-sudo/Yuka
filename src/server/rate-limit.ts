@@ -4,7 +4,7 @@ import { and, eq, lt, sql } from "drizzle-orm";
 import { limits } from "@/config/limits";
 import { getDb, type Database } from "@/server/db/client";
 import { rateLimits } from "@/server/db/schema";
-import { isProductionDeployment, serverEnv } from "@/server/env";
+import { developmentFallbacksAllowed, serverEnv } from "@/server/env";
 
 /**
  * Limite d'analyses par jour et par adresse IP, comptée dans Postgres.
@@ -13,9 +13,10 @@ import { isProductionDeployment, serverEnv } from "@/server/env";
  * avec un secret serveur. Impossible de retrouver l'IP, ni de relier deux
  * jours entre eux. Une analyse qui échoue de notre fait est rendue.
  *
- * Sans base (développement, préversion), un compteur en mémoire prend le
- * relais. En production, jamais : sans base ni secret, l'analyse est fermée
- * plutôt qu'ouverte sans limite.
+ * Sans base, un compteur en mémoire prend le relais, mais seulement en
+ * développement et en test (`developmentFallbacksAllowed`). Partout ailleurs
+ * (production, préversion, tout `next start`), sans base ni secret, l'analyse
+ * est fermée plutôt qu'ouverte sans limite.
  */
 
 export interface QuotaTicket {
@@ -110,7 +111,7 @@ const holder = globalThis as typeof globalThis & { __loupeMemoryQuota?: QuotaSto
 function resolveStore(): QuotaStore | null {
   const db = getDb();
   if (db) return createDatabaseQuotaStore(db);
-  if (isProductionDeployment()) return null;
+  if (!developmentFallbacksAllowed()) return null;
   holder.__loupeMemoryQuota ??= createMemoryQuotaStore();
   return holder.__loupeMemoryQuota;
 }
@@ -118,7 +119,7 @@ function resolveStore(): QuotaStore | null {
 function resolveSecret(): string | null {
   const secret = serverEnv().IP_HASH_SECRET;
   if (secret) return secret;
-  return isProductionDeployment() ? null : DEVELOPMENT_SECRET;
+  return developmentFallbacksAllowed() ? DEVELOPMENT_SECRET : null;
 }
 
 export async function consumeAnalysisQuota(
@@ -167,4 +168,35 @@ export async function consumeAdminAttempt(
   if (!store || !secret) return false;
   const day = parisDay(now);
   return (await store.consume(quotaKey(`admin|${ip}`, day, secret), day, limits.adminAttemptsPerDay)) !== null;
+}
+
+/**
+ * Compteur quotidien générique d'une action (« events », « signup »…), même
+ * principe que la limite d'analyses : HMAC du jour, du nom et de l'adresse,
+ * jamais l'adresse. Vrai si l'action est permise. Sans base ni secret (hors
+ * développement), faux : on n'écrit rien plutôt que d'écrire sans limite.
+ */
+export async function consumeNamedQuota(
+  name: string,
+  ip: string,
+  limit: number,
+  now: Date = new Date(),
+  store: QuotaStore | null = resolveStore(),
+): Promise<boolean> {
+  const secret = resolveSecret();
+  if (!store || !secret) return false;
+  const day = parisDay(now);
+  return (await store.consume(quotaKey(`${name}|${ip}`, day, secret), day, limit)) !== null;
+}
+
+/**
+ * Essais de mot de passe sur `/admin`, toutes adresses confondues : au-delà de
+ * `limits.adminAttemptsGlobalPerDay`, l'administration se ferme jusqu'au
+ * lendemain, même pour un attaquant qui change d'adresse à chaque essai.
+ */
+export async function consumeGlobalAdminAttempt(
+  now: Date = new Date(),
+  store: QuotaStore | null = resolveStore(),
+): Promise<boolean> {
+  return consumeNamedQuota("admin-global", "toutes-adresses", limits.adminAttemptsGlobalPerDay, now, store);
 }

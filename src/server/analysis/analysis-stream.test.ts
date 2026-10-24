@@ -7,8 +7,10 @@ import { analyses, priceLines } from "@/server/db/schema";
 import { ESTIMATE_TOOL_NAME } from "@/server/pricing/estimate-prices";
 import {
   createFakeAnthropic,
+  errorResponse,
   messageResponse,
   sseResponse,
+  textEvents,
   toolUseBlock,
   toolUseEvents,
   type Responder,
@@ -35,6 +37,7 @@ const pricing: Responder = () =>
 function stream(responders: readonly Responder[], options: { database?: Database | null; budgetMs?: number } = {}) {
   const fake = createFakeAnthropic(responders);
   const refund = vi.fn(async () => true);
+  const recordSpend = vi.fn<(usd: number) => Promise<void>>(async () => {});
   const body = createAnalysisStream({
     client: fake.client,
     model: "claude-sonnet-5-5",
@@ -42,9 +45,10 @@ function stream(responders: readonly Responder[], options: { database?: Database
     db: options.database === undefined ? db : options.database,
     remaining: 4,
     refund,
+    recordSpend,
     budgetMs: options.budgetMs,
   });
-  return { body, refund, requests: fake.requests };
+  return { body, refund, recordSpend, requests: fake.requests };
 }
 
 async function collect(body: ReadableStream<Uint8Array>): Promise<AnalyzeEvent[]> {
@@ -88,7 +92,8 @@ describe("createAnalysisStream", () => {
     const { body, refund } = stream([reading, pricing], { database: broken });
     const events = await collect(body);
     expect(events.at(-1)).toMatchObject({ type: "verdict", analysisId: null, expiresAt: null });
-    expect(error).toHaveBeenCalledWith("[analyse] enregistrement impossible", expect.any(Error));
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("[analyse] enregistrement impossible"));
+    expect(error.mock.calls.flat().join(" ")).not.toContain("base en panne");
     expect(refund).not.toHaveBeenCalled();
   });
 
@@ -116,5 +121,38 @@ describe("createAnalysisStream", () => {
     await reader.cancel();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(await analysisCount()).toBe(before);
+  });
+
+  it("compte chaque appel au modèle dans la dépense du jour", async () => {
+    const { body, recordSpend } = stream([reading, pricing]);
+    await collect(body);
+    expect(recordSpend).toHaveBeenCalledTimes(2);
+    const total = recordSpend.mock.calls.reduce((sum, [usd]) => sum + usd, 0);
+    expect(total).toBeGreaterThan(0);
+  });
+
+  it("ne rend pas une analyse dont la lecture, facturée, a échoué (réponse tronquée)", async () => {
+    const truncated: Responder = (_request, signal) =>
+      sseResponse(toolUseEvents(JSON.stringify(sampleExtraction).slice(0, 300), { stopReason: "max_tokens" }), signal);
+    const { body, refund, recordSpend } = stream([truncated]);
+    const events = await collect(body);
+    expect(events.at(-1)).toMatchObject({ type: "error", code: "reading-failed", refunded: false });
+    expect(refund).not.toHaveBeenCalled();
+    expect(recordSpend.mock.calls[0]?.[0]).toBeGreaterThan(0);
+  });
+
+  it("ne rend pas non plus une analyse refusée par le modèle", async () => {
+    const refusal: Responder = (_request, signal) => sseResponse(textEvents("", { stopReason: "refusal" }), signal);
+    const { body, refund } = stream([refusal]);
+    const events = await collect(body);
+    expect(events.at(-1)).toMatchObject({ type: "error", refunded: false });
+    expect(refund).not.toHaveBeenCalled();
+  });
+
+  it("rend l'analyse quand l'API est en panne sans rien facturer", async () => {
+    const { body, refund } = stream([() => errorResponse(529, "overloaded_error", "Overloaded")]);
+    const events = await collect(body);
+    expect(events.at(-1)).toMatchObject({ type: "error", code: "reading-failed", refunded: true });
+    expect(refund).toHaveBeenCalledTimes(1);
   });
 });
