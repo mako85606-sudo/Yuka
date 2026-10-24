@@ -25,7 +25,7 @@ Sans rien installer : sur la page du dépôt GitHub, « Code » → onglet « Co
 
 Sous Windows, une fois le dépôt cloné avec Git (`git clone -b claude/loupe-devis-analyzer-mvp-xy60ma https://github.com/mako85606-sudo/Yuka.git Loupe`), un double-clic sur `lancer-loupe.bat` récupère les nouveautés (`git pull`), installe ce qui manque et lance le site en ouvrant le navigateur.
 
-Pour essayer sur ton téléphone, lance `npm run build` puis `npm start` et ouvre l'adresse « Network » affichée, sur le même Wi-Fi.
+Pour essayer sur ton téléphone, lance `npm run build` puis `npm start` et ouvre l'adresse « Network » affichée, sur le même Wi-Fi. Un build de production reste fermé sans base ni secret (sécurité) : pour un essai local sans base, ajoute `ALLOW_MEMORY_QUOTA=true` dans `.env.local` (jamais sur un site en ligne).
 
 ## Scripts
 
@@ -58,7 +58,10 @@ Copie `.env.example` en `.env.local` ; chaque variable y est expliquée.
 | `POSTHOG_HOST` | hôte PostHog (défaut `https://eu.i.posthog.com`) | non |
 | `ADMIN_PASSWORD` | mot de passe de `/admin`, 16 caractères au moins | pour `/admin` |
 | `SITE_URL` | adresse publique du site, pour les images de partage | non (Vercel la fournit) |
-| `ENABLE_DEV_PAGES` | montre `/dev/design` en production si `true` | non |
+| `ENABLE_DEV_PAGES` | montre `/dev/design` hors développement si `true` | non |
+| `CRON_SECRET` | secret du nettoyage de nuit (`/api/purge`, 16 caractères au moins) ; Vercel l'envoie tout seul | en production |
+| `ALLOW_MEMORY_QUOTA` | `true` seulement pour un essai local d'un build sans base (`npm start`) | non |
+| `TRUSTED_PROXY` | `true` si un relais de confiance autre que Vercel pose l'adresse du visiteur | non |
 
 ## Base de données
 
@@ -100,7 +103,8 @@ Compte une demi-heure la première fois. Il te faut : le dépôt GitHub (il y es
    - `ANTHROPIC_API_KEY` : sur <https://platform.claude.com>, rubrique API keys ;
    - `IP_HASH_SECRET` : `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` ;
    - `ADMIN_PASSWORD` : 16 caractères au moins, à garder dans ton gestionnaire de mots de passe ;
-   - `POSTHOG_KEY` (facultatif) : la clé du projet PostHog, hébergement EU.
+   - `POSTHOG_KEY` (facultatif) : la clé du projet PostHog, hébergement EU ;
+   - `CRON_SECRET` : 16 caractères au moins (même commande que `IP_HASH_SECRET`). Vercel l'envoie au nettoyage de nuit (`/api/purge`, planifié dans `vercel.json`), qui efface ce qui a dépassé sa durée de conservation même s'il n'y a pas eu de visite.
 3. **La branche.** Vercel met en ligne la branche principale du dépôt (`main`). Le travail est sur `claude/loupe-devis-analyzer-mvp-xy60ma` : fusionne-la dans `main` (une pull request sur GitHub, puis « Merge »), ou choisis cette branche comme branche de production dans les réglages du projet Vercel.
 4. **Le projet.** Sur Vercel : « Add New… » → « Project » → importe le dépôt `Yuka`. Next.js est reconnu tout seul ; ne touche ni à la commande de build ni au dossier de sortie (Vercel lance `npm run vercel-build` : migrations, puis build). Avant « Deploy », ajoute les variables de l'étape 2 et `DATABASE_URL`, pour l'environnement **Production**.
 5. **Le déploiement.** Clique « Deploy ». Dans le journal du build, tu dois voir `[migrations] base à jour.` puis la fin du build. Ouvre l'adresse donnée (`….vercel.app`) : la landing, puis `/analyse` avec un vrai devis, puis `/admin`.
@@ -109,7 +113,8 @@ Compte une demi-heure la première fois. Il te faut : le dépôt GitHub (il y es
 
 Bon à savoir :
 
-- **Les déploiements de test** (« Preview », un par branche ou pull request) appliquent eux aussi les migrations à la base qu'ils voient. Ne leur donne pas la base de production : laisse `DATABASE_URL` vide pour Preview (l'analyse y sera fermée), ou donne-leur une autre base (une branche Neon).
+- **Les déploiements de test** (« Preview », un par branche ou pull request) appliquent eux aussi les migrations à la base qu'ils voient. Ne leur donne pas la base de production : laisse `DATABASE_URL` vide pour Preview, ou donne-leur une autre base (une branche Neon). Sans base ni `IP_HASH_SECRET`, l'analyse y reste fermée : les replis de développement (compteur en mémoire, secret public) ne valent qu'en développement.
+- **Plafond de dépense.** Loupe additionne chaque jour le coût de tous les appels au modèle, lectures ratées comprises (table `llm_spend`). Au-delà de `limits.dailyLlmBudgetUsd` (20 $ par défaut, dans `src/config/limits.ts`), l'analyse se met en pause jusqu'au lendemain, et `/admin` montre la dépense du jour. Fixe aussi une limite de dépense mensuelle dans la console Anthropic (platform.claude.com) : c'est la protection ultime.
 - **Durée d'une analyse.** La route d'analyse peut durer jusqu'à 120 secondes (`maxDuration`). À vérifier : que ton offre Vercel l'autorise (sinon, Vercel coupe plus tôt et l'analyse s'interrompt).
 - **Poids des envois.** Vercel refuse un envoi de plus de 4,5 Mo avant qu'il n'atteigne Loupe (à vérifier dans sa documentation) : Loupe accepte donc 4 Mo au plus, au lieu des 10 Mo prévus. Les photos compressées en pèsent bien moins ; seul un gros PDF scanné est refusé, avec le conseil de prendre les pages en photo.
 - **Offre gratuite.** L'offre Hobby de Vercel est prévue pour un usage personnel, non commercial (à vérifier dans ses conditions) : pour un lancement public, prévois l'offre Pro.

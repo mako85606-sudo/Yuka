@@ -1,3 +1,4 @@
+import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { limits } from "@/config/limits";
 import { sniffFileType } from "@/lib/analysis/file-type";
@@ -9,6 +10,17 @@ const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16]);
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]);
 const WEBP = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]);
 const PDF = new TextEncoder().encode("%PDF-1.7\n");
+
+/** Un vrai PDF de `pages` pages, avec des propriétés qui nomment une personne. */
+async function realPdf(pages: number): Promise<Uint8Array<ArrayBuffer>> {
+  const pdf = await PDFDocument.create();
+  for (let i = 0; i < pages; i += 1) pdf.addPage([595, 842]);
+  pdf.setTitle("Devis Dupont");
+  pdf.setAuthor("Camille Dupont");
+  pdf.setSubject("Chantier 12 rue des Lilas");
+  pdf.setKeywords(["dupont"]);
+  return new Uint8Array(await pdf.save());
+}
 
 function form(files: readonly File[], consent: string | null = CONSENT_VALUE): FormData {
   const data = new FormData();
@@ -43,9 +55,31 @@ describe("parseUpload", () => {
     ]);
   });
 
-  it("accepte un PDF seul", async () => {
-    const result = await parseUpload(form([new File([PDF], "devis.pdf", { type: "application/pdf" })]));
+  it("accepte un PDF seul, sans ses propriétés", async () => {
+    const pdf = await realPdf(2);
+    const result = await parseUpload(form([new File([pdf], "devis.pdf", { type: "application/pdf" })]));
     expect(result).toMatchObject({ ok: true, documents: [{ kind: "pdf" }] });
+    if (!result.ok || result.documents[0]?.kind !== "pdf") throw new Error("PDF attendu");
+    const read = await PDFDocument.load(result.documents[0].data, { updateMetadata: false });
+    expect(read.getPageCount()).toBe(2);
+    expect(read.getAuthor() ?? "").toBe("");
+    expect(read.getTitle() ?? "").toBe("");
+    expect(new TextDecoder("latin1").decode(result.documents[0].data)).not.toMatch(/Dupont|Lilas/);
+  });
+
+  it(`refuse un PDF de plus de ${limits.maxPdfPages} pages`, async () => {
+    const pdf = await realPdf(limits.maxPdfPages + 1);
+    expect(await parseUpload(form([new File([pdf], "devis.pdf", { type: "application/pdf" })]))).toEqual({
+      ok: false,
+      code: "too-many-pages",
+    });
+  });
+
+  it("refuse un faux PDF qui ne s'ouvre pas", async () => {
+    expect(await parseUpload(form([new File([PDF], "devis.pdf", { type: "application/pdf" })]))).toEqual({
+      ok: false,
+      code: "unsupported-file",
+    });
   });
 
   it("exige l'accord explicite", async () => {
@@ -60,7 +94,7 @@ describe("parseUpload", () => {
   });
 
   it("refuse un PDF accompagné d'autres fichiers", async () => {
-    const pdf = new File([PDF], "devis.pdf", { type: "application/pdf" });
+    const pdf = new File([await realPdf(1)], "devis.pdf", { type: "application/pdf" });
     expect(await parseUpload(form([pdf, photo()]))).toEqual({ ok: false, code: "too-many-files" });
   });
 

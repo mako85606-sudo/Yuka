@@ -170,8 +170,13 @@ export async function purgeExpiredAnalyses(db: Database, now = new Date()): Prom
   await db.delete(priceLines).where(lt(priceLines.createdAt, windowStart(now)));
 }
 
-/** Forme d'un identifiant d'analyse : inutile d'interroger la base pour autre chose. */
+/** Forme d'un identifiant d'analyse ou de partage : inutile d'interroger la base pour autre chose. */
 const ANALYSIS_ID = /^[A-Za-z0-9_-]{22}$/;
+
+/** Vrai si la chaîne a la forme d'un identifiant (analyse ou partage). */
+export function looksLikeId(value: string): boolean {
+  return ANALYSIS_ID.test(value);
+}
 
 /**
  * Contrôle de forme du contenu enregistré : l'extraction est revalidée
