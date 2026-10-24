@@ -50,8 +50,10 @@ export function lineWeight(price: ComparablePrice): number {
 export function loupeOpinion(
   lineIndex: number,
   price: ComparablePrice,
-  comparables: readonly number[],
+  found: readonly number[],
 ): PriceOpinion | null {
+  // Seuls des prix finis et positifs entrent dans une médiane.
+  const comparables = found.filter((value) => Number.isFinite(value) && value > 0);
   if (comparables.length < pricingConfig.minComparables) return null;
   const middle = roundCents(median(comparables));
   return {

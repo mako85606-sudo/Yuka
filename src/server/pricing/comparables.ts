@@ -5,12 +5,19 @@ import type { RegionCode } from "@/config/regions";
 import type { QuoteUnit, TaxonomyId } from "@/config/taxonomy";
 import type { Database } from "@/server/db/client";
 import { priceLines } from "@/server/db/schema";
+import { parisDay } from "@/server/rate-limit";
 
 /**
  * Prix comparables de la base Loupe : lignes anonymisées des devis déjà
  * analysés, même prestation, même unité de comparaison, même région, saisies
  * il y a moins de `windowMonths` mois. Un devis ne se compare jamais à
  * lui-même (empreinte différente).
+ *
+ * Contre l'empoisonnement de la base (quelques faux devis aux prix absurdes
+ * envoyés d'un coup) : au plus `maxComparablesPerDay` lignes par jour
+ * d'enregistrement, et des lignes venues d'au moins `minComparableDays` jours
+ * différents. Sinon, pas de médiane : l'avis passe par l'estimation IA, qui
+ * ne mène jamais à « À vérifier sérieusement ».
  */
 
 export interface ComparableKey {
@@ -49,6 +56,7 @@ export async function findComparables(db: Database, query: ComparablesQuery): Pr
       item: priceLines.canonicalItem,
       unit: priceLines.comparableUnit,
       price: priceLines.comparablePrice,
+      createdAt: priceLines.createdAt,
     })
     .from(priceLines)
     .where(
@@ -63,13 +71,27 @@ export async function findComparables(db: Database, query: ComparablesQuery): Pr
     .orderBy(desc(priceLines.createdAt))
     .limit(pricingConfig.maxComparablesPerItem * items.length);
 
+  // Par clé : nombre de lignes retenues par jour d'enregistrement.
+  const perDay = new Map<string, Map<string, number>>();
   for (const row of rows) {
     if (row.item === null || row.unit === null || row.price === null) continue;
+    if (!Number.isFinite(row.price) || row.price <= 0) continue;
     const key = `${row.item}|${row.unit}`;
     if (!wanted.has(key)) continue;
     const prices = found.get(key) ?? [];
-    if (prices.length < pricingConfig.maxComparablesPerItem) prices.push(row.price);
+    if (prices.length >= pricingConfig.maxComparablesPerItem) continue;
+    const days = perDay.get(key) ?? new Map<string, number>();
+    const day = parisDay(row.createdAt);
+    const sameDay = days.get(day) ?? 0;
+    if (sameDay >= pricingConfig.maxComparablesPerDay) continue;
+    days.set(day, sameDay + 1);
+    perDay.set(key, days);
+    prices.push(row.price);
     found.set(key, prices);
+  }
+  // Trop peu de jours différents : la base ne dit encore rien de fiable pour cette prestation.
+  for (const [key, days] of perDay) {
+    if (days.size < pricingConfig.minComparableDays) found.delete(key);
   }
   return found;
 }

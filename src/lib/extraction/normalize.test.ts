@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { sampleExtraction } from "@/fixtures/sample-extraction";
 import { REDACTED } from "@/lib/anonymize";
 import { departmentLabel, normalizeDepartment } from "@/lib/department";
-import { MAX_LINES, normalizeExtraction } from "@/lib/extraction/normalize";
+import { MAX_AMOUNT, MAX_LINES, normalizeExtraction } from "@/lib/extraction/normalize";
 import type { ExtractedLine } from "@/lib/extraction/schema";
 
 describe("normalizeDepartment", () => {
@@ -96,5 +96,37 @@ describe("normalizeExtraction", () => {
     const result = normalizeExtraction({ ...sampleExtraction, lines });
     expect(result.lines).toHaveLength(MAX_LINES);
     expect(result.lines[0]?.label).toBe("Ligne sans désignation");
+  });
+
+  it("écarte un montant démesuré ou infini au lieu de le garder (base de prix, calculs)", () => {
+    const line: ExtractedLine = {
+      label: "Remplacement chauffe-eau 200 L",
+      quantity: 1e9,
+      unitPriceHT: 1e307,
+      totalHT: Number.POSITIVE_INFINITY,
+      confidence: "high",
+    };
+    const result = normalizeExtraction({
+      ...sampleExtraction,
+      lines: [line],
+      meta: { ...sampleExtraction.meta, depositAmount: MAX_AMOUNT * 2 },
+      totals: { totalHT: Number.NaN, totalVAT: -MAX_AMOUNT * 3, totalTTC: 1200 },
+    });
+    expect(result.lines[0]).toMatchObject({ quantity: undefined, unitPriceHT: undefined, totalHT: undefined });
+    expect(result.meta.depositAmount).toBeUndefined();
+    expect(result.totals).toEqual({ totalHT: undefined, totalVAT: undefined, totalTTC: 1200 });
+  });
+
+  it("garde une remise (montant négatif) plausible", () => {
+    const line: ExtractedLine = { label: "Remise fidélité", totalHT: -50, confidence: "high" };
+    expect(normalizeExtraction({ ...sampleExtraction, lines: [line] }).lines[0]?.totalHT).toBe(-50);
+  });
+
+  it("nettoie vite un libellé démesuré, sans le garder entier", () => {
+    const huge = `${"a".repeat(30_000)}@${"b".repeat(30_000)}`;
+    const started = performance.now();
+    const result = normalizeExtraction({ ...sampleExtraction, lines: [{ label: huge, confidence: "high" }] });
+    expect(performance.now() - started).toBeLessThan(200);
+    expect(result.lines[0]?.label.length).toBeLessThanOrEqual(160);
   });
 });

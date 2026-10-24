@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { and, asc, eq, gt, gte, lt, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { limits } from "@/config/limits";
 import { regionOf } from "@/config/regions";
@@ -161,12 +161,28 @@ export async function saveAnalysis(db: Database, input: SaveAnalysisInput): Prom
 }
 
 /**
+ * Une ligne détachée de son analyse ne garde que ce qui sert aux médianes
+ * (prestation, unité, région, prix) : ni libellé, ni département. Un nom que
+ * le filtre anti-données personnelles aurait manqué ne survit pas à l'analyse.
+ */
+async function scrubDetachedLines(db: Database): Promise<void> {
+  await db
+    .update(priceLines)
+    .set({ label: "", department: null })
+    .where(and(isNull(priceLines.analysisId), or(ne(priceLines.label, ""), isNotNull(priceLines.department))));
+}
+
+/**
  * Efface les analyses expirées (30 jours) et les lignes sorties de la
- * fenêtre de comparaison (24 mois). Les lignes d'une analyse effacée restent,
- * détachées, tant qu'elles servent aux médianes.
+ * fenêtre de comparaison (24 mois). Les lignes d'une analyse effacée qui
+ * servent aux médianes restent, détachées et réduites au strict nécessaire ;
+ * les autres partent avec elle.
  */
 export async function purgeExpiredAnalyses(db: Database, now = new Date()): Promise<void> {
+  const expired = db.select({ id: analyses.id }).from(analyses).where(lt(analyses.expiresAt, now));
+  await db.delete(priceLines).where(and(inArray(priceLines.analysisId, expired), eq(priceLines.comparable, false)));
   await db.delete(analyses).where(lt(analyses.expiresAt, now));
+  await scrubDetachedLines(db);
   await db.delete(priceLines).where(lt(priceLines.createdAt, windowStart(now)));
 }
 
@@ -299,11 +315,14 @@ export async function ensureShareId(db: Database, id: string, now = new Date()):
 
 /**
  * Supprime une analyse à la demande de qui a son lien privé : la page et son
- * lien de partage cessent d'exister. Ses lignes de prix restent, anonymes et
- * détachées. Vrai si une analyse a été supprimée.
+ * lien de partage cessent d'exister. Ses lignes de prix qui servent aux
+ * médianes restent, détachées, sans libellé ni département ; les autres
+ * partent avec elle. Vrai si une analyse a été supprimée.
  */
 export async function deleteAnalysis(db: Database, id: string): Promise<boolean> {
   if (!ANALYSIS_ID.test(id)) return false;
+  await db.delete(priceLines).where(and(eq(priceLines.analysisId, id), eq(priceLines.comparable, false)));
   const deleted = await db.delete(analyses).where(eq(analyses.id, id)).returning({ id: analyses.id });
+  await scrubDetachedLines(db);
   return deleted.length > 0;
 }
