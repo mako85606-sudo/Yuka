@@ -47,6 +47,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Le site n'utilise pas `next/image` : l'optimiseur d'images reste fermé (moins de surface d'attaque).
+  images: { unoptimized: true },
   ...(codespaceOrigins.length > 0 ? { allowedDevOrigins: codespaceOrigins } : {}),
   ...(serverActionOrigins.length > 0
     ? { experimental: { serverActions: { allowedOrigins: serverActionOrigins } } }
