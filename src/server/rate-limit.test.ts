@@ -1,9 +1,11 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { limits } from "@/config/limits";
 import {
+  consumeAdminAttempt,
   consumeAnalysisQuota,
   consumeGlobalAdminAttempt,
   consumeNamedQuota,
+  refundAdminAttempts,
   takeNamedQuota,
   createDatabaseQuotaStore,
   createMemoryQuotaStore,
@@ -166,6 +168,15 @@ describe("consumeNamedQuota", () => {
     vi.stubEnv("DATABASE_URL", "");
     expect(await consumeNamedQuota("events", "203.0.113.3", 10, now)).toBe(false);
     expect(await takeNamedQuota("signup", "203.0.113.3", 10, now)).toBe("unavailable");
+  });
+
+  it("ne compte pas une connexion réussie dans les essais de /admin", async () => {
+    const store = createMemoryQuotaStore();
+    for (let i = 0; i < limits.adminAttemptsGlobalPerDay + 5; i += 1) {
+      expect(await consumeAdminAttempt("198.51.100.9", now, store)).toBe(true);
+      expect(await consumeGlobalAdminAttempt(now, store)).toBe(true);
+      await refundAdminAttempts("198.51.100.9", now, store);
+    }
   });
 
   it("ferme /admin pour tout le monde au-delà des essais globaux du jour", async () => {

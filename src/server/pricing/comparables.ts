@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, gte, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { pricingConfig } from "@/config/pricing";
 import type { RegionCode } from "@/config/regions";
 import type { QuoteUnit, TaxonomyId } from "@/config/taxonomy";
@@ -51,12 +51,19 @@ export async function findComparables(db: Database, query: ComparablesQuery): Pr
   if (items.length === 0) return found;
   const wanted = new Set(query.keys.map(comparableKey));
 
-  const rows = await db
+  // Le plafond par jour s'applique dans la requête, avant le plafond par
+  // prestation : une avalanche de lignes le même jour ne peut pas évincer les
+  // lignes des autres jours (ni celles des autres prestations).
+  const day = sql`(${priceLines.createdAt} at time zone 'Europe/Paris')::date`;
+  const ranked = db
     .select({
       item: priceLines.canonicalItem,
       unit: priceLines.comparableUnit,
       price: priceLines.comparablePrice,
       createdAt: priceLines.createdAt,
+      dayRank: sql<number>`row_number() over (partition by ${priceLines.canonicalItem}, ${priceLines.comparableUnit}, ${day} order by ${priceLines.createdAt} desc)`.as(
+        "day_rank",
+      ),
     })
     .from(priceLines)
     .where(
@@ -68,8 +75,25 @@ export async function findComparables(db: Database, query: ComparablesQuery): Pr
         ne(priceLines.fingerprint, query.fingerprint),
       ),
     )
-    .orderBy(desc(priceLines.createdAt))
-    .limit(pricingConfig.maxComparablesPerItem * items.length);
+    .as("ranked_by_day");
+  const perItem = db
+    .select({
+      item: ranked.item,
+      unit: ranked.unit,
+      price: ranked.price,
+      createdAt: ranked.createdAt,
+      itemRank: sql<number>`row_number() over (partition by ${ranked.item}, ${ranked.unit} order by ${ranked.createdAt} desc)`.as(
+        "item_rank",
+      ),
+    })
+    .from(ranked)
+    .where(lte(ranked.dayRank, pricingConfig.maxComparablesPerDay))
+    .as("per_item");
+  const rows = await db
+    .select({ item: perItem.item, unit: perItem.unit, price: perItem.price, createdAt: perItem.createdAt })
+    .from(perItem)
+    .where(lte(perItem.itemRank, pricingConfig.maxComparablesPerItem))
+    .orderBy(desc(perItem.createdAt));
 
   // Par clé : nombre de lignes retenues par jour d'enregistrement.
   const perDay = new Map<string, Map<string, number>>();

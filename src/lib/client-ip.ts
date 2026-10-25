@@ -1,16 +1,24 @@
 /**
- * Les en-têtes d'adresse ne sont fiables que posés par un relais de confiance :
- * Vercel (qui écrase `x-real-ip` et `x-forwarded-for`), un relais déclaré par
- * `TRUSTED_PROXY=true`, ou le développement. Ailleurs, n'importe quel client
- * pourrait les inventer pour contourner la limite quotidienne.
+ * Qui pose les en-têtes d'adresse, et donc lequel croire :
+ * - `platform` : Vercel, qui écrase `x-real-ip` et `x-forwarded-for` (et le
+ *   développement) ; la première adresse est celle du visiteur ;
+ * - `proxy` : un relais déclaré par `TRUSTED_PROXY=true`, qui ajoute à la fin
+ *   de `x-forwarded-for` l'adresse qui l'a contacté. Ce qui précède vient du
+ *   visiteur et peut être inventé : seule la dernière adresse compte ;
+ * - `null` : aucun relais de confiance. N'importe quel client pourrait
+ *   inventer ces en-têtes pour contourner la limite quotidienne.
  */
+export type ProxyKind = "platform" | "proxy";
+
+export function trustedProxy(env: NodeJS.ProcessEnv = process.env): ProxyKind | null {
+  if (env.VERCEL === "1" || env.NODE_ENV === "development" || env.NODE_ENV === "test") return "platform";
+  if (env.TRUSTED_PROXY === "true") return "proxy";
+  return null;
+}
+
+/** Vrai si un relais de confiance pose les en-têtes d'adresse. */
 export function proxyHeadersTrusted(env: NodeJS.ProcessEnv = process.env): boolean {
-  return (
-    env.VERCEL === "1" ||
-    env.TRUSTED_PROXY === "true" ||
-    env.NODE_ENV === "development" ||
-    env.NODE_ENV === "test"
-  );
+  return trustedProxy(env) !== null;
 }
 
 /** Clé commune quand l'adresse n'est pas fiable : tout le monde partage la même limite. */
@@ -18,15 +26,17 @@ export const UNKNOWN_CLIENT = "inconnu";
 
 /**
  * Adresse du visiteur, pour les limites quotidiennes uniquement (elle n'est
- * jamais stockée en clair). Derrière Vercel, `x-real-ip` et
- * `x-forwarded-for` sont posés par la plateforme. En local, sans en-tête,
- * tout le monde partage la même clé.
+ * jamais stockée en clair). En local, sans en-tête, tout le monde partage la
+ * même clé.
  */
-export function clientIp(headers: Headers, trusted: boolean = proxyHeadersTrusted()): string {
-  if (!trusted) return UNKNOWN_CLIENT;
-  const real = headers.get("x-real-ip")?.trim();
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return normalizeIp(real || forwarded || "local");
+export function clientIp(headers: Headers, proxy: ProxyKind | null = trustedProxy()): string {
+  if (proxy === null) return UNKNOWN_CLIENT;
+  const forwarded = (headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (proxy === "proxy") return normalizeIp(forwarded.at(-1) || headers.get("x-real-ip")?.trim() || "local");
+  return normalizeIp(headers.get("x-real-ip")?.trim() || forwarded[0] || "local");
 }
 
 /** Développe une adresse IPv6 abrégée (« 2001:db8::1 ») en huit groupes. */

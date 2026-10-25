@@ -52,6 +52,29 @@ function regionName(code: string | null): string | null {
   return code !== null && code in REGIONS ? REGIONS[code as RegionCode] : null;
 }
 
+/**
+ * Les textes des constats passent par `fr()`, qui remplace certaines espaces
+ * par des espaces insécables (« 200 L », « Divers : »). On compare donc sur
+ * un texte où toute espace insécable redevient une espace : la longueur ne
+ * change pas, les positions restent celles du texte d'origine.
+ */
+function plainSpaces(text: string): string {
+  return text.replace(/[\u00a0\u202f]/g, " ");
+}
+
+/** Remplace chaque citation de `raw` dans `text`, typographiée ou non, par `safe`. */
+export function replaceLabel(text: string, raw: string, safe: string): string {
+  const needle = plainSpaces(raw);
+  let result = text;
+  let from = 0;
+  for (;;) {
+    const at = plainSpaces(result).indexOf(needle, from);
+    if (at === -1) return result;
+    result = `${result.slice(0, at)}${safe}${result.slice(at + raw.length)}`;
+    from = at + safe.length;
+  }
+}
+
 /** Nom public d'une ligne : la prestation de la nomenclature, ou son numéro. */
 export function publicLineLabel(line: ExtractedLine, index: number): string {
   const id = line.canonicalItem;
@@ -70,7 +93,7 @@ export function shareableAnalysis(source: ShareSource): SharedView {
     .map((line, index) => [line.label, publicLineLabel(line, index)] as const)
     .filter(([raw, safe]) => raw.trim() !== "" && raw !== safe)
     .sort((a, b) => b[0].length - a[0].length);
-  const scrub = (text: string) => renames.reduce((current, [raw, safe]) => current.split(raw).join(safe), text);
+  const scrub = (text: string) => renames.reduce((current, [raw, safe]) => replaceLabel(current, raw, safe), text);
 
   const extraction: Extraction = {
     ...source.extraction,

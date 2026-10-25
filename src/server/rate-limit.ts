@@ -204,8 +204,25 @@ export async function consumeNamedQuota(
 }
 
 /**
+ * Rend les essais d'une connexion réussie (par adresse et toutes adresses
+ * confondues) : seuls les échecs comptent, l'éditeur qui se reconnecte ne
+ * rapproche jamais la fermeture de `/admin`.
+ */
+export async function refundAdminAttempts(
+  ip: string,
+  now: Date = new Date(),
+  store: QuotaStore | null = resolveStore(),
+): Promise<void> {
+  const secret = resolveSecret();
+  if (!store || !secret) return;
+  const day = parisDay(now);
+  await store.refund(quotaKey(`admin|${ip}`, day, secret), day);
+  await store.refund(quotaKey("admin-global|toutes-adresses", day, secret), day);
+}
+
+/**
  * Essais de mot de passe sur `/admin`, toutes adresses confondues : au-delà de
- * `limits.adminAttemptsGlobalPerDay`, l'administration se ferme jusqu'au
+ * `limits.adminAttemptsGlobalPerDay` échecs, l'administration se ferme jusqu'au
  * lendemain, même pour un attaquant qui change d'adresse à chaque essai.
  */
 export async function consumeGlobalAdminAttempt(

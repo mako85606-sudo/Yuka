@@ -4,7 +4,10 @@ import { runChecks } from "@/lib/checks";
 import type { Extraction } from "@/lib/extraction/schema";
 import { decideVerdict } from "@/lib/verdict";
 import { computeOvercharge } from "@/lib/checks";
-import { shareCounts, shareableAnalysis } from "./share";
+import { normalizeExtraction } from "@/lib/extraction/normalize";
+import { aiOpinion } from "@/lib/pricing/opinions";
+import type { PriceOpinion } from "./result";
+import { replaceLabel, shareCounts, shareableAnalysis } from "./share";
 
 function fixture(id: string): Extraction {
   const found = quoteFixtures.find((item) => item.id.startsWith(id));
@@ -26,6 +29,18 @@ function share(extraction: Extraction, region: string | null = "OCC") {
     verdict,
   });
 }
+
+describe("replaceLabel", () => {
+  it("retrouve un libellé dont les espaces sont devenues insécables", () => {
+    expect(replaceLabel("Ballon Durand 200\u00a0L\u00a0: au-dessus", "Ballon Durand 200 L", "Chauffe-eau")).toBe(
+      "Chauffe-eau\u00a0: au-dessus",
+    );
+    expect(replaceLabel("« Divers\u00a0: forfait » et « Divers : forfait »", "Divers : forfait", "Ligne 3")).toBe(
+      "« Ligne 3 » et « Ligne 3 »",
+    );
+    expect(replaceLabel("Rien à voir", "Divers", "Ligne 3")).toBe("Rien à voir");
+  });
+});
 
 describe("shareableAnalysis", () => {
   it("ne garde du lieu que la région, et aucune date qui situerait le chantier", () => {
@@ -60,6 +75,40 @@ describe("shareableAnalysis", () => {
     const { data } = share(extraction);
     expect(data.findings?.map((finding) => finding.ruleId)).toEqual(["deposit-high"]);
     expect(data.verdict?.keyPoints.join(" ")).not.toMatch(/rétract|hors des locaux|domicile/i);
+  });
+
+  it("ne laisse aucun libellé lu, même typographié, dans les points clés ni les constats", () => {
+    const base = fixture("01");
+    const extraction = normalizeExtraction({
+      ...base,
+      lines: base.lines.map((line, index) =>
+        index === 0
+          ? { ...line, label: "Ballon Thermor de chez Plomberie Durand 200 L" }
+          : index === 2
+            ? { ...line, label: "Divers : forfait Durand" }
+            : line,
+      ),
+    });
+    const findings = runChecks(extraction);
+    const first = extraction.lines[0];
+    if (!first?.unitPriceHT) throw new Error("ligne 1 sans prix");
+    const prices: PriceOpinion[] = [
+      aiOpinion(0, { unit: "unite", unitPrice: first.unitPriceHT * 3, quantity: 1 }, { low: 10, high: 20 }),
+    ];
+    const verdict = decideVerdict({ extraction, findings, prices, overcharge: computeOvercharge(extraction) });
+    // Le point clé cite le libellé, typographié par `fr()` (« 200 L », « Divers : »).
+    expect(verdict.keyPoints.join(" ")).toContain("Durand");
+    const { data } = shareableAnalysis({
+      shareId: "partage-test-123456789",
+      region: "ARA",
+      createdAt: new Date("2026-10-13T10:00:00Z"),
+      extraction,
+      findings,
+      prices,
+      pricesComplete: true,
+      verdict,
+    });
+    expect(JSON.stringify(data)).not.toContain("Durand");
   });
 
   it("ne donne jamais l'identifiant de l'analyse privée", () => {

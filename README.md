@@ -61,7 +61,7 @@ Copie `.env.example` en `.env.local` ; chaque variable y est expliquée.
 | `ENABLE_DEV_PAGES` | montre `/dev/design` hors développement si `true` | non |
 | `CRON_SECRET` | secret du nettoyage de nuit (`/api/purge`, 16 caractères au moins) ; Vercel l'envoie tout seul | en production |
 | `ALLOW_MEMORY_QUOTA` | `true` seulement pour un essai local d'un build sans base (`npm start`) | non |
-| `TRUSTED_PROXY` | `true` si un relais de confiance autre que Vercel pose l'adresse du visiteur | non |
+| `TRUSTED_PROXY` | `true` si un relais de confiance autre que Vercel ajoute l'adresse du visiteur à la fin de `X-Forwarded-For` (seule cette dernière adresse est crue) | non |
 
 ## Base de données
 

@@ -21,9 +21,12 @@ describe("checkUnknownVatRates", () => {
 });
 
 describe("taux de TVA selon le territoire du chantier", () => {
-  /** La lecture propre, toutes lignes au même taux, pour un chantier dans `department`. */
-  const at = (vatRate: number, department = "69") =>
-    extractionWith({ meta: { department }, lines: cleanExtraction.lines.map((line) => ({ ...line, vatRate })) });
+  /** La lecture propre, toutes lignes au même taux ; `null` : département non lu. */
+  const at = (vatRate: number, department: string | null = "69") =>
+    extractionWith({
+      meta: { department: department ?? undefined },
+      lines: cleanExtraction.lines.map((line) => ({ ...line, vatRate })),
+    });
 
   it("accepte 8,5 % en Guadeloupe, et le relève en métropole", () => {
     expect(checkUnknownVatRates(at(8.5, "971"))).toEqual([]);
@@ -49,6 +52,14 @@ describe("taux de TVA selon le territoire du chantier", () => {
   it("accepte 13 % en Corse, et le relève ailleurs", () => {
     expect(checkUnknownVatRates(at(13, "2A"))).toEqual([]);
     expect(checkUnknownVatRates(at(13))).toHaveLength(1);
+  });
+
+  it("accepte tout taux français quand le département n'a pas été lu", () => {
+    expect(checkUnknownVatRates(at(8.5, null))).toEqual([]);
+    expect(checkUnknownVatRates(at(13, null))).toEqual([]);
+    const [finding] = checkUnknownVatRates(at(19.6, null));
+    expect(finding).toMatchObject({ ruleId: "vat-rate-unknown", ruleVerified: false });
+    expect(finding?.detail).toContain("en France (");
   });
 
   it("ne juge le taux selon le métier qu'en métropole", () => {
