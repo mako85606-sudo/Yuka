@@ -1,3 +1,4 @@
+import { Instrument_Serif } from "next/font/google";
 import type { ReactNode } from "react";
 import { TrackView } from "@/components/analytics/TrackView";
 import { EmailSignup } from "@/components/landing/EmailSignup";
@@ -40,6 +41,14 @@ const PROMISES = [
   "Photo effacée après lecture",
 ] as const;
 
+/** L'italique du titre, le seul mot en italique du site : chargée sur l'accueil seulement. */
+const displayItalic = Instrument_Serif({
+  weight: "400",
+  style: "italic",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 /**
  * Le premier écran : la promesse, le bouton, et à droite un téléphone qui
  * montre l'application sur un devis fictif (photo, analyse, résultat).
@@ -52,7 +61,7 @@ function Hero() {
           Garagiste, plombier, électricien, serrurier…
         </p>
         <h1 className="mt-6 font-display text-hero text-ink">
-          Ne payez plus un devis <em className="text-brand-strong">trop cher.</em>
+          Ne payez plus un devis <em className={cn(displayItalic.className, "text-brand-strong")}>trop cher.</em>
         </h1>
         <p className="mt-6 text-lg leading-relaxed text-ink-muted lg:text-xl lg:leading-relaxed">
           {fr(
