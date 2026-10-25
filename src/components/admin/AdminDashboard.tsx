@@ -247,7 +247,12 @@ export function AdminDashboard({ stats }: { readonly stats: AdminStats }) {
 
         <Section title="Coût du modèle" note="Lecture et estimation des prix comprises, d'après les tarifs de src/config/llm.ts.">
           <dl className="-my-2.5 divide-y divide-rule text-sm">
-            <Figure label="Total sur la période" value={usd(stats.cost.total)} />
+            <Figure
+              label="Dépense du jour"
+              value={fr(`${usd(stats.cost.today)} sur ${usd(stats.cost.dailyBudget)}`)}
+            />
+            <Figure label="Toutes dépenses de la période" value={usd(stats.cost.periodSpend)} />
+            <Figure label="Analyses enregistrées : total" value={usd(stats.cost.total)} />
             <Figure label="Moyenne par analyse" value={usd(stats.cost.average)} />
             <Figure
               label="Tokens en entrée (moyenne)"

@@ -3,6 +3,7 @@
 import { fr } from "@/lib/typography";
 import { deleteAnalysis } from "@/server/analysis/store";
 import { getDb } from "@/server/db/client";
+import { errorSummary } from "@/server/log";
 
 export type DeleteAnalysisResult = { readonly ok: true } | { readonly ok: false; readonly message: string };
 
@@ -17,7 +18,7 @@ export async function deleteAnalysisNow(analysisId: string): Promise<DeleteAnaly
     // Déjà absente (expirée, ou supprimée ailleurs) : le résultat est le même.
     return { ok: true };
   } catch (error) {
-    console.error("[analyse] suppression impossible", error);
+    console.error(`[analyse] suppression impossible : ${errorSummary(error)}`);
     return { ok: false, message: fr("La suppression a échoué de notre côté. Réessayez dans un instant.") };
   }
 }

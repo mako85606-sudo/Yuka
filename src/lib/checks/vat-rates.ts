@@ -1,4 +1,4 @@
-import { USUAL_VAT_RATES, VAT_RATES_IN_FORCE } from "@/config/rules";
+import { USUAL_VAT_RATES, VAT_RATES_IN_FORCE, vatRatesFor } from "@/config/rules";
 import { CATEGORY_LABELS } from "@/config/taxonomy";
 import type { Finding } from "@/lib/analysis/result";
 import type { Extraction } from "@/lib/extraction/schema";
@@ -21,11 +21,19 @@ function lineList(indexes: readonly number[]): string {
   return numbers.length === 1 ? `la ligne ${numbers[0]}` : `les lignes ${numbers.join(", ")}`;
 }
 
-/** Un taux qui n'existe pas en France (19,6 %, 7 %…). */
+/** « taux en vigueur : 20 %, 10 % ou 5,5 % », ou l'absence de TVA (Guyane, Mayotte). */
+function ratesInForce(rates: readonly number[]): string {
+  const shown = rates.filter((rate) => rate > 0).map((rate) => formatRate(rate / 100));
+  if (shown.length === 0) return "la TVA n'y est pas applicable";
+  return shown.length === 1 ? `taux en vigueur : ${shown[0]}` : `taux en vigueur : ${shown.slice(0, -1).join(", ")} ou ${shown.at(-1)}`;
+}
+
+/** Un taux qui n'existe pas là où ont lieu les travaux (19,6 %, 7 %…). */
 export function checkUnknownVatRates(extraction: Extraction): Finding[] {
+  const { rates, where, verified } = vatRatesFor(extraction.meta.department);
   const findings: Finding[] = [];
   for (const [rate, indexes] of linesByRate(extraction)) {
-    if (VAT_RATES_IN_FORCE.includes(rate)) continue;
+    if (rates.includes(rate)) continue;
     findings.push({
       id: `vat-rate-unknown-${rate}`,
       ruleId: "vat-rate-unknown",
@@ -34,16 +42,21 @@ export function checkUnknownVatRates(extraction: Extraction): Finding[] {
       lineIndex: indexes.length === 1 ? indexes[0] : undefined,
       note: fr(`TVA à ${formatRate(rate / 100)} ?`),
       detail: fr(
-        `TVA à ${formatRate(rate / 100)} sur ${lineList(indexes)} : ce n'est pas un taux en vigueur en France (20 %, 10 %, 5,5 % ou 2,1 %). Demandez une correction.`,
+        `TVA à ${formatRate(rate / 100)} sur ${lineList(indexes)} : ce taux n'est pas en vigueur ${where} (${ratesInForce(rates)}). Demandez une correction.`,
       ),
-      ruleVerified: true,
+      ruleVerified: verified,
     });
   }
   return findings;
 }
 
-/** Un taux réduit là où le corps de métier facture d'ordinaire au taux normal. */
+/**
+ * Un taux réduit là où le corps de métier facture d'ordinaire au taux normal.
+ * Seulement en métropole : les taux habituels outre-mer et en Corse ne sont
+ * pas encore décrits par métier.
+ */
 export function checkVatRatesForCategory(extraction: Extraction): Finding[] {
+  if (!vatRatesFor(extraction.meta.department).mainland) return [];
   const usual = USUAL_VAT_RATES[extraction.category];
   const findings: Finding[] = [];
   for (const [rate, indexes] of linesByRate(extraction)) {

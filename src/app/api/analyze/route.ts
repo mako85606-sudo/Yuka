@@ -5,20 +5,17 @@ import {
   type AnalysisErrorCode,
   type AnalyzeErrorBody,
 } from "@/lib/analysis/events";
-import { ERROR_MESSAGES } from "@/lib/analysis/messages";
+import { ERROR_MESSAGES, MISSING_API_KEY_DEV_MESSAGE } from "@/lib/analysis/messages";
 import { clientIp } from "@/lib/client-ip";
 import { createAnalysisStream } from "@/server/analysis/analysis-stream";
-import { purgeExpiredAnalyses } from "@/server/analysis/store";
+import { readBodyCapped } from "@/server/analysis/body";
+import { overDailyBudget, recordSpend } from "@/server/analysis/spend";
 import { isSameOrigin, parseUpload, statusFor } from "@/server/analysis/upload";
 import { getAnthropicClient, getExtractionModel } from "@/server/anthropic";
 import { getDb } from "@/server/db/client";
-import { purgeOldEvents } from "@/server/events/record";
-import {
-  consumeAnalysisQuota,
-  purgeExpiredQuotas,
-  refundAnalysisQuota,
-  type QuotaCheck,
-} from "@/server/rate-limit";
+import { errorSummary } from "@/server/log";
+import { runPurges } from "@/server/maintenance";
+import { consumeAnalysisQuota, refundAnalysisQuota, type QuotaCheck } from "@/server/rate-limit";
 
 /**
  * POST /api/analyze : reçoit un devis (photos ou PDF) et streame les étapes
@@ -37,8 +34,8 @@ export const maxDuration = 120;
 /** Marge pour l'enveloppe multipart autour des fichiers. */
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
 
-function errorResponse(code: AnalysisErrorCode): Response {
-  const body: AnalyzeErrorBody = { error: { code, message: ERROR_MESSAGES[code] } };
+function errorResponse(code: AnalysisErrorCode, message: string = ERROR_MESSAGES[code]): Response {
+  const body: AnalyzeErrorBody = { error: { code, message } };
   return Response.json(body, {
     status: statusFor(code),
     headers: { "cache-control": "no-store" },
@@ -51,56 +48,61 @@ export async function POST(request: Request): Promise<Response> {
   const client = getAnthropicClient();
   if (!client) {
     console.warn("[analyse] ANTHROPIC_API_KEY n'est pas définie : l'analyse est fermée.");
-    return errorResponse("not-configured");
+    // En développement, on dit quoi faire ; le site en ligne garde le message public.
+    return process.env.NODE_ENV === "development"
+      ? errorResponse("not-configured", MISSING_API_KEY_DEV_MESSAGE)
+      : errorResponse("not-configured");
   }
 
-  const declaredLength = Number(request.headers.get("content-length") ?? "0");
-  if (declaredLength > limits.maxUploadBytes + MULTIPART_OVERHEAD_BYTES) {
-    return errorResponse("too-large");
-  }
+  // Jamais plus que la limite en mémoire, même si la taille annoncée manque ou ment.
+  const body = await readBodyCapped(request, limits.maxUploadBytes + MULTIPART_OVERHEAD_BYTES);
+  if (!body.ok) return errorResponse(body.reason === "too-large" ? "too-large" : "invalid-request");
 
   let formData: FormData;
   try {
-    formData = await request.formData();
+    formData = await new Response(body.bytes, {
+      headers: { "content-type": request.headers.get("content-type") ?? "" },
+    }).formData();
   } catch {
     return errorResponse("invalid-request");
   }
   const upload = await parseUpload(formData);
   if (!upload.ok) return errorResponse(upload.code);
 
+  // Plafond de dépense du jour atteint : plus d'analyse jusqu'à demain, pour personne.
+  const db = getDb();
+  if (db) {
+    try {
+      if (await overDailyBudget(db)) {
+        console.warn("[analyse] plafond de dépense du jour atteint : analyses en pause jusqu'à demain.");
+        return errorResponse("paused");
+      }
+    } catch (error) {
+      console.error(`[analyse] dépense du jour illisible : ${errorSummary(error)}`);
+      return errorResponse("server-error");
+    }
+  }
+
   let quota: QuotaCheck;
   try {
     quota = await consumeAnalysisQuota(clientIp(request.headers));
   } catch (error) {
     // Sans compteur, pas d'analyse : la limite quotidienne protège aussi le coût.
-    console.error("[analyse] compteur quotidien indisponible", error);
+    console.error(`[analyse] compteur quotidien indisponible : ${errorSummary(error)}`);
     return errorResponse("server-error");
   }
   if (quota.kind === "unavailable") {
     console.warn(
       quota.reason === "no-database"
-        ? "[analyse] DATABASE_URL n'est pas définie : sans limite quotidienne, l'analyse reste fermée en production."
-        : "[analyse] IP_HASH_SECRET manque ou fait moins de 32 caractères : l'analyse reste fermée en production.",
+        ? "[analyse] DATABASE_URL n'est pas définie : sans limite quotidienne, l'analyse reste fermée hors développement."
+        : "[analyse] IP_HASH_SECRET manque ou fait moins de 32 caractères : l'analyse reste fermée hors développement.",
     );
     return errorResponse("not-configured");
   }
   if (quota.kind === "limited") return errorResponse("rate-limited");
 
-  const db = getDb();
   after(async () => {
-    try {
-      await purgeExpiredQuotas();
-    } catch (error) {
-      console.error("[analyse] nettoyage des compteurs impossible", error);
-    }
-    try {
-      if (db) {
-        await purgeExpiredAnalyses(db);
-        await purgeOldEvents(db);
-      }
-    } catch (error) {
-      console.error("[analyse] nettoyage des analyses expirées impossible", error);
-    }
+    await runPurges(db);
   });
 
   const stream = createAnalysisStream({
@@ -114,10 +116,19 @@ export async function POST(request: Request): Promise<Response> {
         await refundAnalysisQuota(quota.ticket);
         return true;
       } catch (error) {
-        console.error("[analyse] remboursement impossible", error);
+        console.error(`[analyse] remboursement impossible : ${errorSummary(error)}`);
         return false;
       }
     },
+    recordSpend: db
+      ? async (usd) => {
+          try {
+            await recordSpend(db, usd);
+          } catch (error) {
+            console.error(`[analyse] dépense du jour non enregistrée : ${errorSummary(error)}`);
+          }
+        }
+      : undefined,
   });
 
   return new Response(stream, {

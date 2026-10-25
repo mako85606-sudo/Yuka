@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState } from "react";
+import Link from "next/link";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { subscribeToNews } from "@/app/actions/signup";
 import { Button } from "@/components/ui/Button";
-import { CheckGlyph } from "@/components/ui/icons";
+import { AlertGlyph, CheckGlyph } from "@/components/ui/icons";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { emailProblem, HONEYPOT_FIELD, type SignupSource, type SignupState } from "@/lib/signup-form";
@@ -37,20 +38,28 @@ interface EmailSignupProps {
 
 /**
  * Inscription aux nouvelles. La validation se fait côté serveur (Zod) ; le
- * message d'erreur est relié au champ et annoncé aux lecteurs d'écran. Dès
- * que l'adresse est retouchée, le message d'erreur s'efface.
+ * message d'erreur est relié au champ et annoncé aux lecteurs d'écran. Une
+ * adresse refusée se voit : message rouge avec pictogramme, cadre rouge, et le
+ * curseur revient dans le champ. Dès que l'adresse est retouchée, le message
+ * d'erreur s'efface.
  */
 export function EmailSignup({ source = "landing", className }: EmailSignupProps) {
   const [state, formAction, pending] = useActionState(subscribeSafely, INITIAL_STATE);
   const [email, setEmail] = useState("");
   // Vrai quand l'adresse a changé depuis la dernière réponse : son message d'erreur ne vaut plus.
   const [edited, setEdited] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const messageId = useId();
 
   useEffect(() => {
     if (state.status === "success") track("email_submitted", { source });
   }, [state.status, source]);
+
+  // Chaque refus remet le curseur dans le champ, prêt à corriger.
+  useEffect(() => {
+    if (state.status === "invalid") inputRef.current?.focus();
+  }, [state]);
 
   if (state.status === "success") {
     return (
@@ -78,6 +87,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
       </label>
       <div className="mt-2 flex flex-col gap-3 sm:flex-row">
         <input
+          ref={inputRef}
           id={inputId}
           name="email"
           type="email"
@@ -94,7 +104,7 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
           placeholder="prenom@exemple.fr"
           className={cn(
             "h-12 w-full min-w-0 rounded-md border bg-paper-raised px-4 text-base text-ink placeholder:text-ink-muted sm:flex-1",
-            invalid ? "border-pen-red-strong" : "border-rule-strong",
+            invalid ? "border-pen-red-strong ring-1 ring-pen-red-strong" : "border-rule-strong",
           )}
         />
         <Button type="submit" size="lg" disabled={pending}>
@@ -105,13 +115,22 @@ export function EmailSignup({ source = "landing", className }: EmailSignupProps)
         id={messageId}
         aria-live="polite"
         className={cn(
-          "mt-2 min-h-5 text-sm",
-          invalid ? "text-pen-red-strong" : "text-ink-muted",
+          "mt-2 flex min-h-5 items-start gap-1.5 text-sm",
+          invalid ? "font-medium text-pen-red-strong" : hasError ? "text-ink" : "text-ink-muted",
         )}
       >
-        {hasError
-          ? state.message
-          : "Votre adresse ne sert qu'à cela. Vous pouvez vous désinscrire à tout moment."}
+        {invalid ? <AlertGlyph className="mt-px size-4 shrink-0 text-pen-red" /> : null}
+        {hasError ? (
+          state.message
+        ) : (
+          <span>
+            {"Votre adresse ne sert qu'à cela. Vous pouvez vous "}
+            <Link href="/desinscription" className="underline decoration-rule-strong underline-offset-4 hover:text-ink hover:decoration-ink">
+              désinscrire
+            </Link>
+            {" à tout moment."}
+          </span>
+        )}
       </p>
     </form>
   );

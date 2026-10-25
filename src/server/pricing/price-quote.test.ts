@@ -55,8 +55,13 @@ function price(extraction: Extraction, responders: Responder[], overrides: { db?
   return { outcome, requests: fake.requests };
 }
 
-// Base Loupe : cinq chauffe-eau en Auvergne-Rhône-Alpes, un à Paris, un trop ancien.
-for (const unitPrice of [500, 520, 540, 560, 580]) await seed(unitPrice);
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Base Loupe : cinq chauffe-eau en Auvergne-Rhône-Alpes (enregistrés sur cinq
+// jours, comme une vraie base), un à Paris, un trop ancien.
+for (const [day, unitPrice] of [500, 520, 540, 560, 580].entries()) {
+  await seed(unitPrice, { createdAt: new Date(NOW.getTime() - day * DAY_MS) });
+}
 await seed(900, { department: "75" });
 await seed(100, { createdAt: new Date("2024-09-01T10:00:00Z") });
 
@@ -165,5 +170,14 @@ describe("priceQuote", () => {
     const result = await outcome;
     expect(result).toMatchObject({ opinions: [], complete: false });
     expect(requests).toHaveLength(0);
+  });
+
+  it("ignore cinq faux devis envoyés le même jour : pas de médiane, une estimation IA", async () => {
+    // Provence-Alpes-Côte d'Azur : cinq chauffe-eau à 1 € enregistrés le même jour.
+    for (let i = 0; i < 5; i += 1) await seed(1, { department: "13" });
+    const extraction = extractionWith({ meta: { department: "13" } });
+    const { outcome } = price(extraction, [estimates({ line: 1, low: 450, high: 650 }, { line: 2, low: 25, high: 45 }, { line: 3, low: 40, high: 70 })]);
+    const result = await outcome;
+    expect(result.opinions.find((opinion) => opinion.lineIndex === 0)?.source.kind).toBe("ai");
   });
 });

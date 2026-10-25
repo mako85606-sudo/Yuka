@@ -201,6 +201,8 @@ describe("deleteAnalysis", () => {
     const lines = await db.select().from(priceLines).where(eq(priceLines.fingerprint, quoteFingerprint(extractionWith({ meta: { quoteDate: "2026-08-25" } }))));
     expect(lines.length).toBeGreaterThan(0);
     expect(lines.every((line) => line.analysisId === null)).toBe(true);
+    // Ne restent que les lignes utiles aux médianes, sans libellé ni département.
+    expect(lines.every((line) => line.comparable && line.label === "" && line.department === null)).toBe(true);
     expect(await deleteAnalysis(db, saved.id)).toBe(false);
     expect(await deleteAnalysis(db, "pas-un-identifiant")).toBe(false);
   });
@@ -222,8 +224,24 @@ describe("purgeExpiredAnalyses", () => {
     const detached = await db.select().from(priceLines).where(eq(priceLines.fingerprint, quoteFingerprint(extractionWith({ meta: { quoteDate: "2026-07-01" } }))));
     expect(detached).toHaveLength(3);
     expect(detached.every((line) => line.analysisId === null && line.comparable)).toBe(true);
+    expect(detached.every((line) => line.label === "" && line.department === null && line.region !== null)).toBe(true);
 
     const gone = await db.select().from(priceLines).where(eq(priceLines.fingerprint, quoteFingerprint(extractionWith({ meta: { quoteDate: "2024-07-01" } }))));
     expect(gone).toHaveLength(0);
+  });
+});
+
+describe("lignes non comparables", () => {
+  it("partent avec leur analyse au lieu de rester 24 mois", async () => {
+    const extraction = extractionWith({
+      meta: { quoteDate: "2026-06-15" },
+      lines: [{ label: "Forfait divers chez M. Personne", totalHT: 80, confidence: "high" }],
+    });
+    const saved = await save(extraction, new Date("2026-08-01T10:00:00Z"));
+    const before = await db.select().from(priceLines).where(eq(priceLines.analysisId, saved.id));
+    expect(before.some((line) => !line.comparable)).toBe(true);
+    await purgeExpiredAnalyses(db, NOW);
+    const after = await db.select().from(priceLines).where(eq(priceLines.fingerprint, quoteFingerprint(extraction)));
+    expect(after.some((line) => !line.comparable)).toBe(false);
   });
 });

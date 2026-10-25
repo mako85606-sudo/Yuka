@@ -1,16 +1,21 @@
 import Link from "next/link";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { fr } from "@/lib/typography";
 import { Logo } from "./Logo";
 
 const LINKS = [
+  { href: "/methode", label: "Notre méthode" },
+  { href: "/conditions", label: "Conditions" },
   { href: "/confidentialite", label: "Confidentialité" },
   { href: "/mentions-legales", label: "Mentions légales" },
+  { href: "/mentions-legales#contact", label: "Contact" },
+  { href: "/desinscription", label: "Désinscription" },
 ] as const;
 
 /**
- * Pied de page : l'avertissement, toujours visible, nos engagements et les
- * pages légales. Le lien de la page en cours (`current`) est signalé.
+ * Pied de page : l'avertissement, toujours visible, nos engagements, la
+ * méthode, les pages légales et le contact. Le lien de la page en cours (`current`) est signalé.
  */
 export function SiteFooter({ current }: { readonly current?: string } = {}) {
   return (
@@ -19,7 +24,7 @@ export function SiteFooter({ current }: { readonly current?: string } = {}) {
         <div className="space-y-4">
           <Logo />
           <p className="max-w-md text-sm leading-relaxed text-ink-muted">
-            {site.disclaimer} Loupe ne touche rien des artisans et n&apos;affiche aucune publicité.
+            {fr(`${site.disclaimer} Loupe ne touche rien des artisans et n'affiche aucune publicité.`)}
           </p>
         </div>
         <nav aria-label="Informations légales">

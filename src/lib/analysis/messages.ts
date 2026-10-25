@@ -5,7 +5,7 @@ import { fr } from "@/lib/typography";
 /** Ce qu'on dit quand on ne lit pas un document. Rien n'est analysé ni conservé. */
 export const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
   health: fr(
-    "Loupe ne prend pas encore en charge les devis de santé (dentiste, opticien, audioprothésiste). Votre document n'a été ni analysé ni conservé.",
+    "Loupe ne prend pas encore en charge les devis de santé (dentiste, opticien, audioprothésiste) : ce document a été refusé dès sa lecture, et rien n'en a été conservé.",
   ),
   "not-a-quote": fr(
     "Ce document ne ressemble pas à un devis. Loupe vérifie uniquement les devis, avant leur signature (pas les factures ni les autres documents) : envoyez la page qui détaille les prestations et leurs montants. Rien n'a été conservé.",
@@ -28,11 +28,15 @@ export const ERROR_MESSAGES: Record<AnalysisErrorCode, string> = {
   "too-large": fr(
     `Le fichier dépasse ${MAX_MEGABYTES} Mo. Des photos prises avec votre téléphone sont plus légères qu'un PDF scanné.`,
   ),
+  "too-many-pages": fr(
+    `Ce PDF compte plus de ${limits.maxPdfPages} pages. Envoyez seulement les pages du devis (prestations et montants).`,
+  ),
   "forbidden-origin": fr("Cette demande ne vient pas du site de Loupe."),
   "rate-limited": fr(
     `Vous avez utilisé vos ${limits.analysesPerDay} analyses du jour. Le compteur repart à zéro à minuit.`,
   ),
   "not-configured": fr("L'analyse n'est pas encore ouverte sur ce site. Revenez bientôt."),
+  paused: fr("Loupe a atteint sa limite d'analyses pour aujourd'hui. Réessayez demain."),
   "reading-failed": fr(
     "Nous n'avons pas réussi à lire votre devis ; le problème vient de chez nous. Réessayez dans un instant.",
   ),
@@ -40,6 +44,15 @@ export const ERROR_MESSAGES: Record<AnalysisErrorCode, string> = {
   network: fr("La connexion a été interrompue. Vérifiez votre réseau, puis réessayez."),
   interrupted: fr("L'analyse s'est interrompue avant la fin. Relancez-la : cela ne prend qu'une trentaine de secondes."),
 };
+
+/**
+ * En développement seulement, quand `ANTHROPIC_API_KEY` manque : la marche à
+ * suivre, au lieu du message public « pas encore ouverte ». Le site en ligne
+ * garde le message public (`ERROR_MESSAGES["not-configured"]`).
+ */
+export const MISSING_API_KEY_DEV_MESSAGE = fr(
+  "Mode développement : la clé de l'API Claude est absente, Loupe ne peut donc pas lire de devis. Ajoutez ANTHROPIC_API_KEY en secret Codespaces (puis redémarrez le codespace), ou dans un fichier .env.local à la racine du projet (puis relancez npm run dev). Les visiteurs du site en ligne ne voient jamais ce message.",
+);
 
 /** Une analyse ratée de notre fait est rendue : on le dit. */
 export function failureMessage(code: "reading-failed" | "server-error", refunded: boolean): string {

@@ -25,6 +25,21 @@ export const llmConfig = {
   promptCaching: true,
 } as const;
 
+/**
+ * Modèles qui imposent 30 jours de conservation chez Anthropic (« Covered
+ * Models »), relevés le 24 octobre 2026 dans
+ * https://platform.claude.com/docs/en/manage-claude/api-and-data-retention.
+ * La politique de confidentialité dit qu'Anthropic ne garde rien par défaut :
+ * c'est vrai seulement hors de cette liste.
+ * TODO: vérifier — la liste peut s'allonger (article « Covered Models » du support d'Anthropic).
+ */
+export const RETAINED_MODELS = ["claude-fable-5-1", "claude-mythos-5-1", "claude-fable-5", "claude-mythos-5"] as const;
+
+/** Vrai si Anthropic garde 30 jours ce que lit ce modèle (alias ou version datée). */
+export function modelRetainsContent(model: string): boolean {
+  return RETAINED_MODELS.some((retained) => model === retained || model.startsWith(`${retained}-`));
+}
+
 export interface ModelPricing {
   /** Dollars par million de tokens. */
   readonly input: number;

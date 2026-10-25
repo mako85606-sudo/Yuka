@@ -2,6 +2,9 @@ import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { limits } from "@/config/limits";
 import {
   consumeAnalysisQuota,
+  consumeGlobalAdminAttempt,
+  consumeNamedQuota,
+  takeNamedQuota,
   createDatabaseQuotaStore,
   createMemoryQuotaStore,
   parisDay,
@@ -108,7 +111,7 @@ describe("consumeAnalysisQuota", () => {
   });
 
   it("ferme l'analyse en production sans base ni secret", async () => {
-    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("DATABASE_URL", "");
     vi.stubEnv("IP_HASH_SECRET", "");
     expect(await consumeAnalysisQuota("203.0.113.7", now)).toEqual({
@@ -122,7 +125,7 @@ describe("consumeAnalysisQuota", () => {
   });
 
   it("refuse un secret trop court en production", async () => {
-    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("IP_HASH_SECRET", "court");
     expect(await consumeAnalysisQuota("203.0.113.7", now, createMemoryQuotaStore())).toEqual({
       kind: "unavailable",
@@ -130,10 +133,46 @@ describe("consumeAnalysisQuota", () => {
     });
   });
 
-  it("se contente d'un compteur en mémoire hors production", async () => {
-    vi.stubEnv("VERCEL_ENV", "");
+  it("se contente d'un compteur en mémoire en développement et en test", async () => {
     vi.stubEnv("DATABASE_URL", "");
     expect(await consumeAnalysisQuota("198.51.100.1", now)).toMatchObject({ kind: "allowed" });
     await purgeExpiredQuotas(now);
+  });
+
+  it("reste fermée sur une préversion ou un next start sans base, sauf essai local explicite", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("DATABASE_URL", "");
+    expect(await consumeAnalysisQuota("198.51.100.2", now)).toEqual({ kind: "unavailable", reason: "no-database" });
+    vi.stubEnv("ALLOW_MEMORY_QUOTA", "true");
+    expect(await consumeAnalysisQuota("198.51.100.2", now)).toMatchObject({ kind: "allowed" });
+  });
+});
+
+describe("consumeNamedQuota", () => {
+  const now = new Date("2026-10-03T10:00:00Z");
+
+  it("compte chaque action à part, par adresse", async () => {
+    const store = createMemoryQuotaStore();
+    for (let i = 0; i < 2; i += 1) expect(await consumeNamedQuota("signup", "203.0.113.1", 2, now, store)).toBe(true);
+    expect(await consumeNamedQuota("signup", "203.0.113.1", 2, now, store)).toBe(false);
+    expect(await takeNamedQuota("signup", "203.0.113.1", 2, now, store)).toBe("refused");
+    expect(await consumeNamedQuota("events", "203.0.113.1", 2, now, store)).toBe(true);
+    expect(await consumeNamedQuota("signup", "203.0.113.2", 2, now, store)).toBe(true);
+  });
+
+  it("n'écrit rien sans base hors développement", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("DATABASE_URL", "");
+    expect(await consumeNamedQuota("events", "203.0.113.3", 10, now)).toBe(false);
+    expect(await takeNamedQuota("signup", "203.0.113.3", 10, now)).toBe("unavailable");
+  });
+
+  it("ferme /admin pour tout le monde au-delà des essais globaux du jour", async () => {
+    const store = createMemoryQuotaStore();
+    for (let i = 0; i < limits.adminAttemptsGlobalPerDay; i += 1) {
+      expect(await consumeGlobalAdminAttempt(now, store)).toBe(true);
+    }
+    expect(await consumeGlobalAdminAttempt(now, store)).toBe(false);
   });
 });

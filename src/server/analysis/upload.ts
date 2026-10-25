@@ -1,4 +1,5 @@
 import "server-only";
+import { PDFDocument, PDFName } from "pdf-lib";
 import { z } from "zod";
 import { limits } from "@/config/limits";
 import type { AnalysisErrorCode } from "@/lib/analysis/events";
@@ -11,7 +12,8 @@ import type { QuoteDocument } from "@/server/extraction/prompt";
 /**
  * Lecture et contrôle de l'envoi : accord explicite, une à quatre photos ou
  * un seul PDF, `limits.maxUploadBytes` au plus (4 Mo), et de vrais fichiers
- * (reconnus à leurs octets).
+ * (reconnus à leurs octets). Un PDF compte au plus `limits.maxPdfPages` pages,
+ * et perd ses propriétés (auteur, titre, métadonnées XMP) avant d'être lu.
  * Les fichiers restent en mémoire ; rien n'est écrit sur disque.
  */
 
@@ -49,9 +51,13 @@ export async function parseUpload(formData: FormData): Promise<ParsedUpload> {
     const data = new Uint8Array(await file.arrayBuffer());
     const type = sniffFileType(data);
     if (!type) return { ok: false, code: "unsupported-file" };
-    documents.push(
-      type === "pdf" ? { kind: "pdf", data } : { kind: "image", mediaType: `image/${type}`, data },
-    );
+    if (type === "pdf") {
+      const pdf = await preparePdf(data);
+      if (!pdf.ok) return pdf;
+      documents.push({ kind: "pdf", data: pdf.data });
+    } else {
+      documents.push({ kind: "image", mediaType: `image/${type}`, data });
+    }
   }
 
   // Un PDF voyage seul : il contient déjà toutes les pages.
@@ -61,10 +67,43 @@ export async function parseUpload(formData: FormData): Promise<ParsedUpload> {
   return { ok: true, documents, totalBytes };
 }
 
+/**
+ * Contrôle un PDF avant lecture : il doit s'ouvrir, compter au plus
+ * `limits.maxPdfPages` pages (un gros document coûterait cher à lire), et
+ * il perd ses propriétés (titre, auteur, sujet, mots-clés, logiciels,
+ * métadonnées XMP), qui peuvent nommer une personne. Un PDF chiffré est
+ * transmis tel quel : le réenregistrer le rendrait illisible.
+ */
+export async function preparePdf(
+  data: Uint8Array,
+): Promise<{ readonly ok: true; readonly data: Uint8Array } | { readonly ok: false; readonly code: AnalysisErrorCode }> {
+  let pdf: PDFDocument;
+  let pages: number;
+  try {
+    pdf = await PDFDocument.load(data, { ignoreEncryption: true, updateMetadata: false });
+    // pdf-lib ouvre parfois un fichier sans pages ni catalogue : il n'est pas lisible.
+    pages = pdf.getPageCount();
+  } catch {
+    return { ok: false, code: "unsupported-file" };
+  }
+  if (pages === 0) return { ok: false, code: "unsupported-file" };
+  if (pages > limits.maxPdfPages) return { ok: false, code: "too-many-pages" };
+  if (pdf.isEncrypted) return { ok: true, data };
+  pdf.setTitle("");
+  pdf.setAuthor("");
+  pdf.setSubject("");
+  pdf.setKeywords([]);
+  pdf.setCreator("");
+  pdf.setProducer("");
+  pdf.catalog.delete(PDFName.of("Metadata"));
+  return { ok: true, data: await pdf.save({ updateFieldAppearances: false }) };
+}
+
 /** Statut HTTP de chaque refus avant analyse. */
 export function statusFor(code: AnalysisErrorCode): number {
   switch (code) {
     case "too-large":
+    case "too-many-pages":
       return 413;
     case "unsupported-file":
       return 415;
@@ -73,6 +112,7 @@ export function statusFor(code: AnalysisErrorCode): number {
     case "rate-limited":
       return 429;
     case "not-configured":
+    case "paused":
       return 503;
     case "reading-failed":
     case "server-error":

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { limits } from "@/config/limits";
 import { sampleExtraction } from "@/fixtures/sample-extraction";
 import { readEvents, type AnalyzeEvent } from "@/lib/analysis/events";
+import { ERROR_MESSAGES, MISSING_API_KEY_DEV_MESSAGE } from "@/lib/analysis/messages";
 import { ESTIMATE_TOOL_NAME } from "@/server/pricing/estimate-prices";
 import {
   createFakeAnthropic,
@@ -174,10 +175,22 @@ describe("POST /api/analyze", () => {
     expect(requests).toHaveLength(0);
   });
 
-  it("reste fermée sans clé d'API", async () => {
+  it("reste fermée sans clé d'API, avec le message public", async () => {
     fake.client = null;
     const response = await POST(request());
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ error: { code: "not-configured" } });
+    expect(await response.json()).toEqual({
+      error: { code: "not-configured", message: ERROR_MESSAGES["not-configured"] },
+    });
+  });
+
+  it("dit en développement quelle clé manque et comment l'ajouter", async () => {
+    fake.client = null;
+    vi.stubEnv("NODE_ENV", "development");
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    const body = (await response.json()) as { error: { code: string; message: string } };
+    expect(body.error).toEqual({ code: "not-configured", message: MISSING_API_KEY_DEV_MESSAGE });
+    expect(body.error.message).toContain("ANTHROPIC_API_KEY");
   });
 });

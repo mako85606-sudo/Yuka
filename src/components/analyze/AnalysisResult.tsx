@@ -25,6 +25,7 @@ import { buildNegotiation } from "@/lib/negotiation";
 import { fr } from "@/lib/typography";
 import { DeleteAnalysis } from "./DeleteAnalysis";
 import { DetailedReport } from "./DetailedReport";
+import { HowItIsMade } from "./HowItIsMade";
 import { NegotiationMessage } from "./NegotiationMessage";
 import { ShareLink } from "./ShareLink";
 
@@ -284,6 +285,8 @@ export function ResultDetails({
           </p>
         )}
       </section>
+
+      <HowItIsMade />
 
       <section aria-labelledby="titre-suite" className="rounded-lg bg-mist p-5 sm:p-6">
         <h2 id="titre-suite" className="font-display text-[1.75rem] leading-tight text-ink">

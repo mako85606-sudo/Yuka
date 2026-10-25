@@ -91,7 +91,8 @@ describe("verdicts du jeu de test", () => {
     "01-plomberie-chauffe-eau": "ok",
     "02-garage-freins": "alert",
     "03-electricite-tableau": "ok",
-    "04-serrurerie-urgence": "alert",
+    // Erreurs de calcul qui coûtent moins de 20 €, SIRET absent (point d'attention) : à négocier.
+    "04-serrurerie-urgence": "negotiate",
     "05-chauffage-pac-domicile": "negotiate",
   };
 

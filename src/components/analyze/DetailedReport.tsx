@@ -10,8 +10,8 @@ import { offsets, reducedFade, transitions } from "@/lib/motion";
 import { fr } from "@/lib/typography";
 
 /**
- * « Rapport détaillé — 4,90 € » : rien n'est encaissé en V1. Le bouton mesure
- * l'intérêt et propose de laisser son email pour être prévenu.
+ * « Rapport détaillé — 4,90 € · bientôt » : rien n'est encaissé en V1. Le
+ * bouton mesure l'intérêt et propose de laisser son email pour être prévenu.
  */
 export function DetailedReport() {
   const { reduced } = useMotionPrefs();
@@ -30,6 +30,8 @@ export function DetailedReport() {
         }}
       >
         {fr("Rapport détaillé — 4,90 €")}
+        {/* Le prix d'un service indisponible ne s'affiche jamais seul : « bientôt » est sur le bouton. */}
+        <span className="rounded-sm bg-mist px-1.5 py-0.5 text-xs font-semibold text-ink-muted">bientôt</span>
       </Button>
       <div id={panelId}>
         {open ? (

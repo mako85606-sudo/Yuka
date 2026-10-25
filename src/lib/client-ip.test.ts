@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientIp, normalizeIp } from "@/lib/client-ip";
+import { clientIp, normalizeIp, proxyHeadersTrusted, UNKNOWN_CLIENT } from "@/lib/client-ip";
 
 describe("clientIp", () => {
   it("prend l'adresse posée par la plateforme", () => {
@@ -9,6 +9,24 @@ describe("clientIp", () => {
 
   it("retombe sur une clé locale sans en-tête", () => {
     expect(clientIp(new Headers())).toBe("local");
+  });
+
+  it("ignore des en-têtes qu'aucun relais de confiance n'a posés", () => {
+    const spoofed = new Headers({ "x-real-ip": "203.0.113.7", "x-forwarded-for": "198.51.100.1" });
+    expect(clientIp(spoofed, false)).toBe(UNKNOWN_CLIENT);
+  });
+});
+
+describe("proxyHeadersTrusted", () => {
+  it("fait confiance à Vercel, à un relais déclaré et au développement", () => {
+    expect(proxyHeadersTrusted({ NODE_ENV: "production", VERCEL: "1" })).toBe(true);
+    expect(proxyHeadersTrusted({ NODE_ENV: "production", TRUSTED_PROXY: "true" })).toBe(true);
+    expect(proxyHeadersTrusted({ NODE_ENV: "development" })).toBe(true);
+  });
+
+  it("se méfie d'un serveur de production quelconque", () => {
+    expect(proxyHeadersTrusted({ NODE_ENV: "production" })).toBe(false);
+    expect(proxyHeadersTrusted({ NODE_ENV: "production", TRUSTED_PROXY: "false" })).toBe(false);
   });
 });
 

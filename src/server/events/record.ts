@@ -5,6 +5,7 @@ import { analyticsConfig } from "@/config/analytics";
 import type { TrackedEvent } from "@/lib/events";
 import type { Database } from "@/server/db/client";
 import { events } from "@/server/db/schema";
+import { errorSummary } from "@/server/log";
 
 export interface EventSinks {
   readonly db: Database | null;
@@ -37,7 +38,7 @@ export async function recordEvent(event: TrackedEvent, sinks: EventSinks, now = 
   }
   const results = await Promise.allSettled(tasks);
   for (const result of results) {
-    if (result.status === "rejected") console.warn(`[mesure] ${event.name} non enregistré`, result.reason);
+    if (result.status === "rejected") console.warn(`[mesure] ${event.name} non enregistré : ${errorSummary(result.reason)}`);
   }
 }
 

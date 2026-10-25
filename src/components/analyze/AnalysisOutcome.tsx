@@ -50,8 +50,9 @@ export function AnalysisOutcome({ state, headingRef, onRestart, onRetry }: Analy
     const { code } = state.error;
     const retryable = RETRYABLE.includes(code);
     // Rien à refaire aujourd'hui : on raccompagne vers l'accueil.
-    const closed = code === "rate-limited" || code === "not-configured";
-    title = code === "rate-limited" ? "C'est tout pour aujourd'hui." : "L'analyse n'a pas abouti.";
+    const closed = code === "rate-limited" || code === "not-configured" || code === "paused";
+    title =
+      code === "rate-limited" || code === "paused" ? "C'est tout pour aujourd'hui." : "L'analyse n'a pas abouti.";
     body = <p className="text-[1.0625rem] leading-relaxed text-ink">{state.error.message}</p>;
     actions = closed ? (
       <ButtonLink href="/">Retour à l&apos;accueil</ButtonLink>

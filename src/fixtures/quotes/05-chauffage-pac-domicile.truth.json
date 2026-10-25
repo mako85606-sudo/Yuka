@@ -110,6 +110,9 @@
     },
     {
       "kind": "door-to-door"
+    },
+    {
+      "kind": "door-to-door-payment"
     }
   ]
 }

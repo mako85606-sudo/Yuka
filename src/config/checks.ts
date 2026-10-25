@@ -12,8 +12,10 @@ export const checksConfig = {
   toleranceRatio: 0.001,
   tolerancePerLine: 0.005,
   /**
-   * Acompte au-delà duquel on suggère de négocier. Seuil de prudence courant
-   * pour des travaux, pas une limite légale.
+   * Acompte au-delà duquel on suggère de négocier. Choix de produit : aucune
+   * source officielle consultée (fiche DGCCRF « Acompte, arrhes, avoir »
+   * comprise) ne fixe de plafond pour ces métiers, ni n'établit d'usage à
+   * 30 % ; le message ne cite donc ni seuil ni usage.
    */
   depositWarningPercent: 30,
   /** Montant HT à partir duquel une ligne vague mérite une question. */

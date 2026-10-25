@@ -3,6 +3,7 @@
 import { fr } from "@/lib/typography";
 import { ensureShareId } from "@/server/analysis/store";
 import { getDb } from "@/server/db/client";
+import { errorSummary } from "@/server/log";
 
 export type ShareLinkResult =
   | { readonly ok: true; readonly path: string }
@@ -23,7 +24,7 @@ export async function createShareLink(analysisId: string): Promise<ShareLinkResu
     if (!shareId) return { ok: false, message: fr("Cette analyse a expiré : elle ne peut plus être partagée.") };
     return { ok: true, path: `/v/${shareId}` };
   } catch (error) {
-    console.error("[partage] création du lien impossible", error);
+    console.error(`[partage] création du lien impossible : ${errorSummary(error)}`);
     return { ok: false, message: fr("Le lien n'a pas pu être créé ; le problème vient de chez nous. Réessayez dans un instant.") };
   }
 }

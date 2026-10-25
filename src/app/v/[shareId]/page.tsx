@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { TrackView } from "@/components/analytics/TrackView";
 import { AnalysisView } from "@/components/analyze/AnalysisView";
+import { HowItIsMade } from "@/components/analyze/HowItIsMade";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { SharedInvite, SharedSummary } from "@/components/share/SharedConclusion";
@@ -58,7 +59,7 @@ export default async function SharedAnalysisPage({ params }: PageProps<"/v/[shar
         </h1>
         <p className="mt-3 max-w-prose text-ink-muted">
           {fr(
-            `${place ? `${place}. ` : ""}Vous ne verrez ici ni nom ni adresse : Loupe ne les relève même pas.`,
+            `${place ? `${place}. ` : ""}Vous ne verrez ici ni nom ni adresse : Loupe ne les recopie pas, volontairement.`,
           )}
         </p>
         <div className="mt-6">
@@ -76,7 +77,12 @@ export default async function SharedAnalysisPage({ params }: PageProps<"/v/[shar
                 savings={verdict.savings}
               />
             }
-            details={<SharedInvite />}
+            details={
+              <div className="space-y-6">
+                <HowItIsMade shared />
+                <SharedInvite />
+              </div>
+            }
           />
         </div>
         <p className="mt-8 text-xs leading-relaxed text-ink-muted">{fr(site.disclaimer)}</p>

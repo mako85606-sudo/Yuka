@@ -11,8 +11,7 @@ import {
   createSessionToken,
   passwordMatches,
 } from "@/server/admin/auth";
-import { isProductionDeployment } from "@/server/env";
-import { consumeAdminAttempt } from "@/server/rate-limit";
+import { consumeAdminAttempt, consumeGlobalAdminAttempt } from "@/server/rate-limit";
 
 export interface AdminSignInState {
   readonly message: string | null;
@@ -25,7 +24,7 @@ export async function signInAdmin(_previous: AdminSignInState, formData: FormDat
   const password = adminPassword();
   if (!password) return { message: fr("L'administration est fermée : ADMIN_PASSWORD n'est pas défini.") };
 
-  if (!(await consumeAdminAttempt(clientIp(await headers())))) {
+  if (!(await consumeAdminAttempt(clientIp(await headers()))) || !(await consumeGlobalAdminAttempt())) {
     return { message: fr("Trop d'essais aujourd'hui. Réessayez demain.") };
   }
   const candidate = formData.get("password");
@@ -37,7 +36,7 @@ export async function signInAdmin(_previous: AdminSignInState, formData: FormDat
   const { token, expiresAt } = createSessionToken(password);
   (await cookies()).set(ADMIN_COOKIE, token, {
     httpOnly: true,
-    secure: isProductionDeployment() || process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: ADMIN_PATH,
     expires: new Date(expiresAt),

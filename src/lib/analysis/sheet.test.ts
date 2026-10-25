@@ -51,18 +51,22 @@ describe("sheetFromAnalysis", () => {
       ["ligne-5", "vague-line", "warning"],
     ]);
     expect(sheet.totalIssues?.map((issue) => issue.row)).toEqual(["totalHT"]);
-    // Erreurs d'abord, points d'attention ensuite.
+    // Le SIRET absent est un point d'attention : aucun texte lu ne l'exige sur un devis.
     expect(sheet.remarks?.map((remark) => [remark.id, remark.tone])).toEqual([
-      ["mention-siret", "error"],
+      ["mention-siret", "warning"],
       ["mention-validity", "warning"],
     ]);
     expect(annotationCount(sheet)).toBe(5);
   });
 
-  it("garde le rappel de rétractation et l'acompte en remarques", () => {
+  it("garde l'acompte, le paiement avant 7 jours et le rappel de rétractation en remarques", () => {
     const sheet = sheetFromAnalysis(completed(fixture("05")));
-    expect(sheet.remarks?.map((remark) => remark.tone)).toEqual(["warning", "reminder"]);
-    expect(sheet.remarks?.[1]?.note).toContain("14");
+    expect(sheet.remarks?.map((remark) => [remark.id, remark.tone])).toEqual([
+      ["deposit-high", "warning"],
+      ["door-to-door-payment", "warning"],
+      ["door-to-door", "reminder"],
+    ]);
+    expect(sheet.remarks?.[2]?.note).toContain("14");
   });
 
   it("ne présente jamais comme sûr un constat sur des chiffres mal lus", () => {

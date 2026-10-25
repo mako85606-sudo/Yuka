@@ -115,8 +115,13 @@ export async function estimatePrices(options: EstimateOptions): Promise<Estimate
     { role: "user", content: buildRequest(options.category, options.regionName, options.lines, year) },
   ];
   let usage = EMPTY_USAGE;
+  // Un seul délai pour toute l'estimation, relance comprise, et pas de nouvel
+  // essai caché du SDK : l'analyse doit finir avant la limite de la fonction.
+  const deadline = AbortSignal.timeout(Math.max(0, options.timeoutMs ?? pricingConfig.estimateTimeoutMs));
+  const signal = options.signal ? AbortSignal.any([deadline, options.signal]) : deadline;
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
+    if (signal.aborted) return empty(usage, false);
     let message: Anthropic.Message;
     try {
       message = await options.client.messages.create(
@@ -129,9 +134,10 @@ export async function estimatePrices(options: EstimateOptions): Promise<Estimate
           output_config: { effort: llmConfig.effort },
           messages,
         },
-        { timeout: options.timeoutMs ?? pricingConfig.estimateTimeoutMs, signal: options.signal },
+        { signal, maxRetries: 0 },
       );
     } catch (error) {
+      if (signal.aborted) return empty(usage, false);
       if (!(error instanceof Anthropic.APIError)) throw error;
       console.warn(`[prix] estimation impossible : ${error.name} ${error.status ?? ""}`.trim());
       return empty(usage, false);
