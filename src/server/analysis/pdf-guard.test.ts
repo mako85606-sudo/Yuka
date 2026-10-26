@@ -70,6 +70,29 @@ describe("scanPdfForBombs", () => {
     });
   });
 
+  it("compte au total un flux dont la somme Adler-32 est fausse (pdf-lib ne la vérifie pas)", () => {
+    const badChecksum = Buffer.from(flate(800 * 1024));
+    badChecksum[badChecksum.length - 1] = (badChecksum[badChecksum.length - 1] ?? 0) ^ 0xff;
+    const one = `3 0 obj\n<< /Type /ObjStm /N 1 /First 4 /Filter /FlateDecode /Length 0 >>\nstream\n`;
+    const parts: Buffer[] = [enc("%PDF-1.7\n")];
+    for (let i = 0; i < 4; i += 1) parts.push(enc(one), badChecksum, enc("\nendstream\nendobj\n"));
+    parts.push(enc("trailer\n<< /Root 1 0 R >>\n%%EOF\n"));
+    expect(scanPdfForBombs(new Uint8Array(Buffer.concat(parts)), PER_STREAM, TOTAL)).toEqual({
+      ok: false,
+      reason: "bomb",
+    });
+  });
+
+  it("ignore un /ObjStm sans en-tête zlib valide (pdf-lib n'en décompresse rien)", () => {
+    const pdf = pdfWithStream("/Type /ObjStm /N 1 /First 4 /Filter /FlateDecode", Buffer.alloc(64, 0));
+    expect(scanPdfForBombs(pdf, PER_STREAM, TOTAL)).toEqual({ ok: true });
+  });
+
+  it("refuse un /ObjStm aux données deflate invalides (taille décompressée inconnue)", () => {
+    const pdf = pdfWithStream("/Type /ObjStm /N 1 /First 4 /Filter /FlateDecode", Buffer.from([0x78, 0x9c, 0xff, 0xff, 0xff, 0xff]));
+    expect(scanPdfForBombs(pdf, PER_STREAM, TOTAL)).toEqual({ ok: false, reason: "corrupt" });
+  });
+
   it("refuse un /ObjStm à filtre interdit (LZWDecode)", () => {
     const pdf = pdfWithStream("/Type /ObjStm /N 1 /First 4 /Filter /LZWDecode", Buffer.alloc(32, 0));
     expect(scanPdfForBombs(pdf, PER_STREAM, TOTAL)).toEqual({ ok: false, reason: "bad-filter" });

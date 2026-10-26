@@ -18,10 +18,14 @@ import { limits } from "@/config/limits";
  * est donc toujours visible en clair. On ne fait confiance ni à `/Length` ni au
  * mot `endstream` (un attaquant peut en glisser dans les données compressées) :
  * on décompresse depuis le début des données jusqu'à la fin du fichier, zlib
- * s'arrêtant de lui-même au bout du flux deflate.
+ * s'arrêtant de lui-même au bout du flux deflate (octets suivants ignorés,
+ * vérifié). La décompression imite celle de pdf-lib (en-tête contrôlé, deflate
+ * brut sans somme Adler-32) : ce qu'on mesure est ce que pdf-lib produirait.
  */
 
-export type PdfGuardResult = { readonly ok: true } | { readonly ok: false; readonly reason: "bomb" | "bad-filter" };
+export type PdfGuardResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: "bomb" | "bad-filter" | "corrupt" };
 
 /** Octets « blancs » du PDF (espace, tabulation, saut de ligne, page, nul). */
 const WHITESPACE = new Set([0x00, 0x09, 0x0a, 0x0c, 0x0d, 0x20]);
@@ -133,21 +137,41 @@ function isFlateOnly(filter: NameValue): { ok: boolean; flate: boolean } {
 }
 
 /**
- * Décompresse le flux deflate qui commence en `dataStart` et renvoie sa taille,
- * ou `"bomb"` si elle dépasse `perStreamCap`, ou `null` si ce n'est pas un flux
- * deflate exploitable (fausse correspondance dans des données binaires : pdf-lib
- * le refusera lui-même plus tard, inutile de rejeter le fichier ici).
+ * En-tête zlib que pdf-lib exige avant de décompresser (FlateStream) :
+ * méthode 8 (deflate), contrôle FCHECK juste, pas de dictionnaire prédéfini.
+ * Sinon pdf-lib échoue tout de suite, sans rien décompresser.
  */
-function inflatedSize(bytes: Uint8Array, dataStart: number, perStreamCap: number): number | "bomb" | null {
+function validZlibHeader(bytes: Uint8Array, at: number): boolean {
+  const cmf = bytes[at];
+  const flg = bytes[at + 1];
+  if (cmf === undefined || flg === undefined) return false;
+  return (cmf & 0x0f) === 0x08 && ((cmf << 8) + flg) % 31 === 0 && (flg & 0x20) === 0;
+}
+
+/**
+ * Taille décompressée du flux deflate qui commence en `dataStart`, calculée
+ * comme pdf-lib la produirait : même contrôle de l'en-tête, puis deflate brut
+ * jusqu'au dernier bloc, sans vérifier la somme Adler-32 finale (pdf-lib ne la
+ * vérifie pas : une somme fausse ne doit pas faire sortir un flux du total).
+ * Renvoie `"bomb"` au-delà de `perStreamCap`, `"corrupt"` si les données sont
+ * invalides (on ignore alors combien pdf-lib en décompresserait : refus par
+ * prudence), ou `null` si l'en-tête est invalide (pdf-lib n'en ferait rien).
+ */
+function inflatedSize(
+  bytes: Uint8Array,
+  dataStart: number,
+  perStreamCap: number,
+): number | "bomb" | "corrupt" | null {
+  if (!validZlibHeader(bytes, dataStart)) return null;
   try {
-    const out = zlib.inflateSync(Buffer.from(bytes.subarray(dataStart)), {
+    const out = zlib.inflateRawSync(Buffer.from(bytes.subarray(dataStart + 2)), {
       maxOutputLength: perStreamCap,
       finishFlush: zlib.constants.Z_SYNC_FLUSH,
     });
     return out.length;
   } catch (error) {
     if (error instanceof RangeError) return "bomb"; // ERR_BUFFER_TOO_LARGE : plafond dépassé.
-    return null;
+    return "corrupt";
   }
 }
 
@@ -199,7 +223,7 @@ export function scanPdfForBombs(
     if (!filter.flate) continue; // non compressé : pas de gonflement possible.
 
     const size = inflatedSize(bytes, streamDataStart(bytes, at + STREAM.length), perStreamCap);
-    if (size === "bomb") return { ok: false, reason: "bomb" };
+    if (size === "bomb" || size === "corrupt") return { ok: false, reason: size };
     if (size === null) continue;
     total += size;
     if (total > totalCap) return { ok: false, reason: "bomb" };
