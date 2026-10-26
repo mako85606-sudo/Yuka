@@ -7,7 +7,9 @@ import type { EventName } from "@/lib/events";
 import { formatShortDate } from "@/lib/format";
 import { VERDICT_LABELS, type Verdict } from "@/lib/scene-quote";
 import { fr } from "@/lib/typography";
+import type { SetupItem } from "@/server/admin/setup";
 import type { AdminStats } from "@/server/admin/stats";
+import { SetupChecklist } from "./SetupChecklist";
 
 const STEP_NAMES: Record<EventName, string> = {
   landing_view: "Vue de la page d'accueil",
@@ -202,7 +204,7 @@ function Figure({ label, value }: { readonly label: string; readonly value: stri
   );
 }
 
-export function AdminDashboard({ stats }: { readonly stats: AdminStats }) {
+export function AdminDashboard({ stats, setup }: { readonly stats: AdminStats; readonly setup: readonly SetupItem[] }) {
   const signupTotal = Object.values(stats.signups).reduce((sum, value) => sum + value, 0);
   const firstStep = stats.funnel[0]?.visits ?? 0;
 
@@ -235,6 +237,10 @@ export function AdminDashboard({ stats }: { readonly stats: AdminStats }) {
           )}
         />
       </div>
+
+      <Section title="Configuration" note="Ce qui est réglé sur ce serveur. Aucune valeur secrète n'est affichée.">
+        <SetupChecklist items={setup} />
+      </Section>
 
       <Section title="Analyses par jour">
         <DailyChart days={stats.days} />

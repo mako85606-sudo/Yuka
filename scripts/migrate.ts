@@ -11,7 +11,7 @@ import { loadEnvConfig } from "@next/env";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import { sslOption } from "../src/server/db/ssl";
+import { postgresConnection } from "../src/server/db/connection";
 
 loadEnvConfig(process.cwd());
 
@@ -22,8 +22,9 @@ async function main() {
     return;
   }
   // Une seule connexion, et pas de requêtes préparées (compatibles avec les poolers de Neon et Supabase).
-  // Chiffrée vers une base distante, comme le site (`sslOption`).
-  const client = postgres(url, { max: 1, prepare: false, connect_timeout: 15, ...sslOption(url) });
+  // Chiffrée vers une base distante, adresse nettoyée, comme le site (`postgresConnection`).
+  const connection = postgresConnection(url);
+  const client = postgres(connection.url, { max: 1, prepare: false, connect_timeout: 15, ssl: connection.ssl });
   try {
     await migrate(drizzle(client), { migrationsFolder: path.join(process.cwd(), "drizzle") });
     console.info("[migrations] base à jour.");

@@ -18,6 +18,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:deploy": "tsx scripts/migrate.ts",
+    "secrets": "tsx scripts/generate-secrets.ts",
     "fixtures:generate": "tsx scripts/generate-fixtures.ts",
     "eval:extraction": "tsx --conditions=react-server scripts/eval-extraction.ts"
   },
