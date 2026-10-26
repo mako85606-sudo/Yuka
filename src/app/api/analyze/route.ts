@@ -106,9 +106,11 @@ export async function POST(request: Request): Promise<Response> {
   // atteint : l'analyse est en pause et le quota est rendu (pas la faute du
   // visiteur). Sans base, pas de plafond (développement).
   const reservationUsd = db ? limits.llmSpendReservationUsd : 0;
+  // Le solde se fait sur le jour de la réservation, même si l'analyse finit après minuit.
+  const reservedAt = new Date();
   if (db) {
     try {
-      if (!(await reserveSpend(db, reservationUsd))) {
+      if (!(await reserveSpend(db, reservationUsd, reservedAt))) {
         console.warn("[analyse] plafond de dépense du jour atteint : analyses en pause jusqu'à demain.");
         await refundQuota();
         return errorResponse("paused");
@@ -127,7 +129,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!prepared.ok) {
     if (db) {
       try {
-        await releaseSpend(db, reservationUsd);
+        await releaseSpend(db, reservationUsd, reservedAt);
       } catch (error) {
         console.error(`[analyse] réservation de budget non rendue : ${errorSummary(error)}`);
       }
@@ -149,7 +151,7 @@ export async function POST(request: Request): Promise<Response> {
     settleSpend: db
       ? async (actualUsd, trusted) => {
           try {
-            await settleSpend(db, reservationUsd, actualUsd, trusted);
+            await settleSpend(db, reservationUsd, actualUsd, trusted, reservedAt);
           } catch (error) {
             console.error(`[analyse] réservation de budget non soldée : ${errorSummary(error)}`);
           }
