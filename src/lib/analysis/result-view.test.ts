@@ -36,6 +36,9 @@ describe("savingsText", () => {
     expect(plain(savingsText({ low: 21, high: 21 }))).toBe("21 €");
     expect(plain(savingsText({ low: 40, high: 1200 }))).toBe("40 à 1 200 €");
     expect(plain(savingsText({ low: 0, high: 120 }))).toBe("jusqu'à 120 €");
+    // Au centime pour un montant exact, arrondi vers le bas pour une fourchette.
+    expect(plain(savingsText({ low: 20.8, high: 20.8 }))).toBe("20,80 €");
+    expect(plain(savingsText({ low: 129.9, high: 149.6 }))).toBe("129 à 149 €");
   });
 });
 

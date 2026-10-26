@@ -16,6 +16,7 @@ import {
   referenceText,
   savingsRelyOnAi,
   savingsText,
+  wholeEuros,
 } from "@/lib/analysis/result-view";
 import { cn } from "@/lib/cn";
 import type { Extraction } from "@/lib/extraction/schema";
@@ -67,7 +68,7 @@ export function SavingsFigure({ savings, className }: { readonly savings: Saving
     <p className={cn("flex flex-wrap items-baseline gap-x-2 text-brand-strong", className)}>
       {upTo ? <span className="text-lg font-medium">{fr("jusqu'à")}</span> : null}
       <span className="text-[2.75rem] font-semibold leading-none tracking-[-0.03em] tabular-nums">
-        {upTo ? formatEuros(savings.high, 0) : savingsText(savings)}
+        {upTo ? wholeEuros(savings.high) : savingsText(savings)}
       </span>
     </p>
   );

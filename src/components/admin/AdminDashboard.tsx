@@ -7,7 +7,9 @@ import type { EventName } from "@/lib/events";
 import { formatShortDate } from "@/lib/format";
 import { VERDICT_LABELS, type Verdict } from "@/lib/scene-quote";
 import { fr } from "@/lib/typography";
+import type { SetupItem } from "@/server/admin/setup";
 import type { AdminStats } from "@/server/admin/stats";
+import { SetupChecklist } from "./SetupChecklist";
 
 const STEP_NAMES: Record<EventName, string> = {
   landing_view: "Vue de la page d'accueil",
@@ -42,6 +44,8 @@ const VERDICTS: readonly Verdict[] = ["ok", "negotiate", "alert"];
 const integer = new Intl.NumberFormat("fr-FR");
 const percent = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 0 });
 const dollars = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+/** Le plafond du jour, un montant rond : sans les quatre décimales des coûts. */
+const budget = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 
 function usd(value: number | null): string {
   return value === null ? "—" : fr(`${dollars.format(value)} $`);
@@ -202,7 +206,7 @@ function Figure({ label, value }: { readonly label: string; readonly value: stri
   );
 }
 
-export function AdminDashboard({ stats }: { readonly stats: AdminStats }) {
+export function AdminDashboard({ stats, setup }: { readonly stats: AdminStats; readonly setup: readonly SetupItem[] }) {
   const signupTotal = Object.values(stats.signups).reduce((sum, value) => sum + value, 0);
   const firstStep = stats.funnel[0]?.visits ?? 0;
 
@@ -236,6 +240,10 @@ export function AdminDashboard({ stats }: { readonly stats: AdminStats }) {
         />
       </div>
 
+      <Section title="Configuration" note="Ce qui est réglé sur ce serveur. Aucune valeur secrète n'est affichée.">
+        <SetupChecklist items={setup} />
+      </Section>
+
       <Section title="Analyses par jour">
         <DailyChart days={stats.days} />
       </Section>
@@ -249,7 +257,7 @@ export function AdminDashboard({ stats }: { readonly stats: AdminStats }) {
           <dl className="-my-2.5 divide-y divide-rule text-sm">
             <Figure
               label="Dépense du jour"
-              value={fr(`${usd(stats.cost.today)} sur ${usd(stats.cost.dailyBudget)}`)}
+              value={fr(`${usd(stats.cost.today)} sur ${budget.format(stats.cost.dailyBudget)} $`)}
             />
             <Figure label="Toutes dépenses de la période" value={usd(stats.cost.periodSpend)} />
             <Figure label="Analyses enregistrées : total" value={usd(stats.cost.total)} />

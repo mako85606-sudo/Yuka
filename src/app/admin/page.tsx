@@ -3,9 +3,12 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminLogin } from "@/components/admin/AdminLogin";
+import { SetupChecklist } from "@/components/admin/SetupChecklist";
 import { Logo } from "@/components/landing/Logo";
+import { cn } from "@/lib/cn";
 import { fr } from "@/lib/typography";
 import { adminPassword, isAdmin } from "@/server/admin/auth";
+import { setupChecklist } from "@/server/admin/setup";
 import { adminStats } from "@/server/admin/stats";
 import { getDb } from "@/server/db/client";
 
@@ -16,9 +19,14 @@ export const metadata: Metadata = {
 };
 
 /** Une carte centrée : la connexion, ou la raison pour laquelle il n'y a rien à montrer. */
-function AdminCard({ children }: { readonly children: ReactNode }) {
+function AdminCard({ children, wide = false }: { readonly children: ReactNode; readonly wide?: boolean }) {
   return (
-    <div className="mx-auto mt-6 max-w-md rounded-lg bg-paper-raised p-7 elevation-1 sm:mt-12 sm:p-9">
+    <div
+      className={cn(
+        "mx-auto mt-6 rounded-lg bg-paper-raised p-7 elevation-1 sm:mt-12 sm:p-9",
+        wide ? "max-w-3xl" : "max-w-md",
+      )}
+    >
       <h1 className="font-display text-title text-ink">Administration</h1>
       {children}
     </div>
@@ -58,16 +66,19 @@ export default async function AdminPage() {
     );
   } else if (!db) {
     content = (
-      <AdminCard>
+      <AdminCard wide>
         <p className="mt-4 leading-relaxed text-ink-muted">
           {fr("Aucune base de données n'est configurée (")}
           <Code>DATABASE_URL</Code>
-          {fr(") : il n'y a rien à afficher.")}
+          {fr(") : pas encore de statistiques. Voici ce qui est réglé :")}
         </p>
+        <div className="mt-4">
+          <SetupChecklist items={setupChecklist()} />
+        </div>
       </AdminCard>
     );
   } else {
-    content = <AdminDashboard stats={await adminStats(db)} />;
+    content = <AdminDashboard stats={await adminStats(db)} setup={setupChecklist()} />;
   }
 
   return (

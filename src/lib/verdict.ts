@@ -73,7 +73,8 @@ function savingsRange(input: VerdictInput, verdict: Verdict, loss: number): Savi
     }
   }
   if (high < verdictConfig.minSavings) return null;
-  return { low: Math.round(low), high: Math.round(high) };
+  // Au centime : l'affichage arrondit vers le bas (`savingsText`), jamais au-dessus de l'économie réelle.
+  return { low: Math.round(low * 100) / 100, high: Math.round(high * 100) / 100 };
 }
 
 function lineLabel(input: VerdictInput, index: number): string {

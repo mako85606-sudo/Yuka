@@ -30,10 +30,16 @@ export function groupFindings(findings: readonly Finding[]): FindingGroups {
 
 /** « 21 € », « 40 à 120 € », « jusqu'à 120 € ». */
 export function savingsText(savings: SavingsRange): string {
-  const high = formatEuros(savings.high, 0);
-  if (savings.low === savings.high) return high;
+  // Un montant exact (trop-payé recalculé) au centime, comme dans le point clé qui l'explique.
+  if (savings.low === savings.high) return euros(savings.high);
+  const high = wholeEuros(savings.high);
   if (savings.low <= 0) return fr(`jusqu'à ${high}`);
-  return fr(`${formatEuros(savings.low, 0).replace(/\s€$/, "")} à ${high}`);
+  return fr(`${wholeEuros(savings.low).replace(/\s€$/, "")} à ${high}`);
+}
+
+/** Une fourchette s'affiche en euros entiers, arrondis vers le bas : jamais plus que l'économie réelle. */
+export function wholeEuros(amount: number): string {
+  return formatEuros(Math.floor(amount), 0);
 }
 
 /** Vrai si une estimation IA pèse dans l'économie annoncée : on le dit à côté. */

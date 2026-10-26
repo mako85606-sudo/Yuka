@@ -45,8 +45,14 @@ export function QuoteHeader({
   titleAs: Title = "h3",
 }: QuoteHeaderProps) {
   return (
-    <header className={cn("flex items-start justify-between gap-4", compact ? "px-5 pt-5" : "px-5 pt-6 sm:px-7")}>
-      <div className="min-w-0">
+    // Sur un écran étroit, le verdict passe sous le titre plutôt que de l'écraser en colonne.
+    <header
+      className={cn(
+        "flex flex-wrap items-start justify-between gap-x-4 gap-y-2",
+        compact ? "px-5 pt-5" : "px-5 pt-6 sm:px-7",
+      )}
+    >
+      <div className="min-w-0 flex-1 basis-48">
         <p className="text-sm text-ink-muted">{department ? `${category} · ${department}` : category}</p>
         <Title className={cn("mt-1 font-semibold leading-snug text-ink", compact ? "text-lg" : "text-xl sm:text-[1.375rem]")}>
           {title}
