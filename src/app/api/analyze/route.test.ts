@@ -155,6 +155,18 @@ describe("POST /api/analyze", () => {
     });
   });
 
+  it("ne rend pas l'analyse quand la requête est refusée (4xx) par le modèle", async () => {
+    const ip = "203.0.113.55";
+    useModel([() => errorResponse(400, "invalid_request_error", "image illisible")]);
+    const failed = await collect(await POST(request({ ip })));
+    expect(failed.at(-1)).toMatchObject({ type: "error", code: "reading-failed", refunded: false });
+
+    // L'analyse a bien été décomptée : une seule relance reste possible avant la limite.
+    useModel(Array.from({ length: limits.analysesPerDay - 1 }, () => [reading, pricing]).flat());
+    for (let i = 0; i < limits.analysesPerDay - 1; i += 1) await collect(await POST(request({ ip })));
+    expect((await POST(request({ ip }))).status).toBe(429);
+  });
+
   it(`bloque au-delà de ${limits.analysesPerDay} analyses par jour`, async () => {
     const ip = "203.0.113.60";
     useModel(Array.from({ length: limits.analysesPerDay }, () => [reading, pricing]).flat());

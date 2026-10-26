@@ -1,9 +1,12 @@
+import { and, eq } from "drizzle-orm";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import type { Extraction } from "@/lib/extraction/schema";
 import { EMPTY_USAGE } from "@/lib/llm-cost";
 import { quoteFingerprint, saveAnalysis } from "@/server/analysis/store";
 import { cleanExtraction, extractionWith, withLine } from "@/test/extraction";
 import { createFakeAnthropic, errorResponse, messageResponse, toolUseBlock, type Responder } from "@/test/fake-anthropic";
+import { pricingConfig } from "@/config/pricing";
+import { priceLines } from "@/server/db/schema";
 import { createTestDb } from "@/test/test-db";
 import { ESTIMATE_TOOL_NAME } from "./estimate-prices";
 import { priceQuote } from "./price-quote";
@@ -170,6 +173,33 @@ describe("priceQuote", () => {
     const result = await outcome;
     expect(result).toMatchObject({ opinions: [], complete: false });
     expect(requests).toHaveLength(0);
+  });
+
+  it("garde la médiane quand une avalanche de lignes arrive le même jour", async () => {
+    // Occitanie : cinq vrais devis sur cinq jours, puis, aujourd'hui, plus de lignes à 1 € que la
+    // requête n'en lit pour les trois prestations du devis (400 par prestation).
+    for (const [day, unitPrice] of [500, 520, 540, 560, 580].entries()) {
+      await seed(unitPrice, { department: "31", createdAt: new Date(NOW.getTime() - (day + 1) * DAY_MS) });
+    }
+    const [model] = await db.select().from(priceLines).where(and(eq(priceLines.department, "31"), eq(priceLines.position, 0)));
+    if (!model) throw new Error("ligne modèle introuvable");
+    await db.insert(priceLines).values(
+      Array.from({ length: pricingConfig.maxComparablesPerItem * 3 + 50 }, (_, index) => ({
+        ...model,
+        id: undefined,
+        analysisId: null,
+        createdAt: NOW,
+        comparablePrice: 1,
+        unitPriceHT: 1,
+        totalHT: 1,
+        fingerprint: `avalanche-${index}`,
+      })),
+    );
+    const extraction = extractionWith({ meta: { department: "31" } });
+    const { outcome } = price(extraction, [estimates({ line: 1, low: 45, high: 65 }, { line: 2, low: 25, high: 45 })]);
+    const result = await outcome;
+    const first = result.opinions.find((opinion) => opinion.lineIndex === 0);
+    expect(first?.source).toEqual({ kind: "loupe", comparables: 8 });
   });
 
   it("ignore cinq faux devis envoyés le même jour : pas de médiane, une estimation IA", async () => {

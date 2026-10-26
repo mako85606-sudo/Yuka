@@ -155,11 +155,19 @@ describe("extractQuote", () => {
     expect(truncated.requests).toHaveLength(1);
   });
 
-  it("signale une API indisponible sans relancer", async () => {
+  it("signale une API indisponible (panne, surcharge) sans relancer", async () => {
     const { outcome, requests } = await run([
       () => errorResponse(529, "overloaded_error", "Overloaded"),
     ]);
     expect(outcome).toMatchObject({ kind: "failed", reason: "unavailable" });
+    expect(requests).toHaveLength(1);
+  });
+
+  it("distingue une requête refusée (4xx) d'une panne : elle ne sera pas rendue", async () => {
+    const { outcome, requests } = await run([
+      () => errorResponse(400, "invalid_request_error", "image illisible"),
+    ]);
+    expect(outcome).toMatchObject({ kind: "failed", reason: "rejected" });
     expect(requests).toHaveLength(1);
   });
 

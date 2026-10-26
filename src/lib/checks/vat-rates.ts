@@ -52,11 +52,11 @@ export function checkUnknownVatRates(extraction: Extraction): Finding[] {
 
 /**
  * Un taux réduit là où le corps de métier facture d'ordinaire au taux normal.
- * Seulement en métropole : les taux habituels outre-mer et en Corse ne sont
- * pas encore décrits par métier.
+ * En métropole (ou département non lu) seulement : les taux habituels
+ * outre-mer et en Corse ne sont pas encore décrits par métier.
  */
 export function checkVatRatesForCategory(extraction: Extraction): Finding[] {
-  if (!vatRatesFor(extraction.meta.department).mainland) return [];
+  if (!vatRatesFor(extraction.meta.department).usualRatesApply) return [];
   const usual = USUAL_VAT_RATES[extraction.category];
   const findings: Finding[] = [];
   for (const [rate, indexes] of linesByRate(extraction)) {

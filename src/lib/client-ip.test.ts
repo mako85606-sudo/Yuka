@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientIp, normalizeIp, proxyHeadersTrusted, UNKNOWN_CLIENT } from "@/lib/client-ip";
+import { clientIp, normalizeIp, proxyHeadersTrusted, trustedProxy, UNKNOWN_CLIENT } from "@/lib/client-ip";
 
 describe("clientIp", () => {
   it("prend l'adresse posée par la plateforme", () => {
@@ -13,7 +13,22 @@ describe("clientIp", () => {
 
   it("ignore des en-têtes qu'aucun relais de confiance n'a posés", () => {
     const spoofed = new Headers({ "x-real-ip": "203.0.113.7", "x-forwarded-for": "198.51.100.1" });
-    expect(clientIp(spoofed, false)).toBe(UNKNOWN_CLIENT);
+    expect(clientIp(spoofed, null)).toBe(UNKNOWN_CLIENT);
+  });
+
+  it("derrière un relais déclaré, ne croit que l'adresse qu'il a ajoutée", () => {
+    // Le visiteur invente « 198.51.100.1 » ; le relais ajoute l'adresse qui l'a vraiment contacté.
+    const forged = new Headers({ "x-forwarded-for": "198.51.100.1, 203.0.113.9", "x-real-ip": "198.51.100.1" });
+    expect(clientIp(forged, "proxy")).toBe("203.0.113.9");
+    expect(clientIp(new Headers({ "x-real-ip": "203.0.113.10" }), "proxy")).toBe("203.0.113.10");
+  });
+});
+
+describe("trustedProxy", () => {
+  it("distingue la plateforme d'un relais déclaré", () => {
+    expect(trustedProxy({ NODE_ENV: "production", VERCEL: "1" })).toBe("platform");
+    expect(trustedProxy({ NODE_ENV: "production", TRUSTED_PROXY: "true" })).toBe("proxy");
+    expect(trustedProxy({ NODE_ENV: "production" })).toBeNull();
   });
 });
 

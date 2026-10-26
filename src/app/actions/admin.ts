@@ -11,7 +11,7 @@ import {
   createSessionToken,
   passwordMatches,
 } from "@/server/admin/auth";
-import { consumeAdminAttempt, consumeGlobalAdminAttempt } from "@/server/rate-limit";
+import { consumeAdminAttempt, consumeGlobalAdminAttempt, refundAdminAttempts } from "@/server/rate-limit";
 
 export interface AdminSignInState {
   readonly message: string | null;
@@ -24,7 +24,8 @@ export async function signInAdmin(_previous: AdminSignInState, formData: FormDat
   const password = adminPassword();
   if (!password) return { message: fr("L'administration est fermée : ADMIN_PASSWORD n'est pas défini.") };
 
-  if (!(await consumeAdminAttempt(clientIp(await headers()))) || !(await consumeGlobalAdminAttempt())) {
+  const ip = clientIp(await headers());
+  if (!(await consumeAdminAttempt(ip)) || !(await consumeGlobalAdminAttempt())) {
     return { message: fr("Trop d'essais aujourd'hui. Réessayez demain.") };
   }
   const candidate = formData.get("password");
@@ -32,6 +33,8 @@ export async function signInAdmin(_previous: AdminSignInState, formData: FormDat
     await new Promise((resolve) => setTimeout(resolve, FAILURE_DELAY_MS));
     return { message: "Mot de passe incorrect." };
   }
+  // Seuls les échecs comptent.
+  await refundAdminAttempts(ip);
 
   const { token, expiresAt } = createSessionToken(password);
   (await cookies()).set(ADMIN_COOKIE, token, {

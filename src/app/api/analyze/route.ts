@@ -9,8 +9,8 @@ import { ERROR_MESSAGES, MISSING_API_KEY_DEV_MESSAGE } from "@/lib/analysis/mess
 import { clientIp } from "@/lib/client-ip";
 import { createAnalysisStream } from "@/server/analysis/analysis-stream";
 import { readBodyCapped } from "@/server/analysis/body";
-import { overDailyBudget, recordSpend } from "@/server/analysis/spend";
-import { isSameOrigin, parseUpload, statusFor } from "@/server/analysis/upload";
+import { releaseSpend, reserveSpend, settleSpend } from "@/server/analysis/spend";
+import { isSameOrigin, parseUpload, prepareDocuments, statusFor } from "@/server/analysis/upload";
 import { getAnthropicClient, getExtractionModel } from "@/server/anthropic";
 import { getDb } from "@/server/db/client";
 import { errorSummary } from "@/server/log";
@@ -66,23 +66,14 @@ export async function POST(request: Request): Promise<Response> {
   } catch {
     return errorResponse("invalid-request");
   }
+  // Contrôles bon marché seulement : on n'ouvre aucun PDF avant d'avoir pris le
+  // quota et réservé le budget (un PDF piégé ne doit rien coûter d'abord).
   const upload = await parseUpload(formData);
   if (!upload.ok) return errorResponse(upload.code);
 
-  // Plafond de dépense du jour atteint : plus d'analyse jusqu'à demain, pour personne.
   const db = getDb();
-  if (db) {
-    try {
-      if (await overDailyBudget(db)) {
-        console.warn("[analyse] plafond de dépense du jour atteint : analyses en pause jusqu'à demain.");
-        return errorResponse("paused");
-      }
-    } catch (error) {
-      console.error(`[analyse] dépense du jour illisible : ${errorSummary(error)}`);
-      return errorResponse("server-error");
-    }
-  }
 
+  // Quota par adresse IP (avant la réservation de budget).
   let quota: QuotaCheck;
   try {
     quota = await consumeAnalysisQuota(clientIp(request.headers));
@@ -101,6 +92,51 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (quota.kind === "limited") return errorResponse("rate-limited");
 
+  const refundQuota = async () => {
+    try {
+      await refundAnalysisQuota(quota.ticket);
+      return true;
+    } catch (error) {
+      console.error(`[analyse] remboursement impossible : ${errorSummary(error)}`);
+      return false;
+    }
+  };
+
+  // Réservation atomique du budget du jour, après le quota. Refusée = plafond
+  // atteint : l'analyse est en pause et le quota est rendu (pas la faute du
+  // visiteur). Sans base, pas de plafond (développement).
+  const reservationUsd = db ? limits.llmSpendReservationUsd : 0;
+  // Le solde se fait sur le jour de la réservation, même si l'analyse finit après minuit.
+  const reservedAt = new Date();
+  if (db) {
+    try {
+      if (!(await reserveSpend(db, reservationUsd, reservedAt))) {
+        console.warn("[analyse] plafond de dépense du jour atteint : analyses en pause jusqu'à demain.");
+        await refundQuota();
+        return errorResponse("paused");
+      }
+    } catch (error) {
+      console.error(`[analyse] réservation de budget impossible : ${errorSummary(error)}`);
+      await refundQuota();
+      return errorResponse("server-error");
+    }
+  }
+
+  // Nettoyage des PDF (garde anti-bombe, pages, chiffrement, métadonnées), une
+  // fois le quota pris. Un fichier refusé ici est la faute du client : le quota
+  // n'est pas rendu, mais la réservation de budget l'est.
+  const prepared = await prepareDocuments(upload.documents);
+  if (!prepared.ok) {
+    if (db) {
+      try {
+        await releaseSpend(db, reservationUsd, reservedAt);
+      } catch (error) {
+        console.error(`[analyse] réservation de budget non rendue : ${errorSummary(error)}`);
+      }
+    }
+    return errorResponse(prepared.code);
+  }
+
   after(async () => {
     await runPurges(db);
   });
@@ -108,24 +144,16 @@ export async function POST(request: Request): Promise<Response> {
   const stream = createAnalysisStream({
     client,
     model: getExtractionModel(),
-    documents: upload.documents,
+    documents: prepared.documents,
     db,
     remaining: quota.remaining,
-    refund: async () => {
-      try {
-        await refundAnalysisQuota(quota.ticket);
-        return true;
-      } catch (error) {
-        console.error(`[analyse] remboursement impossible : ${errorSummary(error)}`);
-        return false;
-      }
-    },
-    recordSpend: db
-      ? async (usd) => {
+    refund: refundQuota,
+    settleSpend: db
+      ? async (actualUsd, trusted) => {
           try {
-            await recordSpend(db, usd);
+            await settleSpend(db, reservationUsd, actualUsd, trusted, reservedAt);
           } catch (error) {
-            console.error(`[analyse] dépense du jour non enregistrée : ${errorSummary(error)}`);
+            console.error(`[analyse] réservation de budget non soldée : ${errorSummary(error)}`);
           }
         }
       : undefined,

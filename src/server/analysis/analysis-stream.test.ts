@@ -34,21 +34,24 @@ const reading: Responder = (_request, signal) => sseResponse(toolUseEvents(sampl
 const pricing: Responder = () =>
   messageResponse([toolUseBlock(ESTIMATE_TOOL_NAME, { estimates: [{ line: 1, low: 550, high: 800 }] })]);
 
-function stream(responders: readonly Responder[], options: { database?: Database | null; budgetMs?: number } = {}) {
+function stream(
+  responders: readonly Responder[],
+  options: { database?: Database | null; budgetMs?: number; model?: string } = {},
+) {
   const fake = createFakeAnthropic(responders);
   const refund = vi.fn(async () => true);
-  const recordSpend = vi.fn<(usd: number) => Promise<void>>(async () => {});
+  const settleSpend = vi.fn<(actualUsd: number, trusted: boolean) => Promise<void>>(async () => {});
   const body = createAnalysisStream({
     client: fake.client,
-    model: "claude-sonnet-5-5",
+    model: options.model ?? "claude-sonnet-5-5",
     documents: [{ kind: "pdf", data: new TextEncoder().encode("%PDF-1.7") }],
     db: options.database === undefined ? db : options.database,
     remaining: 4,
     refund,
-    recordSpend,
+    settleSpend,
     budgetMs: options.budgetMs,
   });
-  return { body, refund, recordSpend, requests: fake.requests };
+  return { body, refund, settleSpend, requests: fake.requests };
 }
 
 async function collect(body: ReadableStream<Uint8Array>): Promise<AnalyzeEvent[]> {
@@ -109,7 +112,7 @@ describe("createAnalysisStream", () => {
     const before = await analysisCount();
     // L'estimation ne répond jamais : seul le départ du visiteur l'interrompt.
     const hanging: Responder = (_request, signal) => sseResponse([], signal, { hang: true });
-    const { body } = stream([reading, hanging]);
+    const { body, settleSpend } = stream([reading, hanging]);
     const reader = body.getReader();
     const decoder = new TextDecoder();
     let received = "";
@@ -121,24 +124,51 @@ describe("createAnalysisStream", () => {
     await reader.cancel();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(await analysisCount()).toBe(before);
+    // Visiteur parti : la réservation est gardée (solde non fiable).
+    expect(settleSpend).toHaveBeenCalledTimes(1);
+    expect(settleSpend.mock.calls[0]?.[1]).toBe(false);
   });
 
-  it("compte chaque appel au modèle dans la dépense du jour", async () => {
-    const { body, recordSpend } = stream([reading, pricing]);
+  it("solde la réservation une fois, le coût réel connu, après une analyse complète", async () => {
+    const { body, settleSpend } = stream([reading, pricing]);
     await collect(body);
-    expect(recordSpend).toHaveBeenCalledTimes(2);
-    const total = recordSpend.mock.calls.reduce((sum, [usd]) => sum + usd, 0);
-    expect(total).toBeGreaterThan(0);
+    expect(settleSpend).toHaveBeenCalledTimes(1);
+    const [actualUsd, trusted] = settleSpend.mock.calls[0] ?? [];
+    expect(actualUsd).toBeGreaterThan(0);
+    expect(trusted).toBe(true);
+  });
+
+  it("compte au tarif le plus cher un modèle absent de la table des tarifs", async () => {
+    const known = stream([reading, pricing]);
+    await collect(known.body);
+    const unknown = stream([reading, pricing], { model: "claude-sonnet-5-5-20261001" });
+    await collect(unknown.body);
+    const knownUsd = known.settleSpend.mock.calls[0]?.[0] ?? 0;
+    const unknownUsd = unknown.settleSpend.mock.calls[0]?.[0] ?? 0;
+    expect(knownUsd).toBeGreaterThan(0);
+    // Même usage, tarif majorant (Opus) : jamais zéro, jamais moins.
+    expect(unknownUsd).toBeGreaterThan(knownUsd);
   });
 
   it("ne rend pas une analyse dont la lecture, facturée, a échoué (réponse tronquée)", async () => {
     const truncated: Responder = (_request, signal) =>
       sseResponse(toolUseEvents(JSON.stringify(sampleExtraction).slice(0, 300), { stopReason: "max_tokens" }), signal);
-    const { body, refund, recordSpend } = stream([truncated]);
+    const { body, refund, settleSpend } = stream([truncated]);
     const events = await collect(body);
     expect(events.at(-1)).toMatchObject({ type: "error", code: "reading-failed", refunded: false });
     expect(refund).not.toHaveBeenCalled();
-    expect(recordSpend.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    // Réponse tronquée : le message est complet, le coût est fiable et soldé.
+    expect(settleSpend).toHaveBeenCalledTimes(1);
+    const [actualUsd, trusted] = settleSpend.mock.calls[0] ?? [];
+    expect(actualUsd).toBeGreaterThan(0);
+    expect(trusted).toBe(true);
+  });
+
+  it("garde la réservation quand la lecture s'interrompt (panne, tokens sous-comptés)", async () => {
+    const { body, settleSpend } = stream([() => errorResponse(529, "overloaded_error", "Overloaded")]);
+    await collect(body);
+    expect(settleSpend).toHaveBeenCalledTimes(1);
+    expect(settleSpend.mock.calls[0]?.[1]).toBe(false);
   });
 
   it("ne rend pas non plus une analyse refusée par le modèle", async () => {

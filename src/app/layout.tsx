@@ -5,30 +5,30 @@ import { site } from "@/config/site";
 import { serverEnv } from "@/server/env";
 import "./globals.css";
 
-/** Titres éditoriaux. */
+/** Titres éditoriaux. L'italique, utilisée par le seul titre de l'accueil, est chargée par `page.tsx`. */
 const display = Instrument_Serif({
   weight: "400",
-  style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-instrument-serif",
   display: "swap",
 });
 
 /**
- * Interface. Pas préchargée : le premier élément affiché est un titre (police
- * des titres) ; le texte courant s'affiche d'abord avec une police de secours
- * aux mêmes mesures, puis bascule sans décalage.
+ * Interface. Préchargée : sur mobile, le plus grand élément du premier écran
+ * est un paragraphe en Geist (audit Lighthouse du 25 octobre 2026), et la
+ * police de secours calée par next/font repose sur Arial, absente d'Android
+ * et de Linux : sans préchargement, le texte s'affiche d'abord dans une police
+ * du système aux autres mesures, puis la page bouge à l'arrivée de Geist.
  */
 const sans = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
   display: "swap",
-  preload: false,
 });
 
 /**
- * Montants et lignes de devis. Pas préchargée : chaque préchargement retarde
- * le titre, le plus grand élément du premier écran.
+ * Montants et lignes de devis. Pas préchargée : surtout sur la page d'analyse,
+ * plus bas que le premier écran ailleurs ; chaque préchargement retarde les autres.
  */
 const mono = Geist_Mono({
   subsets: ["latin"],

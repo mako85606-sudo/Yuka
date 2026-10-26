@@ -30,6 +30,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Rapports de couverture Vitest
     "coverage/**",
+    // Copies de travail temporaires des agents de Claude Code
+    ".claude/**",
   ]),
 ]);
 

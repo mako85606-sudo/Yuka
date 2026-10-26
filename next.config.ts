@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { contentSecurityPolicy } from "./src/lib/content-security-policy";
 import { codespaceHosts, ownForwardedHosts } from "./src/lib/forwarded-hosts";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -15,27 +16,18 @@ const codespaceOrigins = codespaceHosts(process.env, process.env.NODE_ENV);
 const serverActionOrigins = ownForwardedHosts(process.env, process.env.NODE_ENV);
 
 /**
- * Politique de contenu sans nonce (guide « Content Security Policy » de la
- * doc Next.js) : tout vient du site lui-même. Aucun script, style, police ou
- * appel tiers : la mesure part du serveur. `blob:` et `data:` servent aux
- * aperçus des photos déposées et au grain du papier ; `unsafe-eval` seulement
- * en développement (rechargement à chaud).
+ * Politique de contenu sans nonce, celle des pages statiques
+ * (src/lib/content-security-policy.ts) : posée ici sur toutes les adresses,
+ * comme plancher. Sur les pages rendues à chaque visite, `src/proxy.ts` la
+ * remplace par la politique stricte, à nonce (vérifié avec `next start`). Si
+ * un hébergeur envoyait les deux en-têtes, le navigateur appliquerait les
+ * deux : la plus stricte l'emporte, et les scripts de Next.js, munis du
+ * nonce, passent l'une comme l'autre.
  */
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-].join("; ");
+const staticContentSecurityPolicy = contentSecurityPolicy({ dev: isDev });
 
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: contentSecurityPolicy },
+  { key: "Content-Security-Policy", value: staticContentSecurityPolicy },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

@@ -51,7 +51,10 @@ export type ExtractionFailure =
   | "truncated"
   | "timeout"
   | "aborted"
-  | "unavailable";
+  // Panne de notre côté ou d'Anthropic (5xx, 429, coupure) : l'analyse peut être rendue.
+  | "unavailable"
+  // Requête refusée par l'API (4xx) : la faute vient de l'envoi, l'analyse n'est pas rendue.
+  | "rejected";
 
 export interface ExtractionRun {
   readonly model: string;
@@ -91,7 +94,7 @@ type AttemptResult =
   | { readonly kind: "stopped"; readonly reason: EarlyStop; readonly usage: LlmUsage }
   | {
       readonly kind: "error";
-      readonly reason: "timeout" | "aborted" | "unavailable" | "unparseable";
+      readonly reason: "timeout" | "aborted" | "unavailable" | "rejected" | "unparseable";
       readonly usage: LlmUsage;
       readonly detail?: string;
     };
@@ -179,11 +182,15 @@ async function runAttempt(
     if (timedOut) return { kind: "error", reason: "timeout", usage };
     if (options.signal?.aborted) return { kind: "error", reason: "aborted", usage };
     if (error instanceof Anthropic.APIError) {
+      // 4xx (hors 429) : la requête est fautive, elle n'est pas rendue. Panne,
+      // surcharge (429) ou coupure (pas de statut) : échec de notre côté.
+      const status = error.status;
+      const ourFault = status === undefined || status === 429 || status >= 500;
       return {
         kind: "error",
-        reason: "unavailable",
+        reason: ourFault ? "unavailable" : "rejected",
         usage,
-        detail: `${error.name} ${error.status ?? ""}`.trim(),
+        detail: `${error.name} ${status ?? ""}`.trim(),
       };
     }
     // L'entrée de l'outil, streamée sans tampon, n'a pas pu être analysée.

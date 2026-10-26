@@ -49,6 +49,16 @@ export const limits = {
   /** Pages d'un PDF au plus : un devis en compte rarement plus. */
   maxPdfPages: 8,
   /**
+   * Flux compressé d'un PDF décompressé par pdf-lib au chargement (table
+   * d'objets `/ObjStm`, table des références `/XRef`) : octets décompressés
+   * acceptés, par flux puis au total. Au-delà, le PDF est refusé avant même
+   * que pdf-lib ne l'ouvre (bombe de décompression : un petit fichier qui se
+   * gonfle en mémoire). Un vrai devis de huit pages reste très en deçà ; les
+   * images (jamais décompressées au chargement) ne comptent pas.
+   */
+  maxPdfInflatedBytesPerStream: 8 * 1024 * 1024,
+  maxPdfInflatedBytesTotal: 32 * 1024 * 1024,
+  /**
    * Plafond de dépense quotidienne de l'API Claude, en dollars, toutes
    * analyses comprises (lectures réussies ou non, estimations de prix). Au-delà,
    * l'analyse s'arrête jusqu'au lendemain.
@@ -56,6 +66,27 @@ export const limits = {
    * aussi une limite de dépense dans la console Anthropic.
    */
   dailyLlmBudgetUsd: 20,
+  /**
+   * Montant réservé sur le plafond du jour au début de chaque analyse, avant
+   * tout appel au modèle, puis rendu en partie une fois le vrai coût connu.
+   * La réservation est atomique : N analyses simultanées ne peuvent pas
+   * dépasser le plafond en lisant toutes un total à 0 $ avant d'y ajouter leur
+   * coût (sans elle, la course laissait passer tout le monde).
+   *
+   * Pire cas d'une analyse, au tarif le plus cher de `MODEL_PRICING`
+   * (claude-opus-5-5 : 4 $/M en entrée, 20 $/M en sortie, 5 $/M en cache) :
+   * - lecture, deux tentatives (`MAX_ATTEMPTS`) : sortie 2 × `maxTokens`
+   *   (16 000) = 32 000 tokens → 0,64 $ ; entrée (consignes en cache + quatre
+   *   photos ou huit pages) majorée à 2 × 40 000 tokens au tarif cache =
+   *   0,40 $ ;
+   * - estimation des prix, deux tentatives : sortie 2 × 4 000 = 0,16 $ ;
+   *   entrée 2 × 8 000 au tarif cache = 0,08 $.
+   * Soit ≈ 1,28 $, arrondi à 1,50 $. Le coût réel d'un devis bien lu est de
+   * quelques centimes ; le reste est rendu au règlement.
+   * TODO: vérifier — à recaler si `maxTokens`, le nombre de pages ou les tarifs
+   * changent.
+   */
+  llmSpendReservationUsd: 1.5,
   /** Événements de mesure acceptés par jour et par adresse IP. */
   eventsPerDay: 300,
   /** Inscriptions (ou désinscriptions) par jour et par adresse IP. */

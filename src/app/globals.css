@@ -141,6 +141,15 @@
     color: var(--ink);
   }
 
+  /*
+   * Couleur du contour posée d'avance sur tout élément : `transition-colors`
+   * anime aussi `outline-color`, et le contour de focus partirait sinon de la
+   * couleur du texte (blanc sur un bouton principal, invisible sur la page).
+   */
+  * {
+    outline-color: var(--annotation-blue);
+  }
+
   :focus-visible {
     outline: 2px solid var(--annotation-blue);
     outline-offset: 3px;

@@ -194,18 +194,31 @@ export interface VatTerritory {
   readonly where: string;
   /** Faux tant que les taux du territoire n'ont pas été relus (voir le TODO ci-dessus). */
   readonly verified: boolean;
-  /** Vrai hors Corse et outre-mer : les taux habituels par métier ne valent que là. */
-  readonly mainland: boolean;
+  /**
+   * Vrai si les taux habituels par métier (`USUAL_VAT_RATES`, décrits pour la
+   * métropole) s'appliquent : en métropole, ou si le département n'a pas été lu.
+   */
+  readonly usualRatesApply: boolean;
 }
 
-/** Taux en vigueur pour un département, et le nom du territoire (métropole par défaut). */
+/** Tous les taux en vigueur en France, territoires compris, du plus haut au plus bas. */
+const ALL_FRENCH_RATES: readonly number[] = [
+  ...new Set([...VAT_RATES_IN_FORCE, ...VAT_TERRITORIES.flatMap((territory) => territory.rates)]),
+].sort((a, b) => b - a);
+
+/**
+ * Taux en vigueur pour un département. Département non lu : on ne sait pas
+ * où ont lieu les travaux, donc tout taux en vigueur quelque part en France
+ * est accepté (un devis de La Réunion à 8,5 % n'est pas une erreur).
+ */
 export function vatRatesFor(department: string | undefined): VatTerritory {
-  const territory = VAT_TERRITORIES.find((item) =>
-    department === undefined ? false : (item.departments as readonly string[]).includes(department),
-  );
+  if (department === undefined) {
+    return { rates: ALL_FRENCH_RATES, where: "en France", verified: false, usualRatesApply: true };
+  }
+  const territory = VAT_TERRITORIES.find((item) => (item.departments as readonly string[]).includes(department));
   return territory
-    ? { rates: territory.rates, where: territory.name, verified: false, mainland: false }
-    : { rates: VAT_RATES_IN_FORCE, where: "en France métropolitaine", verified: true, mainland: true };
+    ? { rates: territory.rates, where: territory.name, verified: false, usualRatesApply: false }
+    : { rates: VAT_RATES_IN_FORCE, where: "en France métropolitaine", verified: true, usualRatesApply: true };
 }
 
 /**

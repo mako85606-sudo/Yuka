@@ -6,7 +6,7 @@ import { REFUSAL_MESSAGES, failureMessage } from "@/lib/analysis/messages";
 import type { Finding, VerdictResult } from "@/lib/analysis/result";
 import { computeOvercharge, runChecks } from "@/lib/checks";
 import type { Extraction } from "@/lib/extraction/schema";
-import { addUsage, type LlmUsage } from "@/lib/llm-cost";
+import { EMPTY_USAGE, addUsage, spendCostUsd, type LlmUsage } from "@/lib/llm-cost";
 import { decideVerdict } from "@/lib/verdict";
 import { quoteFingerprint, saveAnalysis, type SavedAnalysis } from "@/server/analysis/store";
 import type { Database } from "@/server/db/client";
@@ -31,8 +31,12 @@ export interface AnalysisStreamOptions {
   readonly remaining: number;
   /** Rend l'analyse au visiteur ; renvoie vrai si c'est fait. */
   readonly refund: () => Promise<boolean>;
-  /** Ajoute le coût d'un appel au modèle au total du jour (plafond quotidien), s'il y a une base. */
-  readonly recordSpend?: (usd: number) => Promise<void>;
+  /**
+   * Solde la réservation de budget du jour une fois l'analyse finie : coût réel
+   * mesuré et si les appels se sont terminés normalement (`trusted`). Appelé
+   * une seule fois, à la fin du flux, s'il y a une base.
+   */
+  readonly settleSpend?: (actualUsd: number, trusted: boolean) => Promise<void>;
   readonly attemptTimeoutMs?: number;
   /** Temps total accordé à l'analyse ; l'estimation des prix prend ce qui reste après la lecture. */
   readonly budgetMs?: number;
@@ -113,6 +117,12 @@ export function createAnalysisStream(options: AnalysisStreamOptions): ReadableSt
   const budgetMs = options.budgetMs ?? limits.analysisBudgetMs;
   let open = true;
 
+  // Tokens de tous les appels au modèle de cette analyse, pour solder la
+  // réservation de budget à la fin, et si les appels se sont terminés
+  // normalement (sinon le SDK sous-compte les tokens de sortie).
+  let totalUsage = EMPTY_USAGE;
+  let readingComplete = false;
+
   return new ReadableStream<Uint8Array>({
     async start(controller) {
       const started = Date.now();
@@ -142,7 +152,7 @@ export function createAnalysisStream(options: AnalysisStreamOptions): ReadableSt
           signal: abort.signal,
           estimateTimeoutMs: budgetMs - (Date.now() - started),
         });
-        await options.recordSpend?.(pricing.costUsd ?? 0);
+        totalUsage = addUsage(totalUsage, pricing.usage);
         // Le visiteur est parti : rien à conclure, rien à garder.
         if (abort.signal.aborted) return;
         send({ type: "prices", prices: pricing.opinions, complete: pricing.complete });
@@ -199,7 +209,13 @@ export function createAnalysisStream(options: AnalysisStreamOptions): ReadableSt
         });
         logOutcome(outcome);
         // Payée, réussie ou non : chaque lecture compte dans la dépense du jour.
-        await options.recordSpend?.(outcome.run.costUsd ?? 0);
+        totalUsage = addUsage(totalUsage, outcome.run.usage);
+        // Lecture terminée normalement : les tokens sont comptés en entier. Un
+        // flux interrompu (délai, panne, départ) les sous-compte.
+        readingComplete =
+          outcome.kind === "extracted" ||
+          outcome.kind === "stopped" ||
+          (outcome.kind === "failed" && (outcome.reason === "refusal" || outcome.reason === "truncated"));
 
         if (outcome.kind === "extracted") {
           send({ type: "extracted", extraction: outcome.extraction, remaining: options.remaining });
@@ -208,11 +224,12 @@ export function createAnalysisStream(options: AnalysisStreamOptions): ReadableSt
           send({ type: "refused", reason: outcome.reason, message: REFUSAL_MESSAGES[outcome.reason] });
         } else if (outcome.reason !== "aborted") {
           // Le visiteur parti ne reçoit rien. Sinon, l'analyse n'est rendue que si
-          // le fournisseur était en panne sans rien facturer : un envoi qui provoque
-          // lui-même l'échec (devis démesuré, consignes cachées dans l'image) ne doit
-          // pas pouvoir se rejouer sans fin aux frais de Loupe.
-          const refunded =
-            outcome.reason === "unavailable" && !billed(outcome.run.usage) ? await options.refund() : false;
+          // l'échec vient de nous ou d'Anthropic (panne, surcharge, coupure, délai)
+          // sans rien facturer. Un envoi que le client sait mauvais (image que le
+          // modèle refuse de décoder, erreur 4xx) ne doit pas se rejouer sans fin
+          // à nos frais : il est décompté.
+          const ourFault = outcome.reason === "unavailable" || outcome.reason === "timeout";
+          const refunded = ourFault && !billed(outcome.run.usage) ? await options.refund() : false;
           send({
             type: "error",
             code: "reading-failed",
@@ -235,6 +252,10 @@ export function createAnalysisStream(options: AnalysisStreamOptions): ReadableSt
           open = false;
           controller.close();
         }
+        // Solde la réservation : on ne descend pas sous elle si un appel s'est
+        // interrompu (tokens de sortie sous-comptés) ou si le visiteur est parti.
+        const trusted = readingComplete && !abort.signal.aborted;
+        await options.settleSpend?.(spendCostUsd(totalUsage, options.model), trusted);
       }
     },
     cancel() {

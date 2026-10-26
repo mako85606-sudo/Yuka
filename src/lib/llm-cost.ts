@@ -1,4 +1,4 @@
-import type { ModelPricing } from "@/config/llm";
+import { MAX_MODEL_PRICING, MODEL_PRICING, type ModelPricing } from "@/config/llm";
 
 /** Tokens consommés par un ou plusieurs appels au modèle. */
 export interface LlmUsage {
@@ -56,4 +56,14 @@ export function costUsd(usage: LlmUsage, pricing: ModelPricing | undefined): num
     usage.cacheWriteTokens * pricing.cacheWrite * perToken +
     usage.cacheReadTokens * pricing.cacheRead * perToken;
   return Math.round(cost * 1_000_000) / 1_000_000;
+}
+
+/**
+ * Coût d'un appel pour le plafond de dépense : comme `costUsd`, mais jamais
+ * `null`. Un modèle au tarif inconnu (une version datée mise dans
+ * `ANTHROPIC_MODEL`, par exemple) est compté au tarif majorant, pour que le
+ * plafond reste un rempart même alors (sinon son coût compterait pour zéro).
+ */
+export function spendCostUsd(usage: LlmUsage, model: string): number {
+  return costUsd(usage, MODEL_PRICING[model] ?? MAX_MODEL_PRICING) ?? 0;
 }
