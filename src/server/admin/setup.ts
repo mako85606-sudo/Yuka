@@ -35,7 +35,10 @@ export function missingLegalFields(): number {
   return values.filter((value) => value === null).length;
 }
 
-export function setupChecklist(env: ServerEnv = serverEnv()): readonly SetupItem[] {
+export function setupChecklist(
+  env: ServerEnv = serverEnv(),
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+): readonly SetupItem[] {
   const model = env.ANTHROPIC_MODEL ?? llmConfig.defaultModel;
   const missingLegal = missingLegalFields();
   return [
@@ -84,8 +87,12 @@ export function setupChecklist(env: ServerEnv = serverEnv()): readonly SetupItem
     {
       id: "site-url",
       label: "Adresse du site",
-      state: env.SITE_URL || env.VERCEL_PROJECT_PRODUCTION_URL ? "ok" : "optional",
-      detail: siteOrigin(env),
+      // En ligne hors de Vercel, sans SITE_URL, liens et plan du site pointeraient vers localhost.
+      state: env.SITE_URL || env.VERCEL_PROJECT_PRODUCTION_URL ? "ok" : nodeEnv === "production" ? "warning" : "optional",
+      detail:
+        env.SITE_URL || env.VERCEL_PROJECT_PRODUCTION_URL || nodeEnv !== "production"
+          ? siteOrigin(env)
+          : "SITE_URL manque : les images de partage et le plan du site pointent vers localhost (à définir aussi au build).",
     },
     {
       id: "posthog",

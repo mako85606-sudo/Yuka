@@ -62,7 +62,7 @@ export function demoVerdict(quote: SceneQuote): Verdict {
 }
 
 /**
- * Économie possible, arrondie à l'euro : le haut de la fourchette de
+ * Économie possible, arrondie à l'euro inférieur : le haut de la fourchette de
  * l'analyse réelle (trop-payé, plus chaque écart au-dessus de la référence).
  * `null` pour un devis correct ou une économie trop faible pour être annoncée.
  */
@@ -70,10 +70,11 @@ export function demoSavings(quote: SceneQuote): number | null {
   if (demoVerdict(quote) === "ok") return null;
   const above = quote.prices.reduce((sum, price) => sum + Math.max(0, price.delta), 0);
   const high = demoOvercharge(quote) + above;
-  return high < verdictConfig.minSavings ? null : Math.round(high);
+  // Vers le bas, comme `wholeEuros` : jamais plus que l'économie réelle.
+  return high < verdictConfig.minSavings ? null : Math.floor(high);
 }
 
-/** « jusqu'à 219 € », ou `null` s'il n'y a rien à annoncer. */
+/** « jusqu'à 218 € », ou `null` s'il n'y a rien à annoncer. */
 export function demoSavingsText(quote: SceneQuote): string | null {
   const savings = demoSavings(quote);
   return savings === null ? null : fr(`jusqu'à ${formatEuros(savings, 0)}`);

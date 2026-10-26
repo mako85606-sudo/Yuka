@@ -102,7 +102,7 @@ describe("verdicts du jeu de test", () => {
     const result = verdictFor(expectedExtraction(fixture));
     expect(result.verdict).toBe(verdict);
     if (id.startsWith("02")) {
-      expect(result.savings).toEqual({ low: 21, high: 21 });
+      expect(result.savings).toEqual({ low: 20.8, high: 20.8 });
       expect(result.keyPoints[0]).toBe("Les erreurs de calcul vous font payer 20,80 € de trop.");
     }
   });

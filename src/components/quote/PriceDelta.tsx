@@ -22,6 +22,11 @@ interface PriceDeltaProps {
   readonly className?: string;
 }
 
+/** « Estimation IA · confiance faible » → « estimation IA · confiance faible » (le sigle garde ses capitales). */
+function lowerFirst(text: string): string {
+  return `${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+}
+
 /**
  * Avis de prix : « +340 € au-dessus de la médiane », avec un compteur animé
  * (600 ms au plus) et, toujours, sa source et son niveau de confiance.
@@ -81,7 +86,7 @@ export function PriceDelta({
       transition={reduced ? reducedFade(delay) : transitions.fadeIn(delay)}
     >
       <p className="sr-only">
-        {inRange ? `Prix ${phrase} (${caption.toLowerCase()})` : `${finalText} ${phrase} (${caption.toLowerCase()})`}
+        {inRange ? `Prix ${phrase} (${lowerFirst(caption)})` : `${finalText} ${phrase} (${lowerFirst(caption)})`}
       </p>
       <p aria-hidden className="flex flex-wrap items-baseline gap-x-2">
         {inRange ? null : (

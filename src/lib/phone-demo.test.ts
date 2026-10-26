@@ -9,7 +9,7 @@ describe("phoneResult", () => {
 
   it("annonce l'économie des règles réelles (haut de fourchette)", () => {
     expect(result.savings).toBe(demoSavings(plumbingQuote));
-    expect(result.savings).toBe(219);
+    expect(result.savings).toBe(218);
   });
 
   it("barre le montant imprimé et donne le bon à côté", () => {
@@ -42,7 +42,7 @@ describe("phoneResult", () => {
   it("se décrit en une phrase pour les lecteurs d'écran", () => {
     const text = describePhoneResult(plumbingQuote, result);
     expect(text).toContain("Exemple fictif");
-    expect(text).toContain(`jusqu'à ${formatEuros(219, 0)}`);
+    expect(text).toContain(`jusqu'à ${formatEuros(218, 0)}`);
     expect(text).toContain("estimation IA");
   });
 });

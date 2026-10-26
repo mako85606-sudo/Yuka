@@ -39,6 +39,12 @@ describe("setupChecklist", () => {
     expect(state({}, "model")).toBe("ok");
   });
 
+  it("demande l'adresse du site en ligne hors de Vercel", () => {
+    expect(setupChecklist({}, "production").find((item) => item.id === "site-url")?.state).toBe("warning");
+    expect(setupChecklist({ VERCEL_PROJECT_PRODUCTION_URL: "loupe.vercel.app" }, "production").find((item) => item.id === "site-url")?.state).toBe("ok");
+    expect(setupChecklist({}, "development").find((item) => item.id === "site-url")?.state).toBe("optional");
+  });
+
   it("compte les informations légales encore à compléter", () => {
     expect(missingLegalFields()).toBeGreaterThan(0);
     expect(state({}, "legal")).toBe("warning");
