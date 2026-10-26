@@ -6,15 +6,23 @@ import type { AnalysisErrorCode } from "@/lib/analysis/events";
 import { sniffFileType } from "@/lib/analysis/file-type";
 import { CONSENT_FIELD, CONSENT_VALUE, FILES_FIELD } from "@/lib/analysis/form";
 import { hostMatches, ownForwardedHosts } from "@/lib/forwarded-hosts";
+import { scanPdfForBombs } from "@/server/analysis/pdf-guard";
 import { serverEnv } from "@/server/env";
 import type { QuoteDocument } from "@/server/extraction/prompt";
 
 /**
- * Lecture et contrôle de l'envoi : accord explicite, une à quatre photos ou
- * un seul PDF, `limits.maxUploadBytes` au plus (4 Mo), et de vrais fichiers
- * (reconnus à leurs octets). Un PDF compte au plus `limits.maxPdfPages` pages,
- * et perd ses propriétés (auteur, titre, métadonnées XMP) avant d'être lu.
- * Les fichiers restent en mémoire ; rien n'est écrit sur disque.
+ * Lecture et contrôle de l'envoi, en deux temps.
+ *
+ * `parseUpload` ne fait que les contrôles qui ne coûtent rien : accord
+ * explicite, une à quatre photos ou un seul PDF, `limits.maxUploadBytes` au
+ * plus (4 Mo), et de vrais fichiers (reconnus à leurs octets). Il n'ouvre pas
+ * les PDF : un fichier piégé ne doit rien coûter avant que le quota et la
+ * réservation de budget ne soient pris.
+ *
+ * `prepareDocuments` traite ensuite les PDF (une fois le quota pris) : garde
+ * anti-bombe, contrôle du nombre de pages, refus d'un PDF chiffré, puis
+ * reconstruction sans aucune métadonnée. Les fichiers restent en mémoire ; rien
+ * n'est écrit sur disque.
  */
 
 const uploadSchema = z.object({
@@ -26,6 +34,10 @@ export type ParsedUpload =
   | { readonly ok: true; readonly documents: readonly QuoteDocument[]; readonly totalBytes: number }
   | { readonly ok: false; readonly code: AnalysisErrorCode };
 
+export type PreparedUpload =
+  | { readonly ok: true; readonly documents: readonly QuoteDocument[] }
+  | { readonly ok: false; readonly code: AnalysisErrorCode };
+
 function errorCode(error: z.ZodError): AnalysisErrorCode {
   const issue = error.issues[0];
   if (issue?.path[0] === "consent") return "consent-required";
@@ -35,6 +47,10 @@ function errorCode(error: z.ZodError): AnalysisErrorCode {
   return "unsupported-file";
 }
 
+/**
+ * Contrôles bon marché de l'envoi, sans ouvrir les PDF. Les PDF ressortent avec
+ * leurs octets bruts : `prepareDocuments` les nettoie plus tard.
+ */
 export async function parseUpload(formData: FormData): Promise<ParsedUpload> {
   const parsed = uploadSchema.safeParse({
     consent: formData.get(CONSENT_FIELD),
@@ -52,9 +68,7 @@ export async function parseUpload(formData: FormData): Promise<ParsedUpload> {
     const type = sniffFileType(data);
     if (!type) return { ok: false, code: "unsupported-file" };
     if (type === "pdf") {
-      const pdf = await preparePdf(data);
-      if (!pdf.ok) return pdf;
-      documents.push({ kind: "pdf", data: pdf.data });
+      documents.push({ kind: "pdf", data });
     } else {
       documents.push({ kind: "image", mediaType: `image/${type}`, data });
     }
@@ -68,35 +82,79 @@ export async function parseUpload(formData: FormData): Promise<ParsedUpload> {
 }
 
 /**
- * Contrôle un PDF avant lecture : il doit s'ouvrir, compter au plus
- * `limits.maxPdfPages` pages (un gros document coûterait cher à lire), et
- * il perd ses propriétés (titre, auteur, sujet, mots-clés, logiciels,
- * métadonnées XMP), qui peuvent nommer une personne. Un PDF chiffré est
- * transmis tel quel : le réenregistrer le rendrait illisible.
+ * Nettoie les PDF de l'envoi : garde anti-bombe, nombre de pages, refus d'un
+ * PDF chiffré, puis reconstruction sans métadonnées. Les images passent telles
+ * quelles. À appeler après la prise du quota (un PDF refusé ici est la faute du
+ * client : pas de remboursement).
+ */
+export async function prepareDocuments(documents: readonly QuoteDocument[]): Promise<PreparedUpload> {
+  const prepared: QuoteDocument[] = [];
+  for (const document of documents) {
+    if (document.kind !== "pdf") {
+      prepared.push(document);
+      continue;
+    }
+    const pdf = await preparePdf(document.data);
+    if (!pdf.ok) return pdf;
+    prepared.push({ kind: "pdf", data: pdf.data });
+  }
+  return { ok: true, documents: prepared };
+}
+
+/**
+ * Contrôle et nettoie un PDF avant lecture :
+ * - garde anti-bombe sur les octets bruts (`scanPdfForBombs`), avant pdf-lib ;
+ * - il doit s'ouvrir et compter de 1 à `limits.maxPdfPages` pages ;
+ * - un PDF chiffré est refusé (on ne saurait ni le nettoyer ni garantir sa
+ *   lecture) ;
+ * - il est reconstruit à partir de ses seules pages (`create` + `copyPages`) :
+ *   plus de métadonnées XMP du catalogue, plus d'ancien dictionnaire Info laissé
+ *   par une mise à jour incrémentale, et les métadonnées de page (`/Metadata`,
+ *   `/PieceInfo`, `/LastModified`), qui peuvent nommer une personne, sont
+ *   retirées. Un vrai `save()` réécrit tout : c'est la seule façon de ne pas
+ *   laisser passer un objet non référencé.
  */
 export async function preparePdf(
   data: Uint8Array,
 ): Promise<{ readonly ok: true; readonly data: Uint8Array } | { readonly ok: false; readonly code: AnalysisErrorCode }> {
-  let pdf: PDFDocument;
+  if (!scanPdfForBombs(data).ok) return { ok: false, code: "unsupported-file" };
+
+  let source: PDFDocument;
   let pages: number;
   try {
-    pdf = await PDFDocument.load(data, { ignoreEncryption: true, updateMetadata: false });
+    source = await PDFDocument.load(data, { ignoreEncryption: true, updateMetadata: false });
     // pdf-lib ouvre parfois un fichier sans pages ni catalogue : il n'est pas lisible.
-    pages = pdf.getPageCount();
+    pages = source.getPageCount();
   } catch {
     return { ok: false, code: "unsupported-file" };
   }
   if (pages === 0) return { ok: false, code: "unsupported-file" };
   if (pages > limits.maxPdfPages) return { ok: false, code: "too-many-pages" };
-  if (pdf.isEncrypted) return { ok: true, data };
-  pdf.setTitle("");
-  pdf.setAuthor("");
-  pdf.setSubject("");
-  pdf.setKeywords([]);
-  pdf.setCreator("");
-  pdf.setProducer("");
-  pdf.catalog.delete(PDFName.of("Metadata"));
-  return { ok: true, data: await pdf.save({ updateFieldAppearances: false }) };
+  // Un PDF chiffré : ni nettoyage fiable ni lecture garantie.
+  if (source.isEncrypted) return { ok: false, code: "unsupported-file" };
+
+  let clean: PDFDocument;
+  try {
+    clean = await PDFDocument.create();
+    const copied = await clean.copyPages(source, source.getPageIndices());
+    for (const page of copied) {
+      // Métadonnées attachées à la page elle-même (les seules recopiées).
+      page.node.delete(PDFName.of("Metadata"));
+      page.node.delete(PDFName.of("PieceInfo"));
+      page.node.delete(PDFName.of("LastModified"));
+      clean.addPage(page);
+    }
+  } catch {
+    return { ok: false, code: "unsupported-file" };
+  }
+  // Champs Info vidés (pdf-lib en pose quelques-uns à la création).
+  clean.setTitle("");
+  clean.setAuthor("");
+  clean.setSubject("");
+  clean.setKeywords([]);
+  clean.setCreator("");
+  clean.setProducer("");
+  return { ok: true, data: await clean.save({ updateFieldAppearances: false }) };
 }
 
 /** Statut HTTP de chaque refus avant analyse. */

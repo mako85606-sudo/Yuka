@@ -59,3 +59,19 @@ export const MODEL_PRICING: Readonly<Record<string, ModelPricing>> = {
   "claude-sonnet-5": { input: 2, output: 10, cacheWrite: 2.5, cacheRead: 0.2 },
   "claude-opus-5-5": { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 },
 };
+
+/**
+ * Tarif majorant (le plus cher champ par champ parmi `MODEL_PRICING`) : sert
+ * de repli pour le plafond de dépense quand `ANTHROPIC_MODEL` désigne un
+ * modèle absent de la table (une version datée, par exemple). Sans lui, le
+ * coût compterait pour zéro et le plafond ne se déclencherait jamais.
+ */
+export const MAX_MODEL_PRICING: ModelPricing = Object.values(MODEL_PRICING).reduce(
+  (worst, pricing) => ({
+    input: Math.max(worst.input, pricing.input),
+    output: Math.max(worst.output, pricing.output),
+    cacheWrite: Math.max(worst.cacheWrite, pricing.cacheWrite),
+    cacheRead: Math.max(worst.cacheRead, pricing.cacheRead),
+  }),
+  { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 },
+);

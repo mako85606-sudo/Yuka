@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MODEL_PRICING } from "@/config/llm";
-import { EMPTY_USAGE, addUsage, costUsd, usageFromApi } from "@/lib/llm-cost";
+import { MAX_MODEL_PRICING, MODEL_PRICING } from "@/config/llm";
+import { EMPTY_USAGE, addUsage, costUsd, spendCostUsd, usageFromApi } from "@/lib/llm-cost";
 
 describe("coût d'un appel", () => {
   it("lit l'usage renvoyé par l'API, champs de cache compris", () => {
@@ -33,5 +33,22 @@ describe("coût d'un appel", () => {
 
   it("renvoie null pour un modèle au tarif inconnu", () => {
     expect(costUsd(EMPTY_USAGE, MODEL_PRICING["modele-inconnu"])).toBeNull();
+  });
+});
+
+describe("coût pour le plafond de dépense", () => {
+  const usage = { inputTokens: 1_000_000, outputTokens: 100_000, cacheWriteTokens: 0, cacheReadTokens: 0 };
+
+  it("compte un modèle connu à son tarif", () => {
+    expect(spendCostUsd(usage, "claude-sonnet-5-5")).toBe(costUsd(usage, MODEL_PRICING["claude-sonnet-5-5"]));
+  });
+
+  it("compte un modèle inconnu (version datée) au tarif le plus cher, jamais zéro", () => {
+    const cost = spendCostUsd(usage, "claude-sonnet-5-5-20261001");
+    expect(cost).toBe(costUsd(usage, MAX_MODEL_PRICING));
+    expect(cost).toBeGreaterThan(0);
+    for (const pricing of Object.values(MODEL_PRICING)) {
+      expect(cost).toBeGreaterThanOrEqual(costUsd(usage, pricing) ?? 0);
+    }
   });
 });
